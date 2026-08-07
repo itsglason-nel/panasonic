@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parts Confirmation Report</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: #f3f4f6;
+            color: #1f2937;
+            padding: 40px;
+            font-size: 13px;
+            line-height: 1.5;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ── Toolbar (screen only) ── */
+        .toolbar {
+            max-width: 850px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+            color: #374151;
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background-color: #f9fafb;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: #2d3748;
+            border-color: #2d3748;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a202c;
+            border-color: #1a202c;
+        }
+
+        /* ── Page Container ── */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e5e7eb;
+        }
+
+        /* ── Header ── */
+        .report-header {
+            border-bottom: 2px solid #2d3748;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .company-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: #111827;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .division-info {
+            font-size: 12px;
+            color: #4b5563;
+            margin-top: 2px;
+        }
+
+        .title-block {
+            font-size: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 12px;
+            color: #1f2937;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            background-color: #e6fffa;
+            color: #047481;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #c4f1f9;
+        }
+
+        /* ── Info Grid Table ── */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+
+        .info-table td {
+            padding: 8px 12px;
+            vertical-align: middle;
+            font-size: 13px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .info-table .label {
+            font-weight: 700;
+            color: #4b5563;
+            width: 20%;
+            background-color: #f9fafb;
+        }
+
+        .info-table .value {
+            color: #1f2937;
+            width: 30%;
+            font-weight: 500;
+        }
+
+        /* ── Parts Table ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            text-align: left;
+            background-color: #f9fafb;
+            color: #4b5563;
+            font-weight: 700;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 10px 12px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-top: 1px solid #e5e7eb;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .footnote {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 16px;
+            font-style: italic;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .toolbar {
+                display: none;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            .page-break:last-child {
+                page-break-after: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <button onclick="window.print()" class="btn btn-primary">Print Report</button>
+        <button onclick="window.close()" class="btn">Close</button>
+    </div>
+
+    <style>
+        .page-break {
+            page-break-after: always;
+        }
+        .page-break:last-child {
+            page-break-after: auto;
+        }
+    </style>
+    {% for data in units_data %}
+    <div class="container page-break">
+        <!-- Header -->
+        <div class="report-header">
+            <div class="header-left">
+                <div class="company-name">Panasonic Manufacturing Philippines Corporation</div>
+                <div class="division-info">Aircon Division</div>
+                <div class="title-block">Parts Confirmation Report</div>
+            </div>
+            <div>
+                <span class="status-badge">Complete</span>
+            </div>
+        </div>
+
+        <!-- Info Table (Metadata Grid) -->
+        <table class="info-table">
+            <tr>
+                <td class="label">Line No:</td>
+                <td class="value">{{ data.unit.line.line_code }}</td>
+                <td class="label">Finished Date:</td>
+                <td class="value">{{ data.finished_date or '--/--/----' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Production Date:</td>
+                <td class="value">{{ data.unit.production_date.strftime('%m/%d/%Y') }}</td>
+                <td class="label">Shift:</td>
+                <td class="value">{{ data.unit.shift or 'DAY' }}</td>
+            </tr>
+            <tr>
+                <td class="label">From:</td>
+                <td class="value">{{ data.first_scan_time or '--:--:--' }}</td>
+                <td class="label">To:</td>
+                <td class="value">{{ data.last_scan_time or '--:--:--' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Model No:</td>
+                <td class="value" style="font-weight: 700; color: #111827;">{{ data.unit.model.model_number }}</td>
+                <td class="label">Serial No:</td>
+                <td class="value" style="font-weight: 700; color: #111827;">{{ data.unit.serial_number }}</td>
+            </tr>
+            <tr>
+                <td class="label">Date Scanned:</td>
+                <td class="value">{{ data.date_scanned }}</td>
+                <td class="label">Gas Charge:</td>
+                <td class="value">{% if data.gas_charge_g %}{{ data.gas_charge_g }}g{% else %}N/A{% endif %}</td>
+            </tr>
+            <tr>
+                <td class="label">Compressor Part:</td>
+                <td class="value">{% if data.compressor_part %}{{ data.compressor_part.part.part_number }}{% else %}N/A{% endif %}</td>
+                <td class="label">Compressor S/N:</td>
+                <td class="value">{% if data.compressor_part %}{{ data.compressor_part.part_serial_number or data.compressor_part.part_qr_raw or 'N/A' }}{% else %}N/A{% endif %}</td>
+            </tr>
+            <tr>
+                <td class="label">Fan Motor Part:</td>
+                <td class="value">{% if data.fan_motor_part %}{{ data.fan_motor_part.part.part_number }}{% else %}N/A{% endif %}</td>
+                <td class="label">Fan Motor S/N:</td>
+                <td class="value">{% if data.fan_motor_part %}{{ data.fan_motor_part.part_serial_number or data.fan_motor_part.part_qr_raw or 'N/A' }}{% else %}N/A{% endif %}</td>
+            </tr>
+        </table>
+
+        <!-- Parts Table -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Part Number</th>
+                    <th style="width: 35%;">Description</th>
+                    <th style="width: 10%;">Station</th>
+                    <th style="width: 15%;">Mfg Date</th>
+                    <th style="width: 15%;">Arrv Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for up in data.parts %}
+                <tr>
+                    <td style="font-weight: 600;">{{ up.part.part_number }}</td>
+                    <td>{{ up.part.description }}</td>
+                    <td>{{ up.station_scan.station.station_code }}</td>
+                    <td>{% if up.part_lot %}{{ up.part_lot.mfg_date.strftime('%m/%d/%Y') }}{% else %}--/--/----{% endif %}</td>
+                    <td>{% if up.part_lot %}{{ up.part_lot.arrival_date.strftime('%m/%d/%Y') }}{% else %}--/--/----{% endif %}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 24px; color: #6b7280; font-style: italic;">No parts registered for this unit.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="footnote">
+            * -- Replaced part
+        </div>
+    </div>
+    {% endfor %}
+
+</body>
+</html>

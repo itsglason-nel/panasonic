@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panasonic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f5f7;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: #1a1a1a;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 60px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .module-name {
+            font-size: 20px;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        .btn-logout {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #e53e3e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover {
+            background-color: #c53030;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, {{ current_user.full_name or current_user.username }}!</h1>
+        <div class="module-name">You are logged into: <strong>{{ module }}</strong></div>
+        <a href="{{ url_for('auth.logout') }}" class="btn-logout">Sign Out</a>
+    </div>
+</body>
+</html>

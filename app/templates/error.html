@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panasonic — {{ error_title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f5f7;
+            --card-bg: rgba(255, 255, 255, 0.75);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1a1a1a;
+            --text-muted: #6b7280;
+            --accent: #2d3748;
+            --accent-hover: #1a202c;
+            --shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e2e8f0 0%, #edf2f7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient background shapes */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: 0;
+        }
+        .shape-1 {
+            width: 500px;
+            height: 500px;
+            background: rgba(203, 213, 225, 0.7);
+            top: -100px;
+            left: -150px;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+        .shape-2 {
+            width: 600px;
+            height: 600px;
+            background: rgba(226, 232, 240, 0.8);
+            bottom: -200px;
+            right: -150px;
+            animation: float 12s infinite ease-in-out alternate-reverse;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(30px) scale(1.05); }
+        }
+
+        .error-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .error-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .error-code {
+            font-size: 72px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        .error-desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .btn-home {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-home:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+
+    <div class="error-container">
+        <div class="error-card">
+            <div class="error-code">{{ error_code }}</div>
+            <div class="error-title">{{ error_title }}</div>
+            <div class="error-desc">{{ error_desc }}</div>
+            <a href="/" class="btn-home">Return to Home</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Slip - {{ slip.slip_number }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.5;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ── Toolbar (screen only) ── */
+        .toolbar {
+            max-width: 900px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #f3f4f6;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: #2d3748;
+            border-color: #2d3748;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a202c;
+            box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
+        }
+
+        /* ── Page Container ── */
+        .page {
+            max-width: 900px;
+            margin: 0 auto 30px auto;
+            background: white;
+            border-radius: 0;
+            overflow: hidden;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: #1a1a2e;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .company-name {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .division-name {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .page-indicator {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .print-date {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 3px;
+        }
+
+        /* ── Title Bar ── */
+        .title-bar {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            text-align: center;
+            padding: 14px 30px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* ── Meta Information Grid ── */
+        .meta-section {
+            padding: 24px 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 40px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .meta-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 130px;
+            flex-shrink: 0;
+        }
+
+        .meta-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .meta-value.highlight {
+            color: #2d3748;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .meta-divider {
+            grid-column: 1 / -1;
+            height: 1px;
+            background: #e2e8f0;
+            margin: 4px 0;
+        }
+
+        /* ── Serial Numbers Grid ── */
+        .serials-section {
+            padding: 20px 30px;
+        }
+
+        .serials-header {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .serials-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .serials-table thead th {
+            background: #f8fafc;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .serials-table thead th:first-child {
+            width: 35px;
+            text-align: center;
+        }
+
+        .serials-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .serials-table tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+
+        .serials-table tbody tr:hover {
+            background-color: #f0f4ff;
+        }
+
+        .serials-table td {
+            padding: 7px 6px;
+            text-align: left;
+            color: #334155;
+            white-space: nowrap;
+        }
+
+        .serials-table td.row-num {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* ── Footer / Totals ── */
+        .totals-section {
+            padding: 16px 30px;
+            background: #f8fafc;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1a1a2e;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .total-badge .total-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Signatures ── */
+        .signatures-section {
+            padding: 30px 30px 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+        }
+
+        .sig-block {
+            text-align: center;
+        }
+
+        .sig-line {
+            border-bottom: 1px solid #cbd5e0;
+            margin-bottom: 6px;
+            min-height: 40px;
+        }
+
+        .sig-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sig-sublabel {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* ── Print Styles ── */
+        @page {
+            margin: 10mm;
+            size: A4;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .toolbar {
+                display: none !important;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0 auto;
+                break-inside: avoid;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            .page-break:last-child {
+                page-break-after: auto;
+            }
+            .serials-table tbody tr:nth-child(even) {
+                background-color: #f8f9fa !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <button onclick="window.print()" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Print Slip
+        </button>
+        <button onclick="window.close()" class="btn">Close</button>
+    </div>
+
+    {% for page_rows in pages %}
+    <div class="page {% if not loop.last %}page-break{% endif %}">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="company-name">Panasonic Manufacturing Philippines Corporation</div>
+                <div class="division-name">150 Aircon Division</div>
+            </div>
+            <div class="header-right">
+                <div class="page-indicator">Page {{ loop.index }} of {{ total_pages }}</div>
+                <div class="print-date">Printed: {{ print_date }}</div>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="title-bar">Finished Goods Transfer Slip</div>
+
+        <!-- Meta Information -->
+        <div class="meta-section">
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">Reference No.</span>
+                    <span class="meta-value highlight">{{ slip.slip_number }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Model</span>
+                    <span class="meta-value highlight">{{ slip.model.model_number }}</span>
+                </div>
+
+                <div class="meta-item">
+                    <span class="meta-label">Production Date</span>
+                    <span class="meta-value">{{ slip.production_date.strftime('%m-%d-%Y') }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Finished Date</span>
+                    <span class="meta-value">{{ finished_date or '--/--/----' }}</span>
+                </div>
+
+                <div class="meta-item">
+                    <span class="meta-label">Line</span>
+                    <span class="meta-value">{{ slip.line.name }} ({{ slip.line.line_code }})</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Shift</span>
+                    <span class="meta-value">{{ slip.shift }}</span>
+                </div>
+
+                <div class="meta-divider"></div>
+
+                <div class="meta-item">
+                    <span class="meta-label">From</span>
+                    <span class="meta-value">{{ start_time or '--:--:--' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">To</span>
+                    <span class="meta-value">{{ end_time or '--:--:--' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Serial Numbers -->
+        <div class="serials-section">
+            <div class="serials-header">
+                <span>Serial Numbers</span>
+                <span>{{ slip.total_qty }} unit{{ 's' if slip.total_qty != 1 else '' }}</span>
+            </div>
+            <table class="serials-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Col 1</th>
+                        <th>Col 2</th>
+                        <th>Col 3</th>
+                        <th>Col 4</th>
+                        <th>Col 5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in page_rows %}
+                    {% set row_offset = (loop.index0 + ((loop.index0 // 1) * 0)) %}
+                    <tr>
+                        <td class="row-num">{{ (loop.index0 * 5) + 1 + ((loop.parentloop.index0) * 22 * 5) }}</td>
+                        {% for serial in row %}
+                            <td>{{ serial }}</td>
+                        {% endfor %}
+                        {% if row|length < 5 %}
+                            {% for i in range(5 - row|length) %}
+                                <td>&nbsp;</td>
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if loop.last %}
+        <!-- Totals -->
+        <div class="totals-section">
+            <div>
+                <span style="font-size: 13px; color: #64748b;">{{ slip.model.model_number }}</span>
+            </div>
+            <div class="total-badge">
+                <span class="total-label">Total</span>
+                {{ slip.total_qty }}
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="signatures-section">
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Prepared By</div>
+                <div class="sig-sublabel">Production</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Received By</div>
+                <div class="sig-sublabel">Warehouse</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Approved By</div>
+                <div class="sig-sublabel">Supervisor</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+</body>
+</html>

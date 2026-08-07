@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Information Tag</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            background: transparent;
+            padding: 20px;
+        }
+
+        .page {
+            width: 740px;
+            min-height: 1046px; /* A4 proportional at 740px width */
+            background: transparent;
+            margin: 0 auto;
+            border: 3px solid #000;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding: 8px 4px 6px;
+        }
+        .top-line {
+            font-size: 8px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        h1 {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ── MODEL / LINE / SHIFT ── */
+        .top-info {
+            display: flex;
+            border-bottom: 2px solid #000;
+        }
+        .model-block {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 5px 5px;
+        }
+        .model-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            padding: 5px 5px;
+        }
+        .model-row:first-child { border-bottom: 1px solid #000; }
+        .model-label {
+            font-weight: bold;
+            font-size: 9px;
+            width: 35px;
+        }
+        .model-box {
+            width: 14px;
+            height: 18px;
+            border: 1px solid #000;
+            text-align: center;
+            font-size: 10px;
+            outline: none;
+        }
+        .dash { font-weight: bold; }
+        
+        .dest-block {
+            width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 5px;
+            border-right: 1px solid #000;
+        }
+        .top-info .line-shift-block {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        .line-row {
+            display: flex;
+            flex: 1;                        /* fills half the height */
+            border-bottom: 1px solid #000; /* the dividing line */
+        }
+        .line-cell {
+            border-right: 1px solid #000;
+            padding: 5px 5px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            font-weight: bold;
+            font-size: 9px;
+        }
+        .line-cell:last-child { border-right: none; }
+        .shift-row {
+            display: flex;
+            flex: 1;
+        }
+        .shift-cell {
+            border-right: 1px solid #000;
+            padding: 5px 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            font-size: 9px;
+            font-weight: bold;
+        }
+        .shift-cell:last-child { border-right: none; }
+
+        /* ── Serial / Production Date ── */
+        .serial-date {
+            display: flex;
+            flex-direction: column;
+            padding: 4px 5px;
+            gap: 3px;
+        }
+        .serial-row, .date-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 0;
+        }
+        .date-parts {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+        }
+        .date-part {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .date-part .box-row {
+            display: flex;
+            gap: 1px;
+        }
+        .date-box {
+            width: 16px;
+            height: 18px;
+            border: 1px solid #000;
+            text-align: center;
+            font-size: 10px;
+            outline: none;
+        }
+        .date-label {
+            font-size: 8px;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* ── Main body: left + right columns ── */
+        .main-body {
+            display: flex;
+            flex: 1;
+        }
+        .left-col {
+            width: 215px;
+            border-right: 1px solid #000;
+            border-top: 1px solid #000;
+            flex-shrink: 0;
+        }
+        .right-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* â”€â”€ Inspector sections (left col) â”€â”€ */
+        .inspector-section {
+            border-bottom: 1px solid #000;
+            display: flex;
+        }
+        .insp-label-vert {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 8.5px;
+            font-weight: bold;
+            border-left: 1px solid #000;
+            padding: 8px 2px;
+            background: transparent;
+            width: 30px;
+            flex-shrink: 0;
+        }
+        .insp-table-wrap {
+            flex: 1;
+        }
+        .insp-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        .insp-table th {
+            background: transparent;
+            border: 1px solid #000;
+            padding: 2px 2px;
+            text-align: center;
+            font-size: 8px;
+        }
+        .insp-table td {
+            border: 1px solid #000;
+            padding: 3px 3px;
+            vertical-align: middle;
+        }
+        .insp-table .item-col { width: 110px; }
+        .insp-table .check-col { width: 48px; text-align: center; white-space: nowrap; }
+        .insp-table .sig-row td {
+            padding: 3px 3px;
+        }
+        /* Remove outer borders from tables to prevent double-thick lines */
+        .insp-table thead tr:first-child th { border-top: none; }
+        .insp-table tbody tr:last-child td { border-bottom: none; }
+        .insp-table th:first-child, .insp-table td:first-child { border-left: none; }
+        .insp-table th:last-child, .insp-table td:last-child { border-right: none; }
+        .insp-table input[type="text"] {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 9px;
+            background: transparent;
+            height: 16px;
+        }
+        .check-box-cell {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: block;
+            width: 14px;
+            height: 14px;
+            min-width: 14px;
+            min-height: 14px;
+            border: 1px solid #000;
+            background: transparent;
+            position: relative;
+            cursor: pointer;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .check-box-cell:checked::after {
+            content: '\2714';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+        }
+
+        /* â”€â”€ Right col sections â”€â”€ */
+        .right-section {
+            border-bottom: 1px solid #000;
+        }
+        .right-section-title {
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            background: transparent;
+            padding: 3px;
+            border-bottom: 1px solid #000;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .right-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        .right-table th {
+            background: transparent;
+            border: 1px solid #000;
+            padding: 2px 3px;
+            text-align: center;
+            font-size: 8px;
+        }
+        .right-table .check-col { width: 65px; text-align: center; white-space: nowrap; }
+        .final-table tbody tr { height: 11.1%; }
+        .right-table td {
+            border: 1px solid #000;
+            padding: 4px 3px;
+            vertical-align: middle;
+        }
+        /* Remove outer borders from tables to prevent double-thick lines */
+        .right-table tr:first-child th, .right-table tr:first-child td { border-top: none; }
+        .right-table th:first-child, .right-table td:first-child { border-left: none; }
+        .right-table th:last-child, .right-table td:last-child { border-right: none; }
+        .right-table input[type="text"],
+        .right-table textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 9px;
+            background: transparent;
+            font-family: inherit;
+            resize: none;
+            display: block;
+        }
+        .right-table textarea {
+            overflow: hidden;
+        }
+        .inspector-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            width: 100%;
+            cursor: text;
+            overflow: hidden;
+        }
+        .inspector-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 9px;
+            font-family: inherit;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            text-transform: uppercase;
+            text-align: center;
+        }
+        .right-table input[type="text"] {
+            height: 18px;
+        }
+        .rework-header {
+            display: flex;
+        }
+        .rework-header .rh-cell {
+            flex: 1;
+            text-align: center;
+            font-size: 8px;
+            font-weight: bold;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 3px 2px;
+            background: transparent;
+        }
+        .rework-header .rh-cell:last-child { border-right: none; }
+
+        /* Subheader row inside right section (Leak Inspector 1 / Test 1 / Test 2) */
+        .sub-header-row th { background: transparent; }
+
+        /* â”€â”€ Remarks â”€â”€ */
+        .remarks-section {
+            border-top: 1px solid #000;
+            padding: 5px 6px;
+        }
+        .remarks-section .remarks-label {
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        .remarks-lines {
+            display: flex;
+            flex-direction: column;
+        }
+        .remarks-area {
+            border: none;
+            width: 100%;
+            height: 192px;
+            outline: none;
+            background-color: transparent;
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 25px,
+                #000 25px,
+                #000 26px,
+                transparent 26px,
+                transparent 32px
+            );
+            background-attachment: local;
+            font-size: 11px;
+            line-height: 32px;
+            padding: 0 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+            resize: none;
+            overflow: hidden;
+            text-align: justify;
+        }
+        .remarks-area:focus {
+            background-color: transparent !important;
+        }
+
+        /* â”€â”€ Bottom signature row â”€â”€ */
+        .bottom-sig {
+            display: flex;
+            border-top: 2px solid #000;
+        }
+        .sig-cell {
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 5px 6px;
+        }
+        .sig-cell:last-child { border-right: none; }
+        .sig-cell .sig-label {
+            font-size: 9px;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+        }
+        .sig-cell .sig-line {
+            height: 24px;
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 11px;
+            font-family: inherit;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* â”€â”€ Footer â”€â”€ */
+        .footer {
+            border-top: 2px solid #000;
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 6px;
+            font-size: 8.5px;
+        }
+
+        /* â”€â”€ Print â”€â”€ */
+        .no-print {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .print-btn {
+            padding: 10px 30px;
+            font-size: 15px;
+            background: transparent;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .print-btn:hover { background: transparent; }
+
+        @page {
+            size: A4 portrait;
+            margin: 6mm 6mm 6mm 6mm;
+        }
+
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                background: transparent;
+                padding: 0;
+                margin: 0;
+                font-size: 10px;
+            }
+            head { display: none; }
+            .page {
+                width: 100%;
+                min-height: 100%;
+                border: 3px solid #000;
+            }
+            .no-print { display: none; }
+        }
+
+        /* Utility */
+        .bold { font-weight: bold; }
+        .center { text-align: center; }
+        .small { font-size: 8px; }
+        .bg-gray { background: transparent; }
+        input[type="text"] { text-transform: uppercase; }
+        input:focus { background: transparent !important; }
+
+        /* â”€â”€ Formal checkboxes â€” LINE and SHIFT groups (identical size) â”€â”€ */
+        .line-cell input[type="checkbox"],
+        .shift-cell input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            min-width: 13px;
+            min-height: 13px;
+            border: 1px solid #000;
+            background: transparent;
+            position: relative;
+            cursor: pointer;
+            vertical-align: middle;
+            flex-shrink: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        /* The "✔" mark — centered inside the box */
+        .line-cell input[type="checkbox"]:checked::after,
+        .shift-cell input[type="checkbox"]:checked::after {
+            content: '\2714';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="header">
+        <div class="top-line">AIR CONDITIONER BUSINESS DIVISION</div>
+        <h1>Product Information Tag</h1>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODEL / LINE / SHIFT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="top-info">
+        <div class="model-block">
+            <!-- Model row: "Model:" label + "CW" prefix box + dash + individual char boxes -->
+            <div class="char-row" style="display:flex; align-items:center; gap:3px; margin-bottom:4px;">
+                <span class="bold" style="font-size:10px; white-space:nowrap; min-width:44px;">Model:</span>
+                <span class="bold" style="font-size:10px; border:1px solid #000; width:32px; height:18px; display:flex; align-items:center; justify-content:center; background: transparent;">CW</span>
+                <span style="font-size:10px; font-weight:bold;">-</span>
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+            </div>
+            <!-- RC row: spacer (same width as "Model:" label) + "RC" prefix box + dash + individual char boxes -->
+            <div class="char-row" style="display:flex; align-items:center; gap:3px;">
+                <span style="min-width:44px; display:inline-block;"></span>
+                <span class="bold" style="font-size:10px; border:1px solid #000; width:32px; height:18px; display:flex; align-items:center; justify-content:center; background: transparent;">RC</span>
+                <span style="font-size:10px; font-weight:bold;">-</span>
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+            </div>
+        </div>
+        <div class="line-shift-block">
+            <div class="line-row">
+                <div class="line-cell" style="display:flex; align-items:center; gap:4px;">
+                    <input type="checkbox" id="chk-line1"> <label for="chk-line1">LINE 1</label>
+                </div>
+                <div class="line-cell" style="display:flex; align-items:center; gap:4px;">
+                    <input type="checkbox" id="chk-line2"> <label for="chk-line2">LINE 2</label>
+                </div>
+                <div class="line-cell" style="border-right:none; display:flex; align-items:center; gap:4px;">
+                    <input type="checkbox" id="chk-line3"> <label for="chk-line3">LINE 3</label>
+                </div>
+            </div>
+            <div class="shift-row">
+                <div class="shift-cell">
+                    SHIFT
+                </div>
+                <div class="shift-cell">
+                    <input type="checkbox" id="chk-day"> <label for="chk-day">DAY</label>
+                </div>
+                <div class="shift-cell" style="border-right:none;">
+                    <input type="checkbox" id="chk-night"> <label for="chk-night">NIGHT</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SERIAL / PRODUCTION DATE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="serial-date">
+        <div class="serial-row">
+            <span class="bold" style="font-size:10px; min-width:105px;">Serial Number:</span>
+            <input type="text" style="flex:1; border:none; border-bottom:1px solid #000; outline:none; font-size:10px; max-width:220px;">
+        </div>
+        <div class="date-row">
+            <span class="bold" style="font-size:10px; min-width:105px;">Production Date:</span>
+            <div class="date-parts char-row">
+                <div class="date-part">
+                    <div class="box-row">
+                        <input type="text" class="date-box" maxlength="1">
+                        <input type="text" class="date-box" maxlength="1">
+                    </div>
+                    <div class="date-label">(MONTH)</div>
+                </div>
+                <span style="margin-bottom:14px; font-size:11px;">-</span>
+                <div class="date-part">
+                    <div class="box-row">
+                        <input type="text" class="date-box" maxlength="1">
+                        <input type="text" class="date-box" maxlength="1">
+                    </div>
+                    <div class="date-label">(DAY)</div>
+                </div>
+                <span style="margin-bottom:14px; font-size:11px;">-</span>
+                <div class="date-part">
+                    <div class="box-row">
+                        <input type="text" class="date-box" maxlength="1">
+                        <input type="text" class="date-box" maxlength="1">
+                        <input type="text" class="date-box" maxlength="1">
+                        <input type="text" class="date-box" maxlength="1">
+                    </div>
+                    <div class="date-label">(YEAR)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN BODY â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="main-body">
+
+        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ LEFT COLUMN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="left-col">
+
+            <!-- INSPECTOR 1: Airtight Test -->
+            <div class="inspector-section">
+                <div class="insp-label-vert">INSPECTOR 1<br>(AIRTIGHT TEST)</div>
+                <div class="insp-table-wrap">
+                    <table class="insp-table">
+                        <thead>
+                            <tr>
+                                <th class="item-col">INSPECTION ITEMS</th>
+                                <th class="check-col">GOOD</th>
+                                <th class="check-col">NO GOOD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>No Clogged (hindi barado).</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>No Leak</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>Expansion valve must be fully open</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr class="sig-row">
+                                <td colspan="3" style="padding: 0 2px;">
+                                    <div style="text-align:left;">INSPECTOR:</div>
+                                    <input type="text" style="width:100%; border:none; outline:none; font-size:9px; background:transparent; text-align:center; display:block; height:16px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- INSPECTOR 2: Gas Charging -->
+            <div class="inspector-section">
+                <div class="insp-label-vert">INSPECTOR 2<br>(GAS CHARGING)</div>
+                <div class="insp-table-wrap">
+                    <table class="insp-table">
+                        <thead>
+                            <tr>
+                                <th class="item-col">INSPECTION ITEMS</th>
+                                <th class="check-col">GOOD</th>
+                                <th class="check-col">NO GOOD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    Correct Gas Charge<br>
+                                    <span class="small" style="color:#555;">Refrigerant Amount:</span>
+                                    <input type="text" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width:50px; border:none; border-bottom:1px solid #000; outline:none; font-size:10px; font-weight:bold; text-align:center; background:transparent;">
+                                </td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr class="sig-row">
+                                <td colspan="3" style="padding: 0 2px;">
+                                    <div style="text-align:left;">INSPECTOR:</div>
+                                    <input type="text" style="width:100%; border:none; outline:none; font-size:9px; background:transparent; text-align:center; display:block; height:16px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- INSPECTOR 3: Inner Line -->
+            <div class="inspector-section">
+                <div class="insp-label-vert">INSPECTOR 3<br>(INNER LINE)</div>
+                <div class="insp-table-wrap">
+                    <table class="insp-table">
+                        <thead>
+                            <tr>
+                                <th class="item-col">INSPECTION ITEMS</th>
+                                <th class="check-col">GOOD</th>
+                                <th class="check-col">NO GOOD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Correct sequence of wirings</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr class="sig-row">
+                                <td colspan="3" style="padding: 0 2px;">
+                                    <div style="text-align:left;">INSPECTOR:</div>
+                                    <input type="text" style="width:100%; border:none; outline:none; font-size:9px; background:transparent; text-align:center; display:block; height:16px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- INSPECTOR 4: Construction -->
+            <div class="inspector-section">
+                <div class="insp-label-vert">INSPECTOR 4<br>(CONSTRUCTION)</div>
+                <div class="insp-table-wrap">
+                    <table class="insp-table">
+                        <thead>
+                            <tr>
+                                <th class="item-col">INSPECTION ITEMS</th>
+                                <th class="check-col">GOOD</th>
+                                <th class="check-col">NO GOOD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>No touching materials (tubes, rings, spm, etc)</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>No misaligned tubes</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>No lacking parts</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr class="sig-row">
+                                <td colspan="3" style="padding: 0 2px;">
+                                    <div style="text-align:left;">INSPECTOR:</div>
+                                    <input type="text" style="width:100%; border:none; outline:none; font-size:9px; background:transparent; text-align:center; display:block; height:16px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PACKAGING INSPECTION -->
+            <div class="inspector-section" style="border-bottom:none;">
+                <div class="insp-label-vert">PACKAGING INSPECTION</div>
+                <div class="insp-table-wrap">
+                    <table class="insp-table">
+                        <thead>
+                            <tr>
+                                <th class="item-col">INSPECTION ITEMS</th>
+                                <th class="check-col">GOOD</th>
+                                <th class="check-col">NO GOOD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>No lacking manual complete and front grille</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>No Damage on CC Case</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>Unit models in all sides of CC Case must be the same as the running model</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr>
+                                <td>Installing Holder and Screw Bag complete (for W Models)</td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                                <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                            </tr>
+                            <tr class="sig-row">
+                                <td colspan="3" style="padding: 0 2px;">
+                                    <div style="text-align:left;">INSPECTOR:</div>
+                                    <input type="text" style="width:100%; border:none; outline:none; font-size:9px; background:transparent; text-align:center; display:block; height:16px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- REMARKS -->
+            <div class="remarks-section" style="border-top:2px solid #000;">
+                <div class="remarks-label">REMARKS:</div>
+                <div class="remarks-lines">
+                    <textarea class="remarks-area"></textarea>
+                </div>
+            </div>
+
+        </div><!-- /left-col -->
+
+        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ RIGHT COLUMN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div class="right-col">
+
+            <!-- LEAK INSPECTOR 1 sub-section -->
+            <table class="right-table" style="border-top:none;">
+                <thead>
+                    <tr style="height:0; padding:0; border:none; visibility:hidden;">
+                        <th style="width:auto; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:85px; height:0; padding:0; border:none; margin:0;"></th>
+                    </tr>
+                    <tr>
+                        <th colspan="3" style="background: transparent; font-weight:bold; font-size:10px; padding:3px; letter-spacing:1px; border-top:1px solid #000; text-align:center;">RUNNING INSPECTION</th>
+                        <th colspan="2" rowspan="2" style="background: transparent; padding:0; border-top:1px solid #000; text-align:center; vertical-align:middle; height:1px;">
+                            <div style="display:flex; flex-direction:column; height:100%;">
+                                <div style="flex:1; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:9px; padding:3px; white-space:nowrap;">REWORK CONFIRMATION</div>
+                                <div style="flex:1; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:8px; padding:3px;">TEST 2</div>
+                            </div>
+                        </th>
+                        <th style="border-top:none; border-right:none; background:transparent;"></th>
+                    </tr>
+                    <tr class="sub-header-row">
+                        <th style="width:130px;">LEAK INSPECTOR 1</th>
+                        <th colspan="2">TEST 1</th>
+
+                        <th rowspan="2" style="width:85px;">INSPECTOR</th>
+                    </tr>
+                    <tr>
+                        <th>INSPECTION ITEMS</th>
+                        <th style="width:65px;">GOOD</th>
+                        <th style="width:65px; white-space:nowrap;">NO GOOD</th>
+                        <th style="width:65px;">GOOD</th>
+                        <th style="width:65px; white-space:nowrap;">NO GOOD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Insulation Resistance / Withstand Voltage</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:18px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:4px 2px;">
+                            <div style="text-align:left;">Must be no Leak</div>
+                            <div style="display:flex; align-items:flex-end; gap:2px; margin-top:2px;">
+                                <span class="small">Leak location:</span>
+                                <input type="text" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
+                            </div>
+                        </td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:18px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Program Check</td>
+                        <td colspan="2" style="padding:0; border-right:1px solid #000; height:1px;">
+                            <table style="width:100%; height:100%; border-collapse:collapse; border:none;">
+                                <tr>
+                                    <td style="border-bottom:1px solid #000; vertical-align:middle; padding:0;">
+                                        <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
+                                            <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
+                                                <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">H:</span>
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                            <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
+                                            <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align:middle; padding:0;">
+                                        <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
+                                            <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
+                                                <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">F:</span>
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                            <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
+                                            <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td colspan="2" style="padding:0; height:1px;">
+                            <table style="width:100%; height:100%; border-collapse:collapse; border:none;">
+                                <tr>
+                                    <td style="border-bottom:1px solid #000; vertical-align:middle; padding:0;">
+                                        <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
+                                            <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
+                                                <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">H:</span>
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                            <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
+                                            <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="vertical-align:middle; padding:0;">
+                                        <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
+                                            <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
+                                                <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">F:</span>
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                            <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
+                                            <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
+                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:36px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- RUNNING INSPECTOR sub-section -->
+            <div style="background: transparent; border:1px solid #000; border-left:none; border-right:none; text-align:center; font-weight:bold; font-size:10px; padding:3px; text-transform:uppercase; letter-spacing:1px;">
+                RUNNING INSPECTOR
+            </div>
+            <table class="right-table">
+                <thead>
+                    <tr style="height:0; padding:0; border:none; visibility:hidden;">
+                        <th style="width:auto; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:85px; height:0; padding:0; border:none; margin:0;"></th>
+                    </tr>
+                    <tr class="sub-header-row">
+                        <th rowspan="2" colspan="2" style="width:130px;">INSPECTION ITEMS</th>
+                        <th colspan="2">TEST 1</th>
+                        <th colspan="2">TEST 2</th>
+                        <th rowspan="2" style="width:85px;">INSPECTOR</th>
+                    </tr>
+                    <tr>
+                        <th style="width:65px;">GOOD</th>
+                        <th style="width:65px; white-space:nowrap;">NO GOOD</th>
+                        <th style="width:65px;">GOOD</th>
+                        <th style="width:65px; white-space:nowrap;">NO GOOD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2">Airswing Function (working and not noisy)</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:16px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">No Noisy or Abnormal operation of compressor</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:16px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">No Noisy or Abnormal operation of Fan Motor</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:16px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <!-- Evaporator tubes -->
+                    <tr>
+                        <td rowspan="2" style="border-right:1px solid #000; padding-right:2px; width:85px;">Evaporator tubes must be<br><span class="small">Cold (For Cooling)</span><br><span class="small">Hot  (For Heating)</span></td>
+                        <td class="center" style="font-weight:bold; font-size:8px; width:45px; height:24px;">Cooling</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:30px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td class="center" style="font-weight:bold; font-size:8px; height:24px;">Heating</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <!-- Condenser tubes -->
+                    <tr>
+                        <td rowspan="2" style="border-right:1px solid #000; padding-right:2px; width:85px;">Condenser tubes must be<br><span class="small">Hot  (For Cooling)</span><br><span class="small">Cold (For Heating)</span></td>
+                        <td class="center" style="font-weight:bold; font-size:8px; width:45px; height:24px;">Cooling</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:30px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td class="center" style="font-weight:bold; font-size:8px; height:24px;">Heating</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <!-- Operating Current -->
+                    <tr>
+                        <td rowspan="2" style="border-right:1px solid #000; padding:2px; width:85px; position:relative;">
+                            <div style="text-align:left; position:absolute; top:2px; left:2px; font-size:9px; white-space:nowrap;">Operating Current</div>
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:90%;">
+                                <input type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:12px; font-weight:bold;">
+                            </div>
+                            <div style="text-align:right; font-size:9px; position:absolute; bottom:2px; right:4px;">Current Reading</div>
+                        </td>
+                        <td class="center" style="font-weight:bold; font-size:8px; width:45px; height:24px;">Cooling</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:30px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td class="center" style="font-weight:bold; font-size:8px; height:24px;">Heating</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <!-- Input Power -->
+                    <tr>
+                        <td rowspan="2" style="border-right:1px solid #000; padding:2px; width:85px; position:relative;">
+                            <div style="text-align:left; position:absolute; top:2px; left:2px; font-size:9px; white-space:nowrap;">Input Power</div>
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:90%;">
+                                <input type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:12px; font-weight:bold;">
+                            </div>
+                            <div style="text-align:right; font-size:9px; position:absolute; bottom:2px; right:4px;">Wattage Reading</div>
+                        </td>
+                        <td class="center" style="font-weight:bold; font-size:8px; width:45px; height:24px;">Cooling</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:30px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td class="center" style="font-weight:bold; font-size:8px; height:24px;">Heating</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <!-- Temp Difference -->
+                    <tr>
+                        <td colspan="2" style="padding:4px 2px;">
+                            <div style="text-align:left;">Temp. Difference</div>
+                            <div style="display:flex; align-items:flex-end; gap:2px; margin-top:2px;">
+                                <span class="small">Temp. Reading:</span>
+                                <input type="text" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
+                            </div>
+                        </td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:18px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <!-- Must be no Leak -->
+                    <tr>
+                        <td colspan="2" style="padding:4px 2px;">
+                            <div style="text-align:left;">Must be no Leak</div>
+                            <div style="display:flex; align-items:flex-end; gap:2px; margin-top:2px;">
+                                <span class="small">Leak Location:</span>
+                                <input type="text" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
+                            </div>
+                        </td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="inspector-col"><div class="inspector-wrapper" style="height:18px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- FINAL INSPECTION -->
+            <div style="background: transparent; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:10px; padding:3px; text-transform:uppercase; letter-spacing:1px;">
+                FINAL INSPECTION
+            </div>
+            <table class="right-table final-table" style="flex:1;">
+                <thead>
+                    <tr style="height:0; padding:0; border:none; visibility:hidden;">
+                        <th style="width:auto; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:65px; height:0; padding:0; border:none; margin:0;"></th>
+                        <th style="width:85px; height:0; padding:0; border:none; margin:0;"></th>
+                    </tr>
+                    <tr class="sub-header-row">
+                        <th rowspan="2" style="width:130px;">INSPECTION ITEMS</th>
+                        <th colspan="2">TEST 1</th>
+                        <th colspan="2">TEST 2</th>
+                        <th rowspan="2" style="width:85px;">INSPECTOR</th>
+                    </tr>
+                    <tr>
+                        <th style="width:65px;">GOOD</th>
+                        <th style="width:65px; white-space:nowrap;">NO GOOD</th>
+                        <th style="width:65px;">GOOD</th>
+                        <th style="width:65px; white-space:nowrap;">NO GOOD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Insulation Resistance / Withstand Voltage</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:40px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Operating Current / Input Power</td>
+                        <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
+                        <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
+                        <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
+                        <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
+                    </tr>
+                    <tr>
+                        <td>Nameplate and Barcode must be same model and serial no.</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:36px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Correct Model Label and Badge</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <tr>
+                        <td>Correct Manual Complete</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:36px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>1. Remote and Battery</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <tr>
+                        <td>2. Operation Instruction and Warranty Card</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td rowspan="2" class="inspector-col"><div class="inspector-wrapper" style="height:36px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>3. Screw Bag complete and Drain Pan</td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center"><input type="checkbox" class="check-box-cell"></td>
+                    </tr>
+                    <tr>
+                        <td style="border-bottom:none; vertical-align:top; padding-bottom:10px;">
+                            Correct Front Grille Complete<br>
+                            <span style="display:inline-block; margin-left:10px;">1. EEL Label</span><br>
+                            <span style="display:inline-block; margin-left:10px;">2. Correct Model</span><br>
+                            <span style="display:inline-block; margin-left:10px;">3. Flammable Logo</span>
+                        </td>
+                        <td class="center" style="border-bottom:none;"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center" style="border-bottom:none;"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center" style="border-bottom:none;"><input type="checkbox" class="check-box-cell"></td>
+                        <td class="center" style="border-bottom:none;"><input type="checkbox" class="check-box-cell"></td>
+                        <td style="border-bottom:none;" class="inspector-col"><div class="inspector-wrapper" style="height:40px;" onclick="this.querySelector('.inspector-input').focus()"><div contenteditable="true" class="inspector-input"></div></div></td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div><!-- /right-col -->
+    </div><!-- /main-body -->
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• BOTTOM SIGNATURES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="bottom-sig" style="border-top:2px solid #000;">
+        <div class="sig-cell">
+            <div class="sig-label">REWORKED DONE:</div>
+            <input type="text" class="sig-line">
+        </div>
+        <div class="sig-cell">
+            <div class="sig-label">REWORKED BY:</div>
+            <input type="text" class="sig-line">
+        </div>
+        <div class="sig-cell" style="border-right:none;">
+            <div class="sig-label">RECONFIRMED BY:</div>
+            <input type="text" class="sig-line">
+        </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• FOOTER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="footer">
+        <span>Panasonic Manufacturing Philippines Corporation - Air Conditioner Business Division</span>
+        <span>Form No. DACD53F09</span>
+    </div>
+
+</div><!-- /page -->
+
+<div class="no-print">
+    <button onclick="window.print()" class="print-btn">Print Tag</button>
+</div>
+
+
+<script>
+    // ────────────────── Mutual-exclusion helper ──────────────────────────────────
+    // Makes checkboxes within a group behave like radio buttons:
+    // checking one automatically unchecks all others in the same group.
+    function makeExclusive(ids) {
+        ids.forEach(function(id) {
+            document.getElementById(id).addEventListener('change', function() {
+                if (this.checked) {
+                    ids.forEach(function(otherId) {
+                        if (otherId !== id) {
+                            document.getElementById(otherId).checked = false;
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    // LINE group â€” only one of LINE 1 / LINE 2 / LINE 3 can be active
+    makeExclusive(['chk-line1', 'chk-line2', 'chk-line3']);
+
+    // SHIFT group â€” only DAY or NIGHT, never both
+    makeExclusive(['chk-day', 'chk-night']);
+
+    // ── Left inspector tables: GOOD / NO GOOD mutually exclusive per row ──────
+    // Each tbody row only allows one check-box-cell to be checked at a time.
+    document.querySelectorAll('.insp-table tbody tr').forEach(function(row) {
+        var boxes = Array.from(row.querySelectorAll('input.check-box-cell'));
+        if (boxes.length < 2) return;
+        boxes.forEach(function(box) {
+            box.addEventListener('change', function() {
+                if (this.checked) {
+                    boxes.forEach(function(other) {
+                        if (other !== box) other.checked = false;
+                    });
+                }
+            });
+        });
+    });
+
+    // ── Right tables: TEST 1 GOOD/NO GOOD exclusive, TEST 2 GOOD/NO GOOD exclusive ──
+    // Rows with 4 checkboxes: indices [0,1] = TEST1 pair, [2,3] = TEST2 pair.
+    // Rows with fewer checkboxes (Cooling/Heating sub-rows) are left independent.
+    document.querySelectorAll('.right-table tbody tr').forEach(function(row) {
+        var boxes = Array.from(row.querySelectorAll('input.check-box-cell'));
+        if (boxes.length < 4) return;
+        var pairs = [
+            [boxes[0], boxes[1]],  // TEST 1: GOOD, NO GOOD
+            [boxes[2], boxes[3]]   // TEST 2: GOOD, NO GOOD
+        ];
+        pairs.forEach(function(pair) {
+            pair.forEach(function(box) {
+                box.addEventListener('change', function() {
+                    if (this.checked) {
+                        pair.forEach(function(other) {
+                            if (other !== box) other.checked = false;
+                        });
+                    }
+                });
+            });
+        });
+    });
+
+
+    // â”€â”€ Character box row navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Per .char-row: typing a character auto-advances to the next box.
+    // Arrow Left/Right moves between boxes. Backspace on empty goes back.
+    document.querySelectorAll('.char-row').forEach(function(row) {
+        var boxes = Array.from(row.querySelectorAll('input[type="text"][maxlength="1"]'));
+
+        boxes.forEach(function(box, index) {
+
+            // Auto-advance after typing
+            box.addEventListener('input', function() {
+                if (this.value.length >= 1 && index < boxes.length - 1) {
+                    boxes[index + 1].focus();
+                    boxes[index + 1].select();
+                }
+            });
+
+            box.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    if (index < boxes.length - 1) {
+                        boxes[index + 1].focus();
+                        boxes[index + 1].select();
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (index > 0) {
+                        boxes[index - 1].focus();
+                        boxes[index - 1].select();
+                    }
+                } else if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                    e.preventDefault();
+                    boxes[index - 1].focus();
+                    boxes[index - 1].select();
+                }
+            });
+        });
+    });
+
+    // ── Force uppercase on all text inputs ─────────────────────────────────
+    // CSS text-transform handles display; this ensures the actual value is
+    // stored in uppercase too (important for printing and data accuracy).
+    document.querySelectorAll('input[type="text"], textarea').forEach(function(input) {
+        input.addEventListener('input', function() {
+            var start = this.selectionStart;
+            var end   = this.selectionEnd;
+            this.value = this.value.toUpperCase();
+            this.setSelectionRange(start, end);
+        });
+    });
+
+    // ── Date boxes: numbers only + range validation ─────────────────────────
+    // Determines each date-part type from its label, then enforces:
+    //   MONTH → 01–12  (first digit ≤ 1; combined value ≤ 12)
+    //   DAY   → 01–31  (first digit ≤ 3; combined value ≤ 31)
+    //   YEAR  → any 4 digits
+    document.querySelectorAll('.date-part').forEach(function(part) {
+        var labelEl = part.querySelector('.date-label');
+        if (!labelEl) return;
+        var partType = labelEl.textContent.replace(/[()]/g, '').trim().toLowerCase(); // "month" | "day" | "year"
+        var boxes    = Array.from(part.querySelectorAll('input.date-box'));
+        var maxFirst = partType === 'month' ? 1 : partType === 'day' ? 3 : 9;
+        var maxVal   = partType === 'month' ? 12 : partType === 'day' ? 31 : 9999;
+
+        boxes.forEach(function(box, idx) {
+
+            // Block non-digits
+            box.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) e.preventDefault();
+            });
+
+            box.addEventListener('input', function() {
+                // Strip non-digits (handles paste)
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (!this.value) return;
+
+                // First-digit cap (month ≤ 1, day ≤ 3)
+                if (idx === 0 && partType !== 'year') {
+                    if (parseInt(this.value, 10) > maxFirst) {
+                        this.value = '';
+                        return;
+                    }
+                }
+
+                // After last digit of a 2-digit part, validate full value
+                var digits = boxes.map(function(b) { return b.value; }).join('');
+                if (partType !== 'year' && digits.length === 2) {
+                    var num = parseInt(digits, 10);
+                    if (num < 1 || num > maxVal) {
+                        boxes.forEach(function(b) { b.value = ''; });
+                        boxes[0].focus();
+                    }
+                }
+            });
+        });
+    });
+
+    // ── Prevent text areas and inputs from overflowing visually ─────────────────
+    document.querySelectorAll('textarea').forEach(function(ta) {
+        ta.addEventListener('input', function() {
+            let safety = 1000;
+            while (this.scrollHeight > this.clientHeight && this.value.length > 0 && safety > 0) {
+                this.value = this.value.slice(0, -1);
+                safety--;
+            }
+        });
+    });
+
+    document.querySelectorAll('input[type="text"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            // Check if scrollWidth exceeds clientWidth (horizontal overflow)
+            // Added 1px buffer to handle sub-pixel rendering and caret size
+            let safety = 1000;
+            while (this.scrollWidth > this.clientWidth + 1 && this.value.length > 0 && safety > 0) {
+                this.value = this.value.slice(0, -1);
+                safety--;
+            }
+        });
+    });
+
+    // ── Prevent contenteditable inspector inputs from overflowing vertically ──
+    document.querySelectorAll('.inspector-input').forEach(function(div) {
+        let lastValidHTML = div.innerHTML;
+        div.addEventListener('focus', function() {
+            lastValidHTML = this.innerHTML;
+        });
+        div.addEventListener('input', function() {
+            var wrapper = this.parentElement;
+            if (this.offsetHeight > wrapper.clientHeight) {
+                this.innerHTML = lastValidHTML;
+                
+                // Move cursor to the end safely
+                var range = document.createRange();
+                var sel = window.getSelection();
+                range.selectNodeContents(this);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                lastValidHTML = this.innerHTML;
+            }
+        });
+    });
+
+    // ── Program Check rows ──
+    document.querySelectorAll('.prog-row').forEach(function(row) {
+        var boxes = Array.from(row.querySelectorAll('.prog-part'));
+        boxes.forEach(function(box, index) {
+            box.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, ''); // only ints
+                if (this.value.length >= 2 && index < boxes.length - 1) {
+                    boxes[index + 1].focus();
+                    boxes[index + 1].select();
+                }
+            });
+            box.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowRight') {
+                    if (this.selectionStart === this.value.length && index < boxes.length - 1) {
+                        e.preventDefault();
+                        boxes[index + 1].focus();
+                        boxes[index + 1].setSelectionRange(0, 0);
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    if (this.selectionStart === 0 && index > 0) {
+                        e.preventDefault();
+                        boxes[index - 1].focus();
+                        var len = boxes[index - 1].value.length;
+                        boxes[index - 1].setSelectionRange(len, len);
+                    }
+                } else if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                    e.preventDefault();
+                    boxes[index - 1].focus();
+                    boxes[index - 1].select();
+                }
+            });
+        });
+    });
+
+</script>
+<script id="unit-data" type="application/json">
+    {{ unit | tojson | safe if unit else 'null' }}
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const unitDataElement = document.getElementById('unit-data');
+        const unitData = unitDataElement ? JSON.parse(unitDataElement.textContent) : null;
+        if (!unitData) return;
+        
+        // 1. Set Serial Number
+        const serialInput = document.querySelector('.serial-row input[type="text"]');
+        if (serialInput) serialInput.value = unitData.serial;
+        
+        // 2. Set Production Date (MM-DD-YYYY)
+        if (unitData.production_date) {
+            const dateParts = unitData.production_date.split('-'); // YYYY-MM-DD
+            if (dateParts.length === 3) {
+                const year = dateParts[0];
+                const month = dateParts[1];
+                const day = dateParts[2];
+                
+                const dateRows = document.querySelectorAll('.date-part .box-row');
+                if (dateRows.length === 3) {
+                    const mBoxes = dateRows[0].querySelectorAll('input');
+                    if (mBoxes.length === 2 && month.length === 2) {
+                        mBoxes[0].value = month[0]; mBoxes[1].value = month[1];
+                    }
+                    const dBoxes = dateRows[1].querySelectorAll('input');
+                    if (dBoxes.length === 2 && day.length === 2) {
+                        dBoxes[0].value = day[0]; dBoxes[1].value = day[1];
+                    }
+                    const yBoxes = dateRows[2].querySelectorAll('input');
+                    if (yBoxes.length === 4 && year.length === 4) {
+                        yBoxes[0].value = year[0]; yBoxes[1].value = year[1];
+                        yBoxes[2].value = year[2]; yBoxes[3].value = year[3];
+                    }
+                }
+            }
+        }
+        
+        // 3. Set Model Code
+        if (unitData.modelcode) {
+            const charRows = document.querySelectorAll('.model-block .char-row');
+            let model = unitData.modelcode.toUpperCase();
+            let rowIndex = 0;
+            if (model.startsWith('CW-')) { model = model.substring(3); rowIndex = 0; }
+            else if (model.startsWith('RC-')) { model = model.substring(3); rowIndex = 1; }
+            
+            if (charRows.length > rowIndex) {
+                const inputs = charRows[rowIndex].querySelectorAll('input[type="text"]');
+                for (let i = 0; i < inputs.length && i < model.length; i++) {
+                    inputs[i].value = model[i];
+                }
+            }
+        }
+        
+        // 4. Set Inspectors (CRS, GMS, ATT)
+        const inspectorSections = document.querySelectorAll('.inspector-section');
+        
+        // Inspector 1 (ATT)
+        if (inspectorSections.length > 0) {
+            const insp1Input = inspectorSections[0].querySelector('.sig-row input');
+            if (insp1Input) insp1Input.value = unitData.att_inspector || '';
+            if (unitData.att_status === 'PASS' || unitData.att_status === 'OK') {
+                inspectorSections[0].querySelectorAll('tbody tr').forEach(tr => {
+                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true;
+                });
+            }
+        }
+        
+        // Inspector 2 (GMS)
+        if (inspectorSections.length > 1) {
+            const insp2Input = inspectorSections[1].querySelector('.sig-row input');
+            if (insp2Input) insp2Input.value = unitData.gms_inspector || '';
+            const gasChargeInput = inspectorSections[1].querySelector('input[type="text"]');
+            if (gasChargeInput && unitData.gms_gascharge) {
+                gasChargeInput.value = unitData.gms_gascharge;
+            }
+            if (unitData.gms_status === 'PASS' || unitData.gms_status === 'OK') {
+                inspectorSections[1].querySelectorAll('tbody tr').forEach(tr => {
+                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true;
+                });
+            }
+        }
+        
+        // Inspector 4 (CRS / Construction)
+        if (inspectorSections.length > 3) {
+            const insp4Input = inspectorSections[3].querySelector('.sig-row input');
+            if (insp4Input) insp4Input.value = unitData.crs_inspector || '';
+        }
+        
+        // 5. Trigger print dialog after a small delay
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    });
+</script>
+</body>
+</html>
