@@ -516,6 +516,8 @@ def get_crs_data():
     per_page = 50
     date_str = request.args.get('date', '').strip()
     serial   = request.args.get('serial', '').strip()
+    sort_by  = request.args.get('sort_by', 'time').strip()
+    sort_dir = request.args.get('sort_dir', 'desc').strip()
 
     query = CRS.query
     if date_str:
@@ -528,7 +530,18 @@ def get_crs_data():
         query = query.filter(CRS.serial.ilike(f'%{serial}%'))
 
     total   = query.count()
-    records = query.order_by(CRS.time.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    # Apply dynamic sorting
+    if hasattr(CRS, sort_by):
+        column = getattr(CRS, sort_by)
+        if sort_dir == 'asc':
+            query = query.order_by(column.asc())
+        else:
+            query = query.order_by(column.desc())
+    else:
+        query = query.order_by(CRS.time.desc())
+        
+    records = query.offset((page - 1) * per_page).limit(per_page).all()
     ng = _check_ng_history(records)
 
     return jsonify({
@@ -585,23 +598,15 @@ def update_crs_data(id):
 @admin_bp.route('/admin/api/gms-data', methods=['GET'])
 @login_required
 def get_gms_data():
-    page     = max(1, int(request.args.get('page', 1)))
+    page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    date_str = request.args.get('date', '').strip()
-    serial   = request.args.get('serial', '').strip()
-
-    query = GMS.query
-    if date_str:
-        try:
-            parsed = datetime.strptime(date_str, '%Y-%m-%d').date()
-            query = query.filter(func.date(GMS.time) == parsed)
-        except ValueError:
-            pass
-    if serial:
-        query = query.filter(GMS.serial.ilike(f'%{serial}%'))
-
-    total   = query.count()
-    records = query.order_by(GMS.time.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    total, records = _get_paginated_data(
+        GMS, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
 
     return jsonify({
@@ -646,23 +651,15 @@ def update_gms_data(id):
 @admin_bp.route('/admin/api/att-data', methods=['GET'])
 @login_required
 def get_att_data():
-    page     = max(1, int(request.args.get('page', 1)))
+    page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    date_str = request.args.get('date', '').strip()
-    serial   = request.args.get('serial', '').strip()
-
-    query = ATT.query
-    if date_str:
-        try:
-            parsed = datetime.strptime(date_str, '%Y-%m-%d').date()
-            query = query.filter(func.date(ATT.time) == parsed)
-        except ValueError:
-            pass
-    if serial:
-        query = query.filter(ATT.serial.ilike(f'%{serial}%'))
-
-    total   = query.count()
-    records = query.order_by(ATT.time.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    total, records = _get_paginated_data(
+        ATT, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
 
     return jsonify({
@@ -734,21 +731,98 @@ def get_audit_logs():
 @login_required
 def print_tag(serial):
     """Render the Production Information Tag for a specific serial number."""
-    # Gather data from CRS, GMS, ATT
+    # Gather data from CRS, GMS, ATT, INSP2
     crs_record = CRS.query.filter_by(serial=serial).order_by(CRS.id.desc()).first()
     gms_record = GMS.query.filter_by(serial=serial).order_by(GMS.id.desc()).first()
     att_record = ATT.query.filter_by(serial=serial).order_by(ATT.id.desc()).first()
     
+    from app.models.insp2 import INSP2
+    from app.models.insp3_run import INSP3Run
+    from app.models.insp3_vib import INSP3Vib
+    from app.models.insp4 import INSP4
+    
+    insp2_record = INSP2.query.filter_by(serial=serial).order_by(INSP2.id.desc()).first()
+    insp3_run_record = INSP3Run.query.filter_by(serial=serial).order_by(INSP3Run.id.desc()).first()
+    insp3_vib_record = INSP3Vib.query.filter_by(serial=serial).order_by(INSP3Vib.id.desc()).first()
+    insp4_record = INSP4.query.filter_by(serial=serial).order_by(INSP4.id.desc()).first()
+    
+    # Determine the time to calculate shift (Day/Night) and Date
+    production_time = crs_record.time if crs_record else datetime.now()
+    
+    shift = 'DAY'
+    if production_time.hour >= 18 or production_time.hour < 6:
+        shift = 'NIGHT'
+        
+    lineno = crs_record.lineno if crs_record and crs_record.lineno else (
+        gms_record.lineno if gms_record and gms_record.lineno else (
+            att_record.lineno if att_record and att_record.lineno else ''
+        )
+    )
+    
     unit_data = {
         'serial': serial,
         'modelcode': crs_record.modelcode if crs_record else (gms_record.modelcode if gms_record else (att_record.modelcode if att_record else '')),
-        'production_date': crs_record.time.strftime('%Y-%m-%d') if crs_record else datetime.now().strftime('%Y-%m-%d'),
+        'production_date': production_time.strftime('%Y-%m-%d'),
+        'shift': shift,
+        'lineno': lineno,
+        
         'crs_inspector': crs_record.inspector if crs_record else '',
+        
         'att_status': att_record.status if att_record else '',
         'att_inspector': att_record.inspector if att_record else '',
+        'att_no_clogged': att_record.test_no_clogged if att_record else '',
+        'att_no_leak': att_record.test_no_leak if att_record else '',
+        'att_exp_valve': att_record.test_exp_valve if att_record else '',
+        
         'gms_gascharge': float(gms_record.gascharge) if gms_record else '',
         'gms_status': gms_record.status if gms_record else '',
         'gms_inspector': gms_record.inspector if gms_record else '',
+        
+        'insp2_status': insp2_record.status if insp2_record else '',
+        'insp2_inspector': insp2_record.inspector if insp2_record else '',
+        'insp2_wiring_seq': insp2_record.test_wiring_seq if insp2_record else '',
+        'insp2_no_touching': insp2_record.test_no_touching if insp2_record else '',
+        'insp2_no_misaligned': insp2_record.test_no_misaligned if insp2_record else '',
+        'insp2_no_lacking': insp2_record.test_no_lacking if insp2_record else '',
+        
+        'insp3_run_status': insp3_run_record.status if insp3_run_record else '',
+        'insp3_run_inspector': insp3_run_record.inspector if insp3_run_record else '',
+        'insp3_run_leak_status': insp3_run_record.leak_status if insp3_run_record else '',
+        'insp3_run_insulation': insp3_run_record.insulation_resistance if insp3_run_record else '',
+        'insp3_run_withstand': insp3_run_record.withstand_voltage if insp3_run_record else '',
+        'insp3_run_airswing': insp3_run_record.airswing if insp3_run_record else '',
+        'insp3_run_comp_operation': insp3_run_record.comp_operation if insp3_run_record else '',
+        'insp3_run_fan_operation': insp3_run_record.fan_operation if insp3_run_record else '',
+        'insp3_run_temp_diff': insp3_run_record.temp_diff if insp3_run_record else '',
+        'insp3_run_leak_location': insp3_run_record.leak_location if insp3_run_record else '',
+        'insp3_run_prog_check_h': insp3_run_record.prog_check_h if insp3_run_record else '',
+        'insp3_run_prog_check_f': insp3_run_record.prog_check_f if insp3_run_record else '',
+        'insp3_run_operating_current': insp3_run_record.operating_current if insp3_run_record else '',
+        'insp3_run_input_power': insp3_run_record.input_power if insp3_run_record else '',
+        'insp3_run_evap_cool': insp3_run_record.evap_tubes_cool if insp3_run_record else '',
+        'insp3_run_evap_heat': insp3_run_record.evap_tubes_heat if insp3_run_record else '',
+        'insp3_run_cond_cool': insp3_run_record.cond_tubes_cool if insp3_run_record else '',
+        'insp3_run_cond_heat': insp3_run_record.cond_tubes_heat if insp3_run_record else '',
+        'insp3_run_op_cool': insp3_run_record.op_current_cool if insp3_run_record else '',
+        'insp3_run_op_heat': insp3_run_record.op_current_heat if insp3_run_record else '',
+        'insp3_run_in_cool': insp3_run_record.in_power_cool if insp3_run_record else '',
+        'insp3_run_in_heat': insp3_run_record.in_power_heat if insp3_run_record else '',
+        
+        'insp3_vib_status': insp3_vib_record.status if insp3_vib_record else '',
+        'insp3_vib_inspector': insp3_vib_record.inspector if insp3_vib_record else '',
+        
+        'insp4_status': insp4_record.status if insp4_record else '',
+        'insp4_inspector': insp4_record.inspector if insp4_record else '',
+        'insp4_insulation': insp4_record.insulation_resistance if insp4_record else '',
+        'insp4_operating_current': insp4_record.operating_current if insp4_record else '',
+        'insp4_nameplate': insp4_record.nameplate_match if insp4_record else '',
+        'insp4_label': insp4_record.model_label if insp4_record else '',
+        'insp4_manual_remote': insp4_record.manual_remote if insp4_record else '',
+        'insp4_manual_warranty': insp4_record.manual_warranty if insp4_record else '',
+        'insp4_manual_screws': insp4_record.manual_screws if insp4_record else '',
+        'insp4_grille_eel': insp4_record.grille_eel if insp4_record else '',
+        'insp4_grille_model': insp4_record.grille_model if insp4_record else '',
+        'insp4_grille_logo': insp4_record.grille_logo if insp4_record else '',
     }
     return render_template('admin/print_tag.html', unit=unit_data)
 
@@ -765,7 +839,7 @@ def _check_ng_history(records):
     ng_serials = {r[0] for r in repaired}
     return {s: (s in ng_serials) for s in serials}
 
-def _get_paginated_data(model_class, page, per_page, date_str, serial):
+def _get_paginated_data(model_class, page, per_page, date_str, serial, sort_by='time', sort_dir='desc'):
     query = model_class.query
     if date_str:
         try:
@@ -777,7 +851,17 @@ def _get_paginated_data(model_class, page, per_page, date_str, serial):
         query = query.filter(model_class.serial.ilike(f'%{serial}%'))
 
     total = query.count()
-    records = query.order_by(model_class.time.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    if hasattr(model_class, sort_by):
+        column = getattr(model_class, sort_by)
+        if sort_dir == 'asc':
+            query = query.order_by(column.asc())
+        else:
+            query = query.order_by(column.desc())
+    else:
+        query = query.order_by(model_class.time.desc())
+        
+    records = query.offset((page - 1) * per_page).limit(per_page).all()
     return total, records
 
 @admin_bp.route('/admin/api/spams-data', methods=['GET'])
@@ -785,7 +869,13 @@ def _get_paginated_data(model_class, page, per_page, date_str, serial):
 def get_spams_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(SPAMS, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        SPAMS, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
@@ -797,7 +887,13 @@ def get_spams_data():
 def get_cbpcb_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(CBPCB, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        CBPCB, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
@@ -809,7 +905,13 @@ def get_cbpcb_data():
 def get_insp2_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(INSP2, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        INSP2, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
@@ -821,7 +923,13 @@ def get_insp2_data():
 def get_insp3run_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(INSP3Run, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        INSP3Run, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
@@ -833,7 +941,13 @@ def get_insp3run_data():
 def get_insp3vib_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(INSP3Vib, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        INSP3Vib, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
@@ -845,7 +959,13 @@ def get_insp3vib_data():
 def get_insp4_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(INSP4, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        INSP4, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
@@ -857,7 +977,13 @@ def get_insp4_data():
 def get_repair_data():
     page = max(1, int(request.args.get('page', 1)))
     per_page = 50
-    total, records = _get_paginated_data(Repair, page, per_page, request.args.get('date', '').strip(), request.args.get('serial', '').strip())
+    total, records = _get_paginated_data(
+        Repair, page, per_page, 
+        request.args.get('date', '').strip(), 
+        request.args.get('serial', '').strip(),
+        request.args.get('sort_by', 'time').strip(),
+        request.args.get('sort_dir', 'desc').strip()
+    )
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,

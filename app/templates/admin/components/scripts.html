@@ -1365,17 +1365,96 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
+    //  GLOBAL TABLE STATE (Sorting & Selection)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const tableSorts = {
+        crs: { by: 'time', dir: 'desc' },
+        gms: { by: 'time', dir: 'desc' },
+        att: { by: 'time', dir: 'desc' },
+        spams: { by: 'time', dir: 'desc' },
+        cbpcb: { by: 'time', dir: 'desc' },
+        insp2: { by: 'time', dir: 'desc' },
+        insp3run: { by: 'time', dir: 'desc' },
+        insp3vib: { by: 'time', dir: 'desc' },
+        insp4: { by: 'time', dir: 'desc' },
+        repair: { by: 'time', dir: 'desc' }
+    };
+
+    const tableSelection = {
+        crs: null, gms: null, att: null, spams: null, cbpcb: null,
+        insp2: null, insp3run: null, insp3vib: null, insp4: null, repair: null
+    };
+
+    window.handleSort = function(tableId, column) {
+        const state = tableSorts[tableId];
+        if (state.by === column) {
+            state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            state.by = column;
+            state.dir = 'desc'; // Default to desc when changing column
+        }
+        
+        // Update sort indicators
+        document.querySelectorAll(`#${tableId}-table .sort-indicator`).forEach(el => el.innerHTML = '');
+        const indicator = document.getElementById(`${tableId}-sort-${column}`);
+        if (indicator) {
+            indicator.innerHTML = state.dir === 'asc' 
+                ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>'
+                : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+        }
+
+        // Trigger data load based on table
+        if (tableId === 'crs') loadCRSData(1);
+        else if (tableId === 'gms') loadGMSData(1);
+        else if (tableId === 'att') loadATTData(1);
+        else if (tableId === 'spams') loadSPAMSData(1);
+        else if (tableId === 'cbpcb') loadCBPCBData(1);
+        else if (tableId === 'insp2') loadINSP2Data(1);
+        else if (tableId === 'insp3run') loadINSP3RunData(1);
+        else if (tableId === 'insp3vib') loadINSP3VibData(1);
+        else if (tableId === 'insp4') loadINSP4Data(1);
+        else if (tableId === 'repair') loadRepairData(1);
+    };
+
+    window.selectRow = function(tableId, trElement, recordData) {
+        const wasSelected = trElement.classList.contains('selected');
+        
+        // Deselect all rows in the table body
+        document.querySelectorAll(`#${tableId}-tbody tr`).forEach(r => r.classList.remove('selected'));
+        
+        const editBtn = document.getElementById(`${tableId}-btn-edit`);
+        const delBtn = document.getElementById(`${tableId}-btn-delete`);
+
+        if (wasSelected) {
+            tableSelection[tableId] = null;
+            if (editBtn) editBtn.disabled = true;
+            if (delBtn) delBtn.disabled = true;
+        } else {
+            trElement.classList.add('selected');
+            tableSelection[tableId] = recordData;
+            if (editBtn) editBtn.disabled = false;
+            if (delBtn) delBtn.disabled = false;
+        }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
     //  CRS DATA VIEWER
     // ═══════════════════════════════════════════════════════════════════════════
+
     window.loadCRSData = function (page = 1) {
         const date   = document.getElementById('crs-date-filter').value;
         const serial = document.getElementById('crs-serial-filter').value.trim();
         const tbody  = document.getElementById('crs-tbody');
         const totalEl= document.getElementById('crs-total');
+        
+        // Reset selection when loading new data
+        crsSelectedRow = null;
+        if (tableSelection.crs) selectRow('crs', document.createElement('tr'), null); // Reset UI buttons
 
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(10).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(6).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
 
-        let url = `/admin/api/crs-data?page=${page}`;
+        const sortState = tableSorts.crs || { by: 'time', dir: 'desc' };
+        let url = `/admin/api/crs-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}`;
         if (date)   url += `&date=${encodeURIComponent(date)}`;
         if (serial) url += `&serial=${encodeURIComponent(serial)}`;
 
@@ -1385,7 +1464,7 @@
                 totalEl.textContent = data.total.toLocaleString();
                 tbody.innerHTML = '';
                 if (!data.records || data.records.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="20" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No Records Found</h4><p class="empty-state-desc">Try adjusting your search filters.</p></div></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No Records Found</h4><p class="empty-state-desc">Try adjusting your search filters.</p></div></td></tr>`;
                     document.getElementById('crs-pagination').innerHTML = '';
                     return;
                 }
@@ -1393,43 +1472,34 @@
                     const tr = document.createElement('tr');
                     tr.className = 'bom-row';
                     tr.style.animationDelay = `${i * 20}ms`;
+                    tr.style.cursor = 'pointer';
+                    
+                    tr.onclick = function(e) {
+                        if (e.target.closest('button')) return;
+                        selectRow('crs', tr, r);
+                    };
+
                     tr.innerHTML = `
                         <td>${r.time}</td>
                         <td>${r.modelcode}</td>
                         <td>${r.serial}</td>
-                        <td>${r.compmod}</td>
-                        <td>${r.compserial}</td>
-                        <td>${r.fan1mod}</td>
-                        <td>${r.fan1serial}</td>
-                        <td>${r.fan2mod}</td>
-                        <td>${r.fan2serial}</td>
-                        <td>${r.part1mod}</td>
-                        <td>${r.part1desc}</td>
-                        <td>${r.part1serial}</td>
-                        <td>${r.part2mod}</td>
-                        <td>${r.part2desc}</td>
-                        <td>${r.part2serial}</td>
-                        <td>${r.part3mod}</td>
-                        <td>${r.part3desc}</td>
-                        <td>${r.part3serial}</td>
                         <td>${r.inspector}</td>
                         <td>
-                            <button class="btn btn-sm" style="padding:4px 8px; font-size:11px;" onclick='openEditModal("crs", ${JSON.stringify(r)})'>Edit</button>
-                            <button class="btn btn-sm" style="padding:4px 8px; font-size:11px; background:var(--accent-danger); color:white;" onclick='deleteRecord("crs", ${r.id})'>Del</button>
+                            <button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
                 renderPagination('crs-pagination', data.total, data.page, data.per_page, loadCRSData);
             })
-            .catch(() => showToast('Failed to load CRS data.', 'error'));
+            .catch((err) => { console.error(err); showToast('Failed to load CRS data: ' + err.message, 'error'); });
     };
 
     window.clearCRSFilter = function () {
         document.getElementById('crs-date-filter').value = '';
         document.getElementById('crs-serial-filter').value = '';
         document.getElementById('crs-total').textContent = '—';
-        document.getElementById('crs-tbody').innerHTML = `<tr><td colspan="20" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial, then click Refresh to load CRS records.</p></div></td></tr>`;
+        document.getElementById('crs-tbody').innerHTML = `<tr><td colspan="5" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial, then click Refresh to load CRS records.</p></div></td></tr>`;
         document.getElementById('crs-pagination').innerHTML = '';
     };
 
@@ -1441,10 +1511,12 @@
         const serial = document.getElementById('gms-serial-filter').value.trim();
         const tbody  = document.getElementById('gms-tbody');
         const totalEl= document.getElementById('gms-total');
+        if (tableSelection.gms) selectRow('gms', document.createElement('tr'), null);
 
         tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(8).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
 
-        let url = `/admin/api/gms-data?page=${page}`;
+        const sortState = tableSorts.gms || { by: 'time', dir: 'desc' };
+        let url = `/admin/api/gms-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}`;
         if (date)   url += `&date=${encodeURIComponent(date)}`;
         if (serial) url += `&serial=${encodeURIComponent(serial)}`;
 
@@ -1463,6 +1535,11 @@
                     const tr = document.createElement('tr');
                     tr.className = 'bom-row';
                     tr.style.animationDelay = `${i * 20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) {
+                        if (e.target.closest('button')) return;
+                        selectRow('gms', tr, r);
+                    };
                     const badgeCls = GMS_STATUS[r.status.toUpperCase()] || 'status-ok';
                     tr.innerHTML = `
                         <td>${r.time}</td>
@@ -1473,8 +1550,7 @@
                         <td>${r.inspector}</td>
                         <td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
                         <td>
-                            <button class="btn btn-sm" style="padding:4px 8px; font-size:11px;" onclick='openEditModal("gms", ${JSON.stringify(r)})'>Edit</button>
-                            <button class="btn btn-sm" style="padding:4px 8px; font-size:11px; background:var(--accent-danger); color:white;" onclick='deleteRecord("gms", ${r.id})'>Del</button>
+                            <button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1500,10 +1576,12 @@
         const serial = document.getElementById('att-serial-filter').value.trim();
         const tbody  = document.getElementById('att-tbody');
         const totalEl= document.getElementById('att-total');
+        if (tableSelection.att) selectRow('att', document.createElement('tr'), null);
 
         tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(10).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
 
-        let url = `/admin/api/att-data?page=${page}`;
+        const sortState = tableSorts.att || { by: 'time', dir: 'desc' };
+        let url = `/admin/api/att-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}`;
         if (date)   url += `&date=${encodeURIComponent(date)}`;
         if (serial) url += `&serial=${encodeURIComponent(serial)}`;
 
@@ -1521,6 +1599,11 @@
                     const tr = document.createElement('tr');
                     tr.className = 'bom-row';
                     tr.style.animationDelay = `${i * 20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) {
+                        if (e.target.closest('button')) return;
+                        selectRow('att', tr, r);
+                    };
                     const st = r.status.toUpperCase();
                     const badgeCls = st === 'PASS' ? 'status-pass' : (st === 'FAIL' ? 'status-fail' : 'status-ok');
                     tr.innerHTML = `
@@ -1534,8 +1617,7 @@
                         <td>${r.inspector}</td>
                         <td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
                         <td>
-                            <button class="btn btn-sm" style="padding:4px 8px; font-size:11px;" onclick='openEditModal("att", ${JSON.stringify(r)})'>Edit</button>
-                            <button class="btn btn-sm" style="padding:4px 8px; font-size:11px; background:var(--accent-danger); color:white;" onclick='deleteRecord("att", ${r.id})'>Del</button>
+                            <button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1580,16 +1662,30 @@
         const date = document.getElementById('spams-date-filter').value;
         const serial = document.getElementById('spams-serial-filter').value.trim();
         const tbody = document.getElementById('spams-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(6).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/spams-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.spams) selectRow('spams', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(7).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.spams || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/spams-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('spams-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'spams', 'No SPAMS records match your filter.'); document.getElementById('spams-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td><span class="status-badge ${r.status.toUpperCase()==='PASS'||r.status.toUpperCase()==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
-                    <td>${r.inspector}</td><td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.remarks}">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'spams', 'No SPAMS records match your filter.'); document.getElementById('spams-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('spams', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.remarks}">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('spams-pagination', data.total, data.page, data.per_page, loadSPAMSData);
             }).catch(() => showToast('Failed to load SPAMS data.', 'error'));
     };
@@ -1600,16 +1696,30 @@
         const date = document.getElementById('cbpcb-date-filter').value;
         const serial = document.getElementById('cbpcb-serial-filter').value.trim();
         const tbody = document.getElementById('cbpcb-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(6).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/cbpcb-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.cbpcb) selectRow('cbpcb', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(7).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.cbpcb || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/cbpcb-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('cbpcb-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'cbpcb', 'No CB & PCB records match your filter.'); document.getElementById('cbpcb-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td><span class="status-badge ${r.status.toUpperCase()==='PASS'||r.status.toUpperCase()==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
-                    <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'cbpcb', 'No CB & PCB records match your filter.'); document.getElementById('cbpcb-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('cbpcb', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('cbpcb-pagination', data.total, data.page, data.per_page, loadCBPCBData);
             }).catch(() => showToast('Failed to load CB&PCB data.', 'error'));
     };
@@ -1620,17 +1730,31 @@
         const date = document.getElementById('insp2-date-filter').value;
         const serial = document.getElementById('insp2-serial-filter').value.trim();
         const tbody = document.getElementById('insp2-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(10).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/insp2-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.insp2) selectRow('insp2', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(11).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.insp2 || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/insp2-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('insp2-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(10, 'insp2', 'No Inner Line records match your filter.'); document.getElementById('insp2-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td>${r.test_wiring_seq}</td><td>${r.test_no_touching}</td><td>${r.test_no_misaligned}</td><td>${r.test_no_lacking}</td>
-                    <td><span class="status-badge ${r.status.toUpperCase()==='PASS'||r.status.toUpperCase()==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
-                    <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(11, 'insp2', 'No Inner Line records match your filter.'); document.getElementById('insp2-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('insp2', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td>${r.test_wiring_seq}</td><td>${r.test_no_touching}</td><td>${r.test_no_misaligned}</td><td>${r.test_no_lacking}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('insp2-pagination', data.total, data.page, data.per_page, loadINSP2Data);
             }).catch(() => showToast('Failed to load INSP2 data.', 'error'));
     };
@@ -1641,21 +1765,35 @@
         const date = document.getElementById('insp3run-date-filter').value;
         const serial = document.getElementById('insp3run-serial-filter').value.trim();
         const tbody = document.getElementById('insp3run-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(20).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/insp3run-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.insp3run) selectRow('insp3run', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(21).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.insp3run || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/insp3run-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('insp3run-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(20, 'insp3run', 'No Running records match your filter.'); document.getElementById('insp3run-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td>${r.insulation_resistance}</td><td>${r.withstand_voltage}</td><td>${r.leak_status}</td><td>${r.leak_location}</td>
-                    <td>${r.prog_check_h}</td><td>${r.prog_check_f}</td>
-                    <td>${r.airswing}</td><td>${r.comp_operation}</td><td>${r.fan_operation}</td>
-                    <td>${r.evap_tubes}</td><td>${r.cond_tubes}</td>
-                    <td>${r.operating_current}</td><td>${r.input_power}</td><td>${r.temp_diff}</td>
-                    <td><span class="status-badge ${r.status.toUpperCase()==='PASS'||r.status.toUpperCase()==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
-                    <td>${r.inspector}</td><td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(21, 'insp3run', 'No Running records match your filter.'); document.getElementById('insp3run-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('insp3run', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td>${r.insulation_resistance}</td><td>${r.withstand_voltage}</td><td>${r.leak_status}</td><td>${r.leak_location}</td>
+                        <td>${r.prog_check_h}</td><td>${r.prog_check_f}</td>
+                        <td>${r.airswing}</td><td>${r.comp_operation}</td><td>${r.fan_operation}</td>
+                        <td>${r.evap_tubes}</td><td>${r.cond_tubes}</td>
+                        <td>${r.operating_current}</td><td>${r.input_power}</td><td>${r.temp_diff}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('insp3run-pagination', data.total, data.page, data.per_page, loadINSP3RunData);
             }).catch(() => showToast('Failed to load INSP3Run data.', 'error'));
     };
@@ -1666,16 +1804,30 @@
         const date = document.getElementById('insp3vib-date-filter').value;
         const serial = document.getElementById('insp3vib-serial-filter').value.trim();
         const tbody = document.getElementById('insp3vib-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(6).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/insp3vib-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.insp3vib) selectRow('insp3vib', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(7).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.insp3vib || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/insp3vib-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('insp3vib-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'insp3vib', 'No Vibration records match your filter.'); document.getElementById('insp3vib-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td><span class="status-badge ${r.status.toUpperCase()==='PASS'||r.status.toUpperCase()==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
-                    <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'insp3vib', 'No Vibration records match your filter.'); document.getElementById('insp3vib-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('insp3vib', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('insp3vib-pagination', data.total, data.page, data.per_page, loadINSP3VibData);
             }).catch(() => showToast('Failed to load INSP3Vib data.', 'error'));
     };
@@ -1686,20 +1838,34 @@
         const date = document.getElementById('insp4-date-filter').value;
         const serial = document.getElementById('insp4-serial-filter').value.trim();
         const tbody = document.getElementById('insp4-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(16).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/insp4-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.insp4) selectRow('insp4', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(17).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.insp4 || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/insp4-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('insp4-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(16, 'insp4', 'No Final Inspection records match your filter.'); document.getElementById('insp4-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td>${r.insulation_resistance}</td><td>${r.operating_current}</td>
-                    <td>${r.nameplate_match}</td><td>${r.model_label}</td>
-                    <td>${r.manual_remote}</td><td>${r.manual_warranty}</td><td>${r.manual_screws}</td>
-                    <td>${r.grille_model}</td><td>${r.grille_eel}</td><td>${r.grille_logo}</td>
-                    <td><span class="status-badge ${r.status.toUpperCase()==='PASS'||r.status.toUpperCase()==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
-                    <td>${r.inspector}</td><td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(17, 'insp4', 'No Final Inspection records match your filter.'); document.getElementById('insp4-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('insp4', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td>${r.insulation_resistance}</td><td>${r.operating_current}</td>
+                        <td>${r.nameplate_match}</td><td>${r.model_label}</td>
+                        <td>${r.manual_remote}</td><td>${r.manual_warranty}</td><td>${r.manual_screws}</td>
+                        <td>${r.grille_model}</td><td>${r.grille_eel}</td><td>${r.grille_logo}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('insp4-pagination', data.total, data.page, data.per_page, loadINSP4Data);
             }).catch(() => showToast('Failed to load INSP4 data.', 'error'));
     };
@@ -1710,17 +1876,31 @@
         const date = document.getElementById('repair-date-filter').value;
         const serial = document.getElementById('repair-serial-filter').value.trim();
         const tbody = document.getElementById('repair-tbody');
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(9).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
-        fetch(`/admin/api/repair-data?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
+        if (tableSelection.repair) selectRow('repair', document.createElement('tr'), null);
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(10).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        
+        const sortState = tableSorts.repair || { by: 'time', dir: 'desc' };
+        fetch(`/admin/api/repair-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
             .then(r => r.json()).then(data => {
                 document.getElementById('repair-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(9, 'repair', 'No Repair records match your filter.'); document.getElementById('repair-pagination').innerHTML = ''; return; }
-                tbody.innerHTML = data.records.map((r, i) => `<tr style="animation-delay:${i*20}ms">
-                    <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
-                    <td>${r.station_origin}</td><td>${r.defect_type}</td><td>${r.action_taken}</td>
-                    <td><span class="status-badge status-ok">${r.status}</span></td>
-                    <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
-                </tr>`).join('');
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(10, 'repair', 'No Repair records match your filter.'); document.getElementById('repair-pagination').innerHTML = ''; return; }
+                tbody.innerHTML = '';
+                data.records.forEach((r, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bom-row';
+                    tr.style.animationDelay = `${i*20}ms`;
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) { if (e.target.closest('button')) return; selectRow('repair', tr, r); };
+                    const st = r.status.toUpperCase();
+                    tr.innerHTML = `
+                        <td>${r.time}</td><td>${r.modelcode}</td><td>${r.serial}</td>
+                        <td>${r.station_origin}</td><td>${r.defect_type}</td><td>${r.action_taken}</td>
+                        <td><span class="status-badge ${st==='PASS'||st==='OK'?'status-ok':'status-fail'}">${r.status}</span></td>
+                        <td>${r.inspector}</td><td title="${r.remarks}">${r.remarks}</td>
+                        <td><button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
                 renderPagination('repair-pagination', data.total, data.page, data.per_page, loadRepairData);
             }).catch(() => showToast('Failed to load Repair data.', 'error'));
     };
@@ -2648,6 +2828,44 @@ function deleteTag() {
                     .catch(() => showToast('Network error.', 'error'));
             }
         );
+    };
+
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  CRS Details Modal
+    // ═══════════════════════════════════════════════════════════════════════════
+    window.viewCRSDetails = function (data) {
+        document.getElementById('crs-det-date').textContent = data.time || '—';
+        document.getElementById('crs-det-model').textContent = data.modelcode || '—';
+        document.getElementById('crs-det-serial').textContent = data.serial || '—';
+        document.getElementById('crs-det-inspector').textContent = data.inspector || '—';
+
+        document.getElementById('crs-det-comp-model').textContent = data.compmod || '—';
+        document.getElementById('crs-det-comp-serial').textContent = data.compserial || '—';
+
+        document.getElementById('crs-det-fan1-model').textContent = data.fan1mod || '—';
+        document.getElementById('crs-det-fan1-serial').textContent = data.fan1serial || '—';
+
+        document.getElementById('crs-det-fan2-model').textContent = data.fan2mod || '—';
+        document.getElementById('crs-det-fan2-serial').textContent = data.fan2serial || '—';
+
+        document.getElementById('crs-det-part1-desc').textContent = data.part1desc || '—';
+        document.getElementById('crs-det-part1-model').textContent = data.part1mod || '—';
+        document.getElementById('crs-det-part1-serial').textContent = data.part1serial || '—';
+
+        document.getElementById('crs-det-part2-desc').textContent = data.part2desc || '—';
+        document.getElementById('crs-det-part2-model').textContent = data.part2mod || '—';
+        document.getElementById('crs-det-part2-serial').textContent = data.part2serial || '—';
+
+        document.getElementById('crs-det-part3-desc').textContent = data.part3desc || '—';
+        document.getElementById('crs-det-part3-model').textContent = data.part3mod || '—';
+        document.getElementById('crs-det-part3-serial').textContent = data.part3serial || '—';
+
+        document.getElementById('modal-crs-details').classList.add('active');
+    };
+
+    window.closeCRSDetailsModal = function () {
+        document.getElementById('modal-crs-details').classList.remove('active');
     };
 
 </script>

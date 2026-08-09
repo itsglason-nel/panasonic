@@ -18,7 +18,12 @@
             document.documentElement.classList.add('session-valid');
         }
     </script>
-    <style>html:not(.session-valid) body { display: none !important; }</style>
+    <style>
+        html:not(.session-valid) body { display: none !important; }
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { color: var(--accent-primary, #2563eb); }
+        .sort-indicator { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; margin-left: 4px; vertical-align: middle; }
+    </style>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
@@ -289,7 +294,9 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearCRSFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="crs-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.crs) openEditModal('crs', tableSelection.crs)">Edit</button>
+                            <button class="btn btn-secondary" id="crs-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.crs) deleteRecord('crs', tableSelection.crs.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="crs-total">—</span></div>
                         </div>
                     </div>
@@ -297,30 +304,15 @@
                         <table class="data-table" id="crs-table">
                             <thead>
                                 <tr>
-                                    <th>Date / Time</th>
-                                    <th>Model Code</th>
-                                    <th>Serial</th>
-                                    <th>Comp. Model</th>
-                                    <th>Comp. Serial</th>
-                                    <th>Fan 1 Model</th>
-                                    <th>Fan 1 Serial</th>
-                                    <th>Fan 2 Model</th>
-                                    <th>Fan 2 Serial</th>
-                                    <th>Part 1 Model</th>
-                                    <th>Part 1 Desc</th>
-                                    <th>Part 1 Serial</th>
-                                    <th>Part 2 Model</th>
-                                    <th>Part 2 Desc</th>
-                                    <th>Part 2 Serial</th>
-                                    <th>Part 3 Model</th>
-                                    <th>Part 3 Desc</th>
-                                    <th>Part 3 Serial</th>
-                                    <th>Inspector</th>
+                                    <th class="sortable" onclick="handleSort('crs', 'time')">Date / Time <span class="sort-indicator" id="crs-sort-time"></span></th>
+                                    <th class="sortable" onclick="handleSort('crs', 'modelcode')">Model Code <span class="sort-indicator" id="crs-sort-modelcode"></span></th>
+                                    <th class="sortable" onclick="handleSort('crs', 'serial')">Serial <span class="sort-indicator" id="crs-sort-serial"></span></th>
+                                    <th class="sortable" onclick="handleSort('crs', 'inspector')">Inspector <span class="sort-indicator" id="crs-sort-inspector"></span></th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="crs-tbody">
-                                <tr><td colspan="20" class="empty-state">
+                                <tr><td colspan="5" class="empty-state">
                                     <div class="empty-state-wrapper">
                                         <h4 class="empty-state-title">No data loaded</h4>
                                         <p class="empty-state-desc">Select a date or enter a serial to search CRS records.</p>
@@ -363,7 +355,9 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearGMSFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="gms-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.gms) openEditModal('gms', tableSelection.gms)">Edit</button>
+                            <button class="btn btn-secondary" id="gms-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.gms) deleteRecord('gms', tableSelection.gms.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="gms-total">—</span></div>
                         </div>
                     </div>
@@ -371,12 +365,12 @@
                         <table class="data-table" id="gms-table">
                             <thead>
                                 <tr>
-                                    <th>Date / Time</th>
-                                    <th>Model Code</th>
-                                    <th>Serial</th>
-                                    <th>Gas Charge (kg)</th>
-                                    <th>Status</th>
-                                    <th>Inspector</th>
+                                    <th class="sortable" onclick="handleSort('gms', 'time')">Date / Time <span class="sort-indicator" id="gms-sort-time"></span></th>
+                                    <th class="sortable" onclick="handleSort('gms', 'modelcode')">Model Code <span class="sort-indicator" id="gms-sort-modelcode"></span></th>
+                                    <th class="sortable" onclick="handleSort('gms', 'serial')">Serial <span class="sort-indicator" id="gms-sort-serial"></span></th>
+                                    <th class="sortable" onclick="handleSort('gms', 'gascharge')">Gas Charge (kg) <span class="sort-indicator" id="gms-sort-gascharge"></span></th>
+                                    <th class="sortable" onclick="handleSort('gms', 'status')">Status <span class="sort-indicator" id="gms-sort-status"></span></th>
+                                    <th class="sortable" onclick="handleSort('gms', 'inspector')">Inspector <span class="sort-indicator" id="gms-sort-inspector"></span></th>
                                     <th>Remarks</th>
                                     <th>Actions</th>
                                 </tr>
@@ -425,7 +419,9 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearATTFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="att-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.att) openEditModal('att', tableSelection.att)">Edit</button>
+                            <button class="btn btn-secondary" id="att-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.att) deleteRecord('att', tableSelection.att.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="att-total">—</span></div>
                         </div>
                     </div>
@@ -442,14 +438,14 @@
                         <table class="data-table" id="att-table">
                             <thead>
                                 <tr>
-                                    <th>Date / Time</th>
-                                    <th>Model Code</th>
-                                    <th>Serial</th>
-                                    <th>No Clogged</th>
-                                    <th>No Leak</th>
-                                    <th>Exp Valve</th>
-                                    <th>Status</th>
-                                    <th>Inspector</th>
+                                    <th class="sortable" onclick="handleSort('att', 'time')">Date / Time <span class="sort-indicator" id="att-sort-time"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'modelcode')">Model Code <span class="sort-indicator" id="att-sort-modelcode"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'serial')">Serial <span class="sort-indicator" id="att-sort-serial"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'no_clogged')">No Clogged <span class="sort-indicator" id="att-sort-no_clogged"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'no_leak')">No Leak <span class="sort-indicator" id="att-sort-no_leak"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'exp_valve')">Exp Valve <span class="sort-indicator" id="att-sort-exp_valve"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'status')">Status <span class="sort-indicator" id="att-sort-status"></span></th>
+                                    <th class="sortable" onclick="handleSort('att', 'inspector')">Inspector <span class="sort-indicator" id="att-sort-inspector"></span></th>
                                     <th>Remarks</th>
                                     <th>Actions</th>
                                 </tr>
@@ -494,13 +490,23 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearSPAMSFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="spams-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.spams) openEditModal('spams', tableSelection.spams)">Edit</button>
+                            <button class="btn btn-secondary" id="spams-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.spams) deleteRecord('spams', tableSelection.spams.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="spams-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="spams-table">
-                            <thead><tr><th>Date / Time</th><th>Model Code</th><th>Serial</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('spams', 'time')">Date / Time <span class="sort-indicator" id="spams-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('spams', 'modelcode')">Model Code <span class="sort-indicator" id="spams-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('spams', 'serial')">Serial <span class="sort-indicator" id="spams-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('spams', 'status')">Status <span class="sort-indicator" id="spams-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('spams', 'inspector')">Inspector <span class="sort-indicator" id="spams-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="spams-tbody">
                                 <tr><td colspan="6" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search SPAMS records.</p></div></td></tr>
                             </tbody>
@@ -536,15 +542,25 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearCBPCBFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="cbpcb-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.cbpcb) openEditModal('cbpcb', tableSelection.cbpcb)">Edit</button>
+                            <button class="btn btn-secondary" id="cbpcb-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.cbpcb) deleteRecord('cbpcb', tableSelection.cbpcb.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="cbpcb-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="cbpcb-table">
-                            <thead><tr><th>Date / Time</th><th>Model Code</th><th>Serial</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('cbpcb', 'time')">Date / Time <span class="sort-indicator" id="cbpcb-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('cbpcb', 'modelcode')">Model Code <span class="sort-indicator" id="cbpcb-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('cbpcb', 'serial')">Serial <span class="sort-indicator" id="cbpcb-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('cbpcb', 'status')">Status <span class="sort-indicator" id="cbpcb-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('cbpcb', 'inspector')">Inspector <span class="sort-indicator" id="cbpcb-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="cbpcb-tbody">
-                                <tr><td colspan="6" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search CB/PCB records.</p></div></td></tr>
+                                <tr><td colspan="7" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search CB/PCB records.</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -578,15 +594,29 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearINSP2Filter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="insp2-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.insp2) openEditModal('insp2', tableSelection.insp2)">Edit</button>
+                            <button class="btn btn-secondary" id="insp2-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.insp2) deleteRecord('insp2', tableSelection.insp2.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="insp2-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="insp2-table">
-                            <thead><tr><th>Date / Time</th><th>Model</th><th>Serial</th><th>Wiring</th><th>Touching</th><th>Misaligned</th><th>Lacking</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('insp2', 'time')">Date / Time <span class="sort-indicator" id="insp2-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'modelcode')">Model <span class="sort-indicator" id="insp2-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'serial')">Serial <span class="sort-indicator" id="insp2-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'test_wiring_seq')">Wiring <span class="sort-indicator" id="insp2-sort-test_wiring_seq"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'test_no_touching')">Touching <span class="sort-indicator" id="insp2-sort-test_no_touching"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'test_no_misaligned')">Misaligned <span class="sort-indicator" id="insp2-sort-test_no_misaligned"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'test_no_lacking')">Lacking <span class="sort-indicator" id="insp2-sort-test_no_lacking"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'status')">Status <span class="sort-indicator" id="insp2-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('insp2', 'inspector')">Inspector <span class="sort-indicator" id="insp2-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="insp2-tbody">
-                                <tr><td colspan="10" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Inner Line records.</p></div></td></tr>
+                                <tr><td colspan="11" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Inner Line records.</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -620,15 +650,39 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearINSP3RunFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="insp3run-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.insp3run) openEditModal('insp3run', tableSelection.insp3run)">Edit</button>
+                            <button class="btn btn-secondary" id="insp3run-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.insp3run) deleteRecord('insp3run', tableSelection.insp3run.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="insp3run-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="insp3run-table">
-                            <thead><tr><th>Date / Time</th><th>Model</th><th>Serial</th><th>Insulation</th><th>Voltage</th><th>Leak</th><th>Leak Loc</th><th>Prog H</th><th>Prog F</th><th>Airswing</th><th>Comp Op</th><th>Fan Op</th><th>Evap</th><th>Cond</th><th>Current</th><th>Power</th><th>Temp Diff</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('insp3run', 'time')">Date / Time <span class="sort-indicator" id="insp3run-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'modelcode')">Model <span class="sort-indicator" id="insp3run-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'serial')">Serial <span class="sort-indicator" id="insp3run-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'insulation_resistance')">Insulation <span class="sort-indicator" id="insp3run-sort-insulation_resistance"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'withstand_voltage')">Voltage <span class="sort-indicator" id="insp3run-sort-withstand_voltage"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'leak_status')">Leak <span class="sort-indicator" id="insp3run-sort-leak_status"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'leak_location')">Leak Loc <span class="sort-indicator" id="insp3run-sort-leak_location"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'prog_check_h')">Prog H <span class="sort-indicator" id="insp3run-sort-prog_check_h"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'prog_check_f')">Prog F <span class="sort-indicator" id="insp3run-sort-prog_check_f"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'airswing')">Airswing <span class="sort-indicator" id="insp3run-sort-airswing"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'comp_operation')">Comp Op <span class="sort-indicator" id="insp3run-sort-comp_operation"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'fan_operation')">Fan Op <span class="sort-indicator" id="insp3run-sort-fan_operation"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'evap_tubes')">Evap <span class="sort-indicator" id="insp3run-sort-evap_tubes"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'cond_tubes')">Cond <span class="sort-indicator" id="insp3run-sort-cond_tubes"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'operating_current')">Current <span class="sort-indicator" id="insp3run-sort-operating_current"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'input_power')">Power <span class="sort-indicator" id="insp3run-sort-input_power"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'temp_diff')">Temp Diff <span class="sort-indicator" id="insp3run-sort-temp_diff"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'status')">Status <span class="sort-indicator" id="insp3run-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3run', 'inspector')">Inspector <span class="sort-indicator" id="insp3run-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="insp3run-tbody">
-                                <tr><td colspan="20" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Running Inspection records.</p></div></td></tr>
+                                <tr><td colspan="21" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Running Inspection records.</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -662,15 +716,25 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearINSP3VibFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="insp3vib-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.insp3vib) openEditModal('insp3vib', tableSelection.insp3vib)">Edit</button>
+                            <button class="btn btn-secondary" id="insp3vib-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.insp3vib) deleteRecord('insp3vib', tableSelection.insp3vib.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="insp3vib-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="insp3vib-table">
-                            <thead><tr><th>Date / Time</th><th>Model Code</th><th>Serial</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('insp3vib', 'time')">Date / Time <span class="sort-indicator" id="insp3vib-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3vib', 'modelcode')">Model Code <span class="sort-indicator" id="insp3vib-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3vib', 'serial')">Serial <span class="sort-indicator" id="insp3vib-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3vib', 'status')">Status <span class="sort-indicator" id="insp3vib-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('insp3vib', 'inspector')">Inspector <span class="sort-indicator" id="insp3vib-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="insp3vib-tbody">
-                                <tr><td colspan="6" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Vibration Test records.</p></div></td></tr>
+                                <tr><td colspan="7" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Vibration Test records.</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -704,15 +768,35 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearINSP4Filter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="insp4-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.insp4) openEditModal('insp4', tableSelection.insp4)">Edit</button>
+                            <button class="btn btn-secondary" id="insp4-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.insp4) deleteRecord('insp4', tableSelection.insp4.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="insp4-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="insp4-table">
-                            <thead><tr><th>Date / Time</th><th>Model</th><th>Serial</th><th>Insulation</th><th>Current</th><th>Nameplate</th><th>Label</th><th>Remote</th><th>Warranty</th><th>Screws</th><th>Grille Mdl</th><th>Grille EEL</th><th>Grille Logo</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('insp4', 'time')">Date / Time <span class="sort-indicator" id="insp4-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'modelcode')">Model <span class="sort-indicator" id="insp4-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'serial')">Serial <span class="sort-indicator" id="insp4-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'insulation_resistance')">Insulation <span class="sort-indicator" id="insp4-sort-insulation_resistance"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'operating_current')">Current <span class="sort-indicator" id="insp4-sort-operating_current"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'nameplate_match')">Nameplate <span class="sort-indicator" id="insp4-sort-nameplate_match"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'model_label')">Label <span class="sort-indicator" id="insp4-sort-model_label"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'manual_remote')">Remote <span class="sort-indicator" id="insp4-sort-manual_remote"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'manual_warranty')">Warranty <span class="sort-indicator" id="insp4-sort-manual_warranty"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'manual_screws')">Screws <span class="sort-indicator" id="insp4-sort-manual_screws"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'grille_model')">Grille Mdl <span class="sort-indicator" id="insp4-sort-grille_model"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'grille_eel')">Grille EEL <span class="sort-indicator" id="insp4-sort-grille_eel"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'grille_logo')">Grille Logo <span class="sort-indicator" id="insp4-sort-grille_logo"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'status')">Status <span class="sort-indicator" id="insp4-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('insp4', 'inspector')">Inspector <span class="sort-indicator" id="insp4-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="insp4-tbody">
-                                <tr><td colspan="16" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Final Inspection records.</p></div></td></tr>
+                                <tr><td colspan="17" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Final Inspection records.</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -746,15 +830,28 @@
                             <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                         </button>
                         <button class="btn btn-secondary" onclick="clearRepairFilter()">Clear</button>
-                        <div class="stats" style="margin-left:auto;">
+                        <div class="stats" style="margin-left:auto; display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" id="repair-btn-edit" disabled style="padding:4px 12px; font-size:12px;" onclick="if(tableSelection.repair) openEditModal('repair', tableSelection.repair)">Edit</button>
+                            <button class="btn btn-secondary" id="repair-btn-delete" disabled style="padding:4px 12px; font-size:12px; background:var(--accent-danger); color:white; border-color:var(--accent-danger);" onclick="if(tableSelection.repair) deleteRecord('repair', tableSelection.repair.id)">Delete</button>
                             <div class="stat-pill">Total: <span id="repair-total">—</span></div>
                         </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table" id="repair-table">
-                            <thead><tr><th>Date / Time</th><th>Model</th><th>Serial</th><th>Origin Station</th><th>Defect Type</th><th>Action Taken</th><th>Status</th><th>Inspector</th><th>Remarks</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" onclick="handleSort('repair', 'time')">Date / Time <span class="sort-indicator" id="repair-sort-time"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'modelcode')">Model <span class="sort-indicator" id="repair-sort-modelcode"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'serial')">Serial <span class="sort-indicator" id="repair-sort-serial"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'station_origin')">Origin Station <span class="sort-indicator" id="repair-sort-station_origin"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'defect_type')">Defect Type <span class="sort-indicator" id="repair-sort-defect_type"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'action_taken')">Action Taken <span class="sort-indicator" id="repair-sort-action_taken"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'status')">Status <span class="sort-indicator" id="repair-sort-status"></span></th>
+                                <th class="sortable" onclick="handleSort('repair', 'inspector')">Inspector <span class="sort-indicator" id="repair-sort-inspector"></span></th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr></thead>
                             <tbody id="repair-tbody">
-                                <tr><td colspan="9" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Repair records.</p></div></td></tr>
+                                <tr><td colspan="10" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial to search Repair records.</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>

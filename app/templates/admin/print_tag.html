@@ -828,6 +828,50 @@
                 </div>
             </div>
 
+            <!-- BRAZING / PREP PROCESSES -->
+            <div class="remarks-section" style="border-top:2px solid #000; padding:0;">
+                <div class="insp-table-wrap">
+                    <table class="insp-table">
+                        <thead>
+                            <tr>
+                                <th class="item-col">PROCESS</th>
+                                <th class="check-col">BRAZERS INITIAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Condenser prep</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                            <tr>
+                                <td>Evaporator prep</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                            <tr>
+                                <td>Compressor brazing</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                            <tr>
+                                <td>Brazing 1</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                            <tr>
+                                <td>Brazing 2</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                            <tr>
+                                <td>Tube crimping</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                            <tr>
+                                <td>4-way valve Expansion</td>
+                                <td class="center" style="padding:0;"><input type="text" style="width:100%; height:100%; border:none; outline:none; text-align:center; font-size:9px; background:transparent;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- REMARKS -->
             <div class="remarks-section" style="border-top:2px solid #000;">
                 <div class="remarks-label">REMARKS:</div>
@@ -890,7 +934,7 @@
                             <div style="text-align:left;">Must be no Leak</div>
                             <div style="display:flex; align-items:flex-end; gap:2px; margin-top:2px;">
                                 <span class="small">Leak location:</span>
-                                <input type="text" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
+                                <input type="text" id="leak_loc_1" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
                             </div>
                         </td>
                         <td class="center"><input type="checkbox" class="check-box-cell"></td>
@@ -1062,7 +1106,7 @@
                         <td rowspan="2" style="border-right:1px solid #000; padding:2px; width:85px; position:relative;">
                             <div style="text-align:left; position:absolute; top:2px; left:2px; font-size:9px; white-space:nowrap;">Operating Current</div>
                             <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:90%;">
-                                <input type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:12px; font-weight:bold;">
+                                <input type="text" id="op_current" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:12px; font-weight:bold;">
                             </div>
                             <div style="text-align:right; font-size:9px; position:absolute; bottom:2px; right:4px;">Current Reading</div>
                         </td>
@@ -1085,7 +1129,7 @@
                         <td rowspan="2" style="border-right:1px solid #000; padding:2px; width:85px; position:relative;">
                             <div style="text-align:left; position:absolute; top:2px; left:2px; font-size:9px; white-space:nowrap;">Input Power</div>
                             <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:90%;">
-                                <input type="text" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:12px; font-weight:bold;">
+                                <input type="text" id="in_power" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:12px; font-weight:bold;">
                             </div>
                             <div style="text-align:right; font-size:9px; position:absolute; bottom:2px; right:4px;">Wattage Reading</div>
                         </td>
@@ -1109,7 +1153,7 @@
                             <div style="text-align:left;">Temp. Difference</div>
                             <div style="display:flex; align-items:flex-end; gap:2px; margin-top:2px;">
                                 <span class="small">Temp. Reading:</span>
-                                <input type="text" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
+                                <input type="text" id="temp_read" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
                             </div>
                         </td>
                         <td class="center"><input type="checkbox" class="check-box-cell"></td>
@@ -1124,7 +1168,7 @@
                             <div style="text-align:left;">Must be no Leak</div>
                             <div style="display:flex; align-items:flex-end; gap:2px; margin-top:2px;">
                                 <span class="small">Leak Location:</span>
-                                <input type="text" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
+                                <input type="text" id="leak_loc_2" style="flex:1; height:12px; border:none; border-bottom:1px solid #000; outline:none; background:transparent; font-size:10px; text-align:center; min-width:0;">
                             </div>
                         </td>
                         <td class="center"><input type="checkbox" class="check-box-cell"></td>
@@ -1577,11 +1621,24 @@
         if (inspectorSections.length > 0) {
             const insp1Input = inspectorSections[0].querySelector('.sig-row input');
             if (insp1Input) insp1Input.value = unitData.att_inspector || '';
-            if (unitData.att_status === 'PASS' || unitData.att_status === 'OK') {
-                inspectorSections[0].querySelectorAll('tbody tr').forEach(tr => {
-                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) tds[0].checked = true;
-                });
+            const attRows = inspectorSections[0].querySelectorAll('tbody tr');
+            if (attRows.length >= 6) {
+                const setAttCheck = (rowIdx, val) => {
+                    const tds = attRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) {
+                        if (val === 'GOOD' || (unitData.att_status === 'GOOD' && !val)) tds[0].checked = true;
+                        else if (val === 'NG') tds[1].checked = true;
+                    }
+                };
+                setAttCheck(0, unitData.att_no_clogged);
+                setAttCheck(1, unitData.att_no_leak);
+                setAttCheck(2, unitData.att_exp_valve);
+                // Other rows assume GOOD if overall is GOOD
+                if (unitData.att_status === 'GOOD') {
+                    setAttCheck(3, 'GOOD');
+                    setAttCheck(4, 'GOOD');
+                    setAttCheck(5, 'GOOD');
+                }
             }
         }
         
@@ -1593,7 +1650,7 @@
             if (gasChargeInput && unitData.gms_gascharge) {
                 gasChargeInput.value = unitData.gms_gascharge;
             }
-            if (unitData.gms_status === 'PASS' || unitData.gms_status === 'OK') {
+            if (unitData.gms_status === 'GOOD') {
                 inspectorSections[1].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;
@@ -1601,10 +1658,215 @@
             }
         }
         
-        // Inspector 4 (CRS / Construction)
+        // Inspector 3 & 4 (INSP2 / Construction)
+        if (inspectorSections.length > 2) {
+            const insp3Input = inspectorSections[2].querySelector('.sig-row input');
+            if (insp3Input) insp3Input.value = unitData.insp2_inspector || '';
+            const insp2Rows = inspectorSections[2].querySelectorAll('tbody tr');
+            if (insp2Rows.length >= 4) {
+                const setInsp2Check = (rowIdx, val) => {
+                    const tds = insp2Rows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) {
+                        if (val === 'GOOD' || (unitData.insp2_status === 'GOOD' && !val)) tds[0].checked = true;
+                        else if (val === 'NG') tds[1].checked = true;
+                    }
+                };
+                setInsp2Check(0, unitData.insp2_wiring_seq);
+                setInsp2Check(1, unitData.insp2_no_touching);
+                setInsp2Check(2, unitData.insp2_no_misaligned);
+                setInsp2Check(3, unitData.insp2_no_lacking);
+            }
+        }
+
         if (inspectorSections.length > 3) {
             const insp4Input = inspectorSections[3].querySelector('.sig-row input');
-            if (insp4Input) insp4Input.value = unitData.crs_inspector || '';
+            // We use CRS inspector here per old logic, or insp2_inspector if applicable. 
+            // The original logic used CRS for Inspector 4, so let's stick to it, but check GOOD status.
+            if (insp4Input) insp4Input.value = unitData.crs_inspector || unitData.insp2_inspector || '';
+            if (unitData.insp2_status === 'GOOD' || unitData.att_status === 'GOOD') { // Fallback if no specific construction status
+                inspectorSections[3].querySelectorAll('tbody tr').forEach(tr => {
+                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true;
+                });
+            }
+        }
+        
+        // Packaging Inspection (Left Column 5th block)
+        if (inspectorSections.length > 4) {
+            const inspPkgInput = inspectorSections[4].querySelector('.sig-row input');
+            if (inspPkgInput) inspPkgInput.value = unitData.insp4_inspector || '';
+            if (unitData.insp4_status === 'GOOD') {
+                inspectorSections[4].querySelectorAll('tbody tr').forEach(tr => {
+                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true;
+                });
+            }
+        }
+        
+        // Right Column: Running Inspection & Running Inspector (INSP3_RUN)
+        const rightTables = document.querySelectorAll('.right-table');
+        if (rightTables.length > 1) {
+            // Leak Inspector 1 (rightTables[0])
+            const leakRows = rightTables[0].querySelectorAll('tbody tr');
+            if (leakRows.length >= 3) {
+                // Row 0: Insulation
+                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand) {
+                    const tds = leakRows[0].querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true; // Value present implies checked
+                }
+                
+                // Row 1: Leak
+                const tdsLeak = leakRows[1].querySelectorAll('td.center input[type="checkbox"]');
+                if (tdsLeak.length >= 2) {
+                    if (unitData.insp3_run_leak_status === 'LEAK' || unitData.insp3_run_leak_location) {
+                        tdsLeak[1].checked = true; // NO GOOD
+                    } else if (unitData.insp3_run_status === 'GOOD' || unitData.insp3_run_leak_status === 'NO LEAK') {
+                        tdsLeak[0].checked = true; // GOOD
+                    }
+                }
+            }
+
+            // Running Inspector (INSP3_RUN specific logic)
+            const runRows = rightTables[1].querySelectorAll('tbody tr');
+            if (runRows.length > 10) {
+                // Row 0: Insulation
+                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand) {
+                    const tds = runRows[0].querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true;
+                }
+                
+                // Rows 1-2: Comp/Fan
+                const setCheck = (rowIdx, val) => {
+                    if (runRows[rowIdx]) {
+                        const tds = runRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
+                        if (tds.length >= 2) {
+                            if (val === 'GOOD') tds[0].checked = true;
+                            else if (val === 'NG') tds[1].checked = true;
+                        }
+                    }
+                };
+                setCheck(1, unitData.insp3_run_comp_operation);
+                setCheck(2, unitData.insp3_run_fan_operation);
+                
+                // Evap Tubes
+                setCheck(3, unitData.insp3_run_evap_cool);
+                setCheck(4, unitData.insp3_run_evap_heat);
+
+                // Cond Tubes
+                setCheck(5, unitData.insp3_run_cond_cool);
+                setCheck(6, unitData.insp3_run_cond_heat);
+
+                // Op Current
+                setCheck(7, unitData.insp3_run_op_cool);
+                setCheck(8, unitData.insp3_run_op_heat);
+
+                // In Power
+                setCheck(9, unitData.insp3_run_in_cool);
+                setCheck(10, unitData.insp3_run_in_heat);
+                
+                // Temp Difference (Row 11)
+                const tdsTemp = runRows[11].querySelectorAll('td.center input[type="checkbox"]');
+                if (tdsTemp.length >= 2) {
+                    if (unitData.insp3_run_status === 'GOOD' && unitData.insp3_run_temp_diff) {
+                        tdsTemp[0].checked = true; // GOOD
+                    } else if (unitData.insp3_run_status === 'NG' && unitData.insp3_run_temp_diff) {
+                        tdsTemp[1].checked = true; // NO GOOD
+                    } else if (unitData.insp3_run_status === 'NG') {
+                        tdsTemp[1].checked = true; // NO GOOD even if blank
+                    }
+                }
+
+                // Leak (Row 12)
+                const tdsRunLeak = runRows[12].querySelectorAll('td.center input[type="checkbox"]');
+                if (tdsRunLeak.length >= 2) {
+                    if (unitData.insp3_run_leak_status === 'LEAK' || unitData.insp3_run_leak_location) {
+                        tdsRunLeak[1].checked = true; // NO GOOD
+                    } else if (unitData.insp3_run_status === 'GOOD' || unitData.insp3_run_leak_status === 'NO LEAK') {
+                        tdsRunLeak[0].checked = true; // GOOD
+                    }
+                }
+            }
+
+            if (unitData.insp3_run_inspector) {
+                rightTables[0].querySelectorAll('.inspector-input').forEach(div => {
+                    div.textContent = unitData.insp3_run_inspector;
+                });
+                rightTables[1].querySelectorAll('.inspector-input').forEach(div => {
+                    div.textContent = unitData.insp3_run_inspector;
+                });
+            }
+        }
+        
+        // Right Column: Final Inspection (INSP4)
+        if (rightTables.length > 2) {
+            if (unitData.insp4_status === 'GOOD') {
+                rightTables[2].querySelectorAll('tbody tr').forEach(tr => {
+                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) tds[0].checked = true;
+                });
+            }
+            if (unitData.insp4_inspector) {
+                rightTables[2].querySelectorAll('.inspector-input').forEach(div => {
+                    div.textContent = unitData.insp4_inspector;
+                });
+            }
+        }
+
+        // Fill in dynamic text values for INSP3 RUN (Leak Location, Temp Difference, Current, Power, Program Check)
+        const elLeak1 = document.getElementById('leak_loc_1');
+        const elLeak2 = document.getElementById('leak_loc_2');
+        if (elLeak1) elLeak1.value = unitData.insp3_run_leak_location || '';
+        if (elLeak2) elLeak2.value = unitData.insp3_run_leak_location || '';
+
+        const elOpCur = document.getElementById('op_current');
+        if (elOpCur) elOpCur.value = unitData.insp3_run_operating_current || '';
+
+        const elInPow = document.getElementById('in_power');
+        if (elInPow) elInPow.value = unitData.insp3_run_input_power || '';
+
+        const elTemp = document.getElementById('temp_read');
+        if (elTemp) elTemp.value = unitData.insp3_run_temp_diff || '';
+
+        // Program Check (H and F fields split by colon if exists)
+        const progInputs = document.querySelectorAll('.prog-part');
+        if (progInputs.length >= 4) {
+            if (unitData.insp3_run_prog_check_h) {
+                const hParts = String(unitData.insp3_run_prog_check_h).split(':');
+                if (hParts.length >= 2) {
+                    progInputs[0].value = hParts[0];
+                    progInputs[1].value = hParts[1];
+                } else {
+                    progInputs[0].value = hParts[0];
+                }
+            }
+            if (unitData.insp3_run_prog_check_f) {
+                const fParts = String(unitData.insp3_run_prog_check_f).split(':');
+                if (fParts.length >= 2) {
+                    progInputs[2].value = fParts[0];
+                    progInputs[3].value = fParts[1];
+                } else {
+                    progInputs[2].value = fParts[0];
+                }
+            }
+        }
+
+        // Set Line
+        if (unitData.lineno) {
+            const lineCheckboxes = document.querySelectorAll('.line-cell input[type="checkbox"]');
+            const targetLine = parseInt(String(unitData.lineno).replace(/\D/g, ''), 10);
+            if (targetLine === 1 && lineCheckboxes.length > 0) lineCheckboxes[0].checked = true;
+            else if (targetLine === 2 && lineCheckboxes.length > 1) lineCheckboxes[1].checked = true;
+            else if (targetLine === 3 && lineCheckboxes.length > 2) lineCheckboxes[2].checked = true;
+        }
+
+        // Set Shift
+        if (unitData.shift) {
+            const shiftCheckboxes = document.querySelectorAll('.shift-cell input[type="checkbox"]');
+            if (unitData.shift.toUpperCase() === 'DAY' && shiftCheckboxes.length > 0) {
+                shiftCheckboxes[0].checked = true;
+            } else if (unitData.shift.toUpperCase() === 'NIGHT' && shiftCheckboxes.length > 1) {
+                shiftCheckboxes[1].checked = true;
+            }
         }
         
         // 5. Trigger print dialog after a small delay

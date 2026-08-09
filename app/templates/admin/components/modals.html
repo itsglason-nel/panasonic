@@ -435,3 +435,83 @@
         </div>
     </div>
 </div>
+<!-- CRS Details Modal -->
+<div id="modal-crs-details" class="modal-overlay">
+    <div class="modal-content" style="max-width: 700px; width: 95%;">
+        <div class="modal-header">
+            <h3 class="modal-title">CRS Record Details</h3>
+            <button class="modal-close" onclick="closeCRSDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Header Info -->
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                <div style="flex: 1; min-width: 120px;">
+                    <span style="display:block; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Date / Time</span>
+                    <strong id="crs-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <span style="display:block; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Model Code</span>
+                    <strong id="crs-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <span style="display:block; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <strong id="crs-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <span style="display:block; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Inspector</span>
+                    <strong id="crs-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+            </div>
+
+            <h4 style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">Component Scans</h4>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                <!-- Compressor -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                    <strong style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--accent-primary);">COMPRESSOR</strong>
+                    <div style="font-size: 13px; margin-bottom: 4px;"><span style="color:var(--text-secondary);">Model:</span> <span id="crs-det-comp-model" style="font-weight:500;"></span></div>
+                    <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span id="crs-det-comp-serial" style="font-weight:500; font-family:var(--font-mono);"></span></div>
+                </div>
+
+                <!-- Fan 1 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                    <strong style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--accent-primary);">FAN MOTOR 1</strong>
+                    <div style="font-size: 13px; margin-bottom: 4px;"><span style="color:var(--text-secondary);">Model:</span> <span id="crs-det-fan1-model" style="font-weight:500;"></span></div>
+                    <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span id="crs-det-fan1-serial" style="font-weight:500; font-family:var(--font-mono);"></span></div>
+                </div>
+
+                <!-- Fan 2 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                    <strong style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--accent-primary);">FAN MOTOR 2</strong>
+                    <div style="font-size: 13px; margin-bottom: 4px;"><span style="color:var(--text-secondary);">Model:</span> <span id="crs-det-fan2-model" style="font-weight:500;"></span></div>
+                    <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span id="crs-det-fan2-serial" style="font-weight:500; font-family:var(--font-mono);"></span></div>
+                </div>
+
+                <!-- Part 1 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                    <strong style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--accent-primary);">PART 1: <span id="crs-det-part1-desc" style="color:var(--text-primary);"></span></strong>
+                    <div style="font-size: 13px; margin-bottom: 4px;"><span style="color:var(--text-secondary);">Model:</span> <span id="crs-det-part1-model" style="font-weight:500;"></span></div>
+                    <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span id="crs-det-part1-serial" style="font-weight:500; font-family:var(--font-mono);"></span></div>
+                </div>
+
+                <!-- Part 2 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                    <strong style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--accent-primary);">PART 2: <span id="crs-det-part2-desc" style="color:var(--text-primary);"></span></strong>
+                    <div style="font-size: 13px; margin-bottom: 4px;"><span style="color:var(--text-secondary);">Model:</span> <span id="crs-det-part2-model" style="font-weight:500;"></span></div>
+                    <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span id="crs-det-part2-serial" style="font-weight:500; font-family:var(--font-mono);"></span></div>
+                </div>
+
+                <!-- Part 3 -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px;">
+                    <strong style="display:block; font-size: 12px; margin-bottom: 8px; color: var(--accent-primary);">PART 3: <span id="crs-det-part3-desc" style="color:var(--text-primary);"></span></strong>
+                    <div style="font-size: 13px; margin-bottom: 4px;"><span style="color:var(--text-secondary);">Model:</span> <span id="crs-det-part3-model" style="font-weight:500;"></span></div>
+                    <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span id="crs-det-part3-serial" style="font-weight:500; font-family:var(--font-mono);"></span></div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="closeCRSDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
