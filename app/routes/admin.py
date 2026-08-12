@@ -222,7 +222,7 @@ def module_schedules():
 @admin_bp.route('/admin/api/models', methods=['GET'])
 @login_required
 def get_models():
-    models = db.session.query(PartRef.modelcode).distinct().order_by(PartRef.modelcode).all()
+    models = db.session.query(ModelRef.modelcode).order_by(ModelRef.modelcode).all()
     return jsonify([{
         'id': mcode,
         'model_number': mcode,
@@ -668,15 +668,22 @@ def get_att_data():
         'per_page': per_page,
         'records': [{
             'id':        r.id,
-            'time':      r.time.strftime('%Y-%m-%d %H:%M:%S'),
-            'modelcode': r.modelcode,
-            'serial':    r.serial,
+            'time':      r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '',
+            'modelcode': r.modelcode or '',
+            'serial':    r.serial or '',
             'status':    r.status,
-            'test_no_clogged': r.test_no_clogged or '',
-            'test_no_leak': r.test_no_leak or '',
-            'test_exp_valve': r.test_exp_valve or '',
-            'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else ''),
+            'status1':   r.status1 or '',
+            'status2':   r.status2 or '',
+            'status3':   r.status3 or '',
             'inspector': r.inspector or '—',
+            'brazzer1':  r.brazzer1 or '',
+            'brazzer2':  r.brazzer2 or '',
+            'brazzer3':  r.brazzer3 or '',
+            'brazzer4':  r.brazzer4 or '',
+            'brazzer5':  r.brazzer5 or '',
+            'brazzer6':  r.brazzer6 or '',
+            'brazzer7':  r.brazzer7 or '',
+            'ng_history': True if ng.get(r.serial) else False,
         } for r in records],
     })
 
@@ -694,7 +701,16 @@ def update_att_data(id):
     data = request.get_json()
     if 'modelcode' in data: record.modelcode = data['modelcode']
     if 'serial' in data: record.serial = data['serial']
-    if 'status' in data: record.status = data['status']
+    if 'status1' in data: record.status1 = data['status1']
+    if 'status2' in data: record.status2 = data['status2']
+    if 'status3' in data: record.status3 = data['status3']
+    if 'brazzer1' in data: record.brazzer1 = data['brazzer1']
+    if 'brazzer2' in data: record.brazzer2 = data['brazzer2']
+    if 'brazzer3' in data: record.brazzer3 = data['brazzer3']
+    if 'brazzer4' in data: record.brazzer4 = data['brazzer4']
+    if 'brazzer5' in data: record.brazzer5 = data['brazzer5']
+    if 'brazzer6' in data: record.brazzer6 = data['brazzer6']
+    if 'brazzer7' in data: record.brazzer7 = data['brazzer7']
     db.session.commit()
     log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'att', id, data)
     return jsonify({'success': True})
@@ -770,9 +786,16 @@ def print_tag(serial):
         
         'att_status': att_record.status if att_record else '',
         'att_inspector': att_record.inspector if att_record else '',
-        'att_no_clogged': att_record.test_no_clogged if att_record else '',
-        'att_no_leak': att_record.test_no_leak if att_record else '',
-        'att_exp_valve': att_record.test_exp_valve if att_record else '',
+        'att_status1': att_record.status1 if att_record else '',
+        'att_status2': att_record.status2 if att_record else '',
+        'att_status3': att_record.status3 if att_record else '',
+        'att_brazzer1': att_record.brazzer1 if att_record else '',
+        'att_brazzer2': att_record.brazzer2 if att_record else '',
+        'att_brazzer3': att_record.brazzer3 if att_record else '',
+        'att_brazzer4': att_record.brazzer4 if att_record else '',
+        'att_brazzer5': att_record.brazzer5 if att_record else '',
+        'att_brazzer6': att_record.brazzer6 if att_record else '',
+        'att_brazzer7': att_record.brazzer7 if att_record else '',
         
         'gms_gascharge': float(gms_record.gascharge) if gms_record else '',
         'gms_status': gms_record.status if gms_record else '',
@@ -1363,3 +1386,90 @@ def edit_delete_user(uid):
         user.set_password(data['password'].strip())
     db.session.commit()
     return jsonify({'success': True})
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  PRINT SPECIFIC QC REPORT
+# ═══════════════════════════════════════════════════════════════════════════
+@admin_bp.route('/admin/print-specific-qc', methods=['GET'])
+@login_required
+def print_specific_qc():
+    model = request.args.get('model', '').strip()
+    serial = request.args.get('serial', '').strip()
+    
+    if not model or not serial:
+        return "Model and Serial are required.", 400
+        
+    # Get base CRS record
+    crs_record = CRS.query.filter_by(modelcode=model, serial=serial).first()
+    if not crs_record:
+        return f"No records found for Model {model} and Serial {serial}.", 404
+        
+    # Get Gas Charge
+    gms_record = GMS.query.filter_by(modelcode=model, serial=serial).first()
+    gas_charge = gms_record.gascharge if gms_record else None
+    
+    # Get PartRef BOM
+    bom = PartRef.query.filter_by(modelcode=model).all()
+    
+    parts_list = []
+    
+    # Helper to parse 8-digit date
+    def parse_mfg_date(serial_str):
+        if not serial_str:
+            return ""
+        # The first 8 chars might be YYYYMMDD
+        potential_date = serial_str.split('|')[0].strip()
+        if len(potential_date) >= 8 and potential_date[:8].isdigit():
+            dt_str = potential_date[:8]
+            try:
+                # format to MM/DD/YYYY
+                dt = datetime.strptime(dt_str, "%Y%m%d")
+                return dt.strftime("%m/%d/%Y")
+            except:
+                pass
+        return ""
+        
+    # We map CRS parts for easy matching
+    crs_parts_map = {
+        crs_record.compmod: crs_record.compserial,
+        crs_record.fan1mod: crs_record.fan1serial,
+        crs_record.fan2mod: crs_record.fan2serial,
+        crs_record.part1mod: crs_record.part1serial,
+        crs_record.part2mod: crs_record.part2serial,
+        crs_record.part3mod: crs_record.part3serial,
+        crs_record.part4mod: crs_record.part4serial
+    }
+    
+    # For Arrival date from other modules
+    spams_record = SPAMS.query.filter_by(modelcode=model, serial=serial).first()
+    cb_record = CBPCB.query.filter_by(modelcode=model, serial=serial).first()
+    
+    for part in bom:
+        p_serial = crs_parts_map.get(part.partno)
+        mfg_date = parse_mfg_date(p_serial)
+        
+        arv_date = ""
+        if part.module.upper() == 'CRS':
+            arv_date = crs_record.time.strftime("%m/%d/%Y") if crs_record.time else ""
+        elif part.module.upper() == 'SPAMS':
+            arv_date = spams_record.time.strftime("%m/%d/%Y") if spams_record and spams_record.time else ""
+        elif part.module.upper() == 'CB':
+            arv_date = cb_record.time.strftime("%m/%d/%Y") if cb_record and cb_record.time else ""
+            
+        parts_list.append({
+            'partno': part.partno,
+            'partdesc': part.partdesc,
+            'module': part.module,
+            'mfg_date': mfg_date,
+            'arv_date': arv_date
+        })
+        
+    return render_template(
+        'admin/qc_report_print.html',
+        model=model,
+        serial=serial,
+        crs_record=crs_record,
+        gas_charge=gas_charge,
+        parts_list=parts_list,
+        current_time=datetime.now()
+    )

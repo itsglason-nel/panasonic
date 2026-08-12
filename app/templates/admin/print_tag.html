@@ -1630,9 +1630,9 @@
                         else if (val === 'NG') tds[1].checked = true;
                     }
                 };
-                setAttCheck(0, unitData.att_no_clogged);
-                setAttCheck(1, unitData.att_no_leak);
-                setAttCheck(2, unitData.att_exp_valve);
+                setAttCheck(0, unitData.att_status1);
+                setAttCheck(1, unitData.att_status2);
+                setAttCheck(2, unitData.att_status3);
                 // Other rows assume GOOD if overall is GOOD
                 if (unitData.att_status === 'GOOD') {
                     setAttCheck(3, 'GOOD');

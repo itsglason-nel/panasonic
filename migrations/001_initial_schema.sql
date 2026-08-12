@@ -270,23 +270,32 @@ CREATE TABLE IF NOT EXISTS `crs` (
 -- ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `att` (
     `id`        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `modelcode` VARCHAR(14) NOT NULL,
-    `serial`    VARCHAR(14) NOT NULL,
-    `status`    VARCHAR(12) NOT NULL,
-    `time`      TIMESTAMP NOT NULL,
+    `modelcode` VARCHAR(14) NULL,
+    `serial`    VARCHAR(14) NULL,
+    `status1`    VARCHAR(12) NULL,
+    `status2`    VARCHAR(12) NULL,
+    `status3`    VARCHAR(12) NULL,
+    `time`      TIMESTAMP NULL,
     `inspector`   VARCHAR(20) NULL,
-    `lineno`	  VARCHAR(4) NOT NULL, -- newly added
+    `lineno`	  VARCHAR(4) NOT NULL,
+    `brazzer1`    VARCHAR(20) NULL,
+    `brazzer2`    VARCHAR(20) NULL,
+    `brazzer3`    VARCHAR(20) NULL,
+    `brazzer4`    VARCHAR(20) NULL,
+    `brazzer5`    VARCHAR(20) NULL,
+    `brazzer6`    VARCHAR(20) NULL,
+    `brazzer7`    VARCHAR(20) NULL,
     INDEX idx_att_serial (serial)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `att` 
-    (`modelcode`, `serial`, `status`, `time`) 
+    (`modelcode`, `serial`, `status1`, `time`, `lineno`) 
 VALUES 
-    ('CW-U921JPH', 'JPH-0001', 'GOOD',  '2026-07-03 07:15:00'),
-    ('CW-U921JPH', 'JPH-0002', 'GOOD',  '2026-07-03 07:20:00'),
-    ('CU-HZ12BWA', 'BWA-0001', 'NO GOOD',  '2026-07-03 08:05:00'),
-    ('CU-HZ12BWA', 'BWA-0002', 'GOOD',  '2026-07-03 08:10:00'),
-    ('CU-HZ12BWA', 'BWA-0003', 'NO GOOD', '2026-07-03 08:15:00');
+    ('CW-U921JPH', 'JPH-0001', 'GOOD',  '2026-07-03 07:15:00', 'L1'),
+    ('CW-U921JPH', 'JPH-0002', 'GOOD',  '2026-07-03 07:20:00', 'L1'),
+    ('CU-HZ12BWA', 'BWA-0001', 'NO GOOD',  '2026-07-03 08:05:00', 'L2'),
+    ('CU-HZ12BWA', 'BWA-0002', 'GOOD',  '2026-07-03 08:10:00', 'L2'),
+    ('CU-HZ12BWA', 'BWA-0003', 'NO GOOD', '2026-07-03 08:15:00', 'L2');
     
 -- ────────────────────────────────────────────
 -- 5. Gas management system

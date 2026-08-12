@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parts Confirmation Report - Complete</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        .header-title {
+            font-weight: bold;
+            font-size: 13pt;
+        }
+        .sub-header {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 25px;
+        }
+        .meta-info {
+            display: flex;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+        .meta-info div {
+            margin-right: 40px;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            gap: 12px 20px;
+            margin-bottom: 40px;
+            font-weight: bold;
+            align-items: center;
+        }
+        .part-row {
+            display: grid;
+            grid-template-columns: 140px 220px 80px 160px 160px;
+            margin-bottom: 8px;
+            font-size: 10pt;
+        }
+        .part-row div {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: right;
+            font-style: italic;
+            font-size: 9pt;
+        }
+        @media print {
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="header-title">Panasonic Manufacturing Philippines Corporation</div>
+    <div class="header-title" style="margin-bottom: 5px;">Aircon Division</div>
+    <div class="sub-header">Parts Confirmation Report - Complete</div>
+
+    <div class="meta-info" style="margin-bottom: 8px;">
+        <div>Line No: <span style="font-weight:normal;">{{ crs_record.lineno }}</span></div>
+    </div>
+    
+    <div class="meta-info" style="margin-bottom: 30px;">
+        <div>Production Date: <span style="font-weight:normal;">{{ current_time.strftime('%m/%d/%Y') }}</span></div>
+        <div>From: <span style="font-weight:normal;">{{ current_time.strftime('%H:%M:%S') }}</span></div>
+        <div>To: <span style="font-weight:normal;">{{ current_time.strftime('%H:%M:%S') }}</span></div>
+    </div>
+
+    <div class="details-grid">
+        <div style="grid-column: span 4; margin-bottom: 5px;">Model No: <span style="font-weight:normal;">{{ model }}</span></div>
+
+        <div style="grid-column: span 2;">Serial No: <span style="font-weight:normal;">{{ serial }}</span></div>
+        <div style="grid-column: span 2;">Date Scanned: <span style="font-weight:normal;">{{ crs_record.time.strftime('%m/%d/%Y %H:%M:%S') if crs_record.time else '' }}</span></div>
+
+        <div style="text-align: right; margin-left: 20px;">Compressor Part No:</div>
+        <div style="font-weight:normal;">{{ crs_record.compmod }}</div>
+        <div style="text-align: right;">Compressor Serial No:</div>
+        <div style="font-weight:normal;">{{ crs_record.compserial.split('~')[-1] if crs_record.compserial and '~' in crs_record.compserial else (crs_record.compserial or '') }}</div>
+
+        <div style="text-align: right; margin-left: 20px;">Fan Motor Part No:</div>
+        <div style="font-weight:normal;">{{ crs_record.fan1mod or '' }}</div>
+        <div style="text-align: right;">Fan Motor Serial No:</div>
+        <div style="font-weight:normal;">{{ crs_record.fan1serial.split('|')[-1].strip() if crs_record.fan1serial and '|' in crs_record.fan1serial else (crs_record.fan1serial or '') }}</div>
+
+        <div style="text-align: right; margin-left: 20px;">Gas Charge:</div>
+        <div style="font-weight:normal; grid-column: span 3;">{{ gas_charge if gas_charge is not none else '' }}</div>
+    </div>
+
+    <div style="margin-top: 40px; padding-left: 10px;">
+        {% for part in parts_list %}
+        <div class="part-row">
+            <div>{{ part.partno }}</div>
+            <div>{{ part.partdesc }}</div>
+            <div>{{ part.module }}</div>
+            <div><span style="font-weight:bold;">Mfg Date: </span>{{ part.mfg_date }}</div>
+            <div><span style="font-weight:bold;">Arv Date: </span>{{ part.arv_date }}</div>
+        </div>
+        <!-- Add a gap every 4 parts for readability, like the PDF -->
+        {% if loop.index % 4 == 0 and not loop.last %}
+        <div style="height: 15px;"></div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="footer">
+        * - Replaced part
+    </div>
+</body>
+</html>

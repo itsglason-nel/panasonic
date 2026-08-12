@@ -1578,7 +1578,7 @@
         const totalEl= document.getElementById('att-total');
         if (tableSelection.att) selectRow('att', document.createElement('tr'), null);
 
-        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(10).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
+        tbody.innerHTML = [1,2,3].map(() => `<tr>${Array(9).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');
 
         const sortState = tableSorts.att || { by: 'time', dir: 'desc' };
         let url = `/admin/api/att-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}`;
@@ -1591,7 +1591,7 @@
                 totalEl.textContent = data.total.toLocaleString();
                 tbody.innerHTML = '';
                 if (!data.records || data.records.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="10" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No Records Found</h4><p class="empty-state-desc">Try adjusting your search filters.</p></div></td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No Records Found</h4><p class="empty-state-desc">Try adjusting your search filters.</p></div></td></tr>`;
                     document.getElementById('att-pagination').innerHTML = '';
                     return;
                 }
@@ -1604,18 +1604,23 @@
                         if (e.target.closest('button')) return;
                         selectRow('att', tr, r);
                     };
-                    const st = r.status.toUpperCase();
-                    const badgeCls = st === 'PASS' ? 'status-pass' : (st === 'FAIL' ? 'status-fail' : 'status-ok');
+                    const fmtBadge = (val) => {
+                        if (!val) return '<span class="status-badge" style="opacity:0.4">—</span>';
+                        const v = val.toUpperCase();
+                        const cls = (v === 'GOOD') ? 'status-ok' : ((v === 'NO GOOD' || v === 'NG' || v === 'FAIL') ? 'status-fail' : '');
+                        return `<span class="status-badge ${cls}">${val}</span>`;
+                    };
+                    const overallSt = r.status ? r.status.toUpperCase() : '';
+                    const overallCls = overallSt === 'GOOD' ? 'status-ok' : (overallSt === 'NO GOOD' ? 'status-fail' : '');
                     tr.innerHTML = `
                         <td>${r.time}</td>
                         <td>${r.modelcode}</td>
                         <td>${r.serial}</td>
-                        <td>${r.test_no_clogged}</td>
-                        <td>${r.test_no_leak}</td>
-                        <td>${r.test_exp_valve}</td>
-                        <td><span class="status-badge ${badgeCls}">${r.status}</span></td>
+                        <td>${fmtBadge(r.status1)}</td>
+                        <td>${fmtBadge(r.status2)}</td>
+                        <td>${fmtBadge(r.status3)}</td>
+                        <td><span class="status-badge ${overallCls}">${r.status || ''}</span></td>
                         <td>${r.inspector}</td>
-                        <td title="${r.remarks}" style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.remarks}</td>
                         <td>
                             <button class="btn btn-sm btn-primary" style="padding:4px 8px; font-size:11px;" onclick="viewCRSDetails(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(r))}')))">Details</button>
                         </td>
@@ -1631,7 +1636,7 @@
         document.getElementById('att-date-filter').value = '';
         document.getElementById('att-serial-filter').value = '';
         document.getElementById('att-total').textContent = '—';
-        document.getElementById('att-tbody').innerHTML = `<tr><td colspan="10" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial, then click Refresh to load ATT records.</p></div></td></tr>`;
+        document.getElementById('att-tbody').innerHTML = `<tr><td colspan="9" class="empty-state"><div class="empty-state-wrapper"><h4 class="empty-state-title">No data loaded</h4><p class="empty-state-desc">Select a date or enter a serial, then click Refresh to load ATT records.</p></div></td></tr>`;
         document.getElementById('att-pagination').innerHTML = '';
     };
 
@@ -2866,6 +2871,85 @@ function deleteTag() {
 
     window.closeCRSDetailsModal = function () {
         document.getElementById('modal-crs-details').classList.remove('active');
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  PRINT SPECIFIC QC REPORT
+    // ═══════════════════════════════════════════════════════════════════════════
+    window.openQCReportModal = function() {
+        document.getElementById('qc-specific-serial').value = '';
+        document.getElementById('qc-specific-error').style.display = 'none';
+        
+        const select = document.getElementById('qc-specific-model');
+        if (select.tomselect) {
+            select.tomselect.clearOptions();
+            select.tomselect.addOption({value: "", text: "Loading models..."});
+            select.tomselect.refreshOptions(false);
+        } else {
+            select.innerHTML = '<option value="">Loading models...</option>';
+        }
+        
+        document.getElementById('modal-specific-qc').classList.add('active');
+        
+        // Fetch models to populate dropdown
+        fetch('/admin/api/models')
+            .then(r => r.json())
+            .then(models => {
+                if (select.tomselect) {
+                    select.tomselect.clearOptions();
+                    select.tomselect.addOption({value: "", text: "-- Select Model --"});
+                    models.forEach(m => {
+                        const val = m.model_number || m;
+                        select.tomselect.addOption({value: val, text: val});
+                    });
+                    select.tomselect.refreshOptions(false);
+                } else {
+                    select.innerHTML = '<option value="">-- Select Model --</option>';
+                    models.forEach(m => {
+                        const option = document.createElement('option');
+                        const val = m.model_number || m;
+                        option.value = val;
+                        option.textContent = val;
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("Failed to fetch models:", err);
+                if (select.tomselect) {
+                    select.tomselect.clearOptions();
+                    select.tomselect.addOption({value: "", text: "Error loading models"});
+                    select.tomselect.refreshOptions(false);
+                } else {
+                    select.innerHTML = '<option value="">Error loading models</option>';
+                }
+            });
+    };
+
+    window.closeQCReportModal = function() {
+        document.getElementById('modal-specific-qc').classList.remove('active');
+    };
+
+    window.submitSpecificQCReport = function() {
+        const model = document.getElementById('qc-specific-model').value;
+        const serial = document.getElementById('qc-specific-serial').value.trim();
+        const errDiv = document.getElementById('qc-specific-error');
+        
+        if (!model) {
+            errDiv.textContent = 'Please select a model.';
+            errDiv.style.display = 'block';
+            return;
+        }
+        if (!serial) {
+            errDiv.textContent = 'Please enter a serial number.';
+            errDiv.style.display = 'block';
+            return;
+        }
+        
+        // Open print view in new tab
+        const url = `/admin/print-specific-qc?model=${encodeURIComponent(model)}&serial=${encodeURIComponent(serial)}`;
+        window.open(url, '_blank');
+        closeQCReportModal();
     };
 
 </script>

@@ -207,22 +207,27 @@ def submit_station(station_code):
 
     # ── INSP1 / ATT ────────────────────────────────────────────────────────
     elif station_lower in ('insp1', 'att'):
-        required = ['modelcode', 'serial', 'status']
+        required = ['modelcode', 'serial', 'status1']
         missing = [f for f in required if not data.get(f)]
         if missing:
             return jsonify({'success': False, 'error': f'Missing fields: {", ".join(missing)}'}), 400
 
-        status = data.get('status', '').upper()
-        if status not in ('GOOD', 'NO GOOD'):
-            return jsonify({'success': False, 'error': 'Status must be "GOOD" or "NO GOOD".'}), 400
-
         record = ATT(
             modelcode = data.get('modelcode', ''),
             serial    = data.get('serial', ''),
-            status    = status,
+            status1   = (data.get('status1') or '').upper(),
+            status2   = (data.get('status2') or '').upper(),
+            status3   = (data.get('status3') or '').upper(),
             time      = now,
             inspector = getattr(current_user, 'username', 'system'),
-            lineno    = data.get('lineno', 'L1')
+            lineno    = data.get('lineno', 'L1'),
+            brazzer1  = data.get('brazzer1'),
+            brazzer2  = data.get('brazzer2'),
+            brazzer3  = data.get('brazzer3'),
+            brazzer4  = data.get('brazzer4'),
+            brazzer5  = data.get('brazzer5'),
+            brazzer6  = data.get('brazzer6'),
+            brazzer7  = data.get('brazzer7'),
         )
         db.session.add(record)
         db.session.commit()

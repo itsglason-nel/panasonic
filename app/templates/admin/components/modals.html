@@ -515,3 +515,32 @@
         </div>
     </div>
 </div>
+
+<!-- Print Specific QC Modal -->
+<div id="modal-specific-qc" class="modal-overlay">
+    <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Print Specific QC Report</h3>
+            <button class="modal-close" onclick="closeQCReportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Model:</label>
+                <select id="qc-specific-model" class="select-searchable">
+                    <option value="">-- Select Model --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Serial:</label>
+                <input type="text" id="qc-specific-serial" placeholder="Enter Serial Number" style="text-transform: uppercase;">
+            </div>
+            
+            <div id="qc-specific-error" style="color: #dc2626; font-size: 0.875rem; display: none; margin-bottom: 12px; text-align: center; background: #fee2e2; padding: 8px; border-radius: 6px;"></div>
+
+            <div class="modal-actions" style="justify-content: center; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="submitSpecificQCReport()" style="min-width: 100px;">Print</button>
+                <button class="btn btn-secondary" onclick="closeQCReportModal()" style="min-width: 100px;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
