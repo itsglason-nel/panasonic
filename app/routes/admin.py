@@ -1,29 +1,34 @@
 """Admin routes — Administrator module page and CRUD APIs."""
 import logging
-from flask import Blueprint, render_template, jsonify, request, redirect, url_for
+from flask import Blueprint, session, render_template, jsonify, request, redirect, url_for
 from datetime import datetime
 from functools import wraps
 from flask_login import login_required, current_user, logout_user
 from sqlalchemy import func
 from app.models import db
 from app.models.worksched import WorkSched
-from app.models.modelref import ModelRef
+from app.models.linestat import LineStat
+
 from app.models.partref import PartRef
 from app.models.crs import CRS
 from app.models.gms import GMS
 from app.models.att import ATT
-from app.models.spams import SPAMS
-from app.models.cb_pcb import CBPCB
+from app.models.spamsi import SPAMSI
+from app.models.packaging import Packaging
+from app.models.spamso import SPAMSO
 from app.models.insp2 import INSP2
 from app.models.insp3_run import INSP3Run
-from app.models.insp3_vib import INSP3Vib
 from app.models.insp4 import INSP4
-from app.models.repair import Repair
-from app.models.audit import AuditLog, log_audit
+
 from app.models.line import Line
 from app.models.module import Module
+from app.models.shift import Shift
 from app.models.tag import Tag
+from app.models.area import Area
+from app.models.spamsi_unique_ref import SPAMSIUniqueRef
+from app.models.spamso_outmodel_ref import SpamsoOutmodelRef
 from app.models.user import User
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +60,11 @@ def admin_page():
 @admin_bp.route('/admin/api/lines', methods=['GET'])
 @login_required
 def get_lines():
-    lines = db.session.query(WorkSched.lineno).distinct().all()
+    from app.models.line import Line
+    lines = Line.query.filter_by(is_active=True).all()
     result = []
-    for i, (lineno,) in enumerate(lines, start=1):
-        result.append({'id': i, 'line_code': lineno, 'name': f'Line {lineno}'})
+    for l in lines:
+        result.append({'id': l.id, 'line_code': l.lineno, 'name': l.name})
     return jsonify(result)
 
 @admin_bp.route('/admin/api/schedules', methods=['GET'])
@@ -68,28 +74,152 @@ def get_schedules():
     line_id = request.args.get('line_id', 'all')
 
     query = WorkSched.query
+    parsed_date = None
     if date_str:
         try:
             parsed_date = datetime.strptime(date_str, '%m/%d/%Y').date()
-            query = query.filter_by(date=parsed_date)
         except ValueError:
             pass
 
+    lineno_str = None
     if line_id != 'all':
-        lineno = line_id if line_id.startswith('L') else f"L{line_id}"
-        query = query.filter_by(lineno=lineno)
+        lineno_str = line_id if line_id.startswith('L') else f"L{line_id}"
+        query = query.filter_by(lineno=lineno_str)
 
-    schedules = query.order_by(WorkSched.lineno, WorkSched.seq).all()
+    wip_status = None
+    ghost_date = None
+    if parsed_date:
+        if lineno_str:
+            # Single Line View: Find the most recent date that HAS unfinished work
+            ghost_date_query = db.session.query(db.func.max(WorkSched.date)).filter(
+                WorkSched.date < parsed_date,
+                WorkSched.lineno == lineno_str,
+                WorkSched.act < WorkSched.plan
+            )
+            ghost_date = ghost_date_query.scalar()
+            
+            if ghost_date:
+                active_models = []
+                from app.models.linestat import LineStat
+                linestat = LineStat.query.filter_by(lineno=lineno_str).first()
+                
+                def get_sched_stats(modelcode):
+                    s = WorkSched.query.filter_by(date=ghost_date, lineno=lineno_str, modelcode=modelcode).first()
+                    if s: return s.plan, s.act
+                    return 0, 0
+                
+                # Only map to physical line if the physical line is actively stuck on this exact ghost_date
+                if linestat and linestat.active_date == ghost_date:
+                    if linestat.crsvar and linestat.crsvar > 0:
+                        p, a = get_sched_stats(linestat.crsmodelcode)
+                        active_models.append({'station': 'CRS', 'model': linestat.crsmodelcode, 'var': linestat.crsvar, 'plan': p, 'act': a})
+                    if linestat.attvar and linestat.attvar > 0:
+                        p, a = get_sched_stats(linestat.attmodelcode)
+                        active_models.append({'station': 'ATT', 'model': linestat.attmodelcode, 'var': linestat.attvar, 'plan': p, 'act': a})
+                    if linestat.gmsvar and linestat.gmsvar > 0:
+                        p, a = get_sched_stats(linestat.gmsmodelcode)
+                        active_models.append({'station': 'GMS', 'model': linestat.gmsmodelcode, 'var': linestat.gmsvar, 'plan': p, 'act': a})
+                    if linestat.invar and linestat.invar > 0:
+                        p, a = get_sched_stats(linestat.inmodelcode)
+                        active_models.append({'station': 'SPAMSI', 'model': linestat.inmodelcode, 'var': linestat.invar, 'plan': p, 'act': a})
+                    if linestat.outvar and linestat.outvar > 0:
+                        p, a = get_sched_stats(linestat.outmodelcode)
+                        active_models.append({'station': 'SPAMSO', 'model': linestat.outmodelcode, 'var': linestat.outvar, 'plan': p, 'act': a})
+
+                active_model_codes = [m['model'] for m in active_models]
+                unstarted = []
+                past_scheds = WorkSched.query.filter_by(date=ghost_date, lineno=lineno_str).all()
+                for ps in past_scheds:
+                    if ps.act < ps.plan and ps.modelcode not in active_model_codes:
+                        unstarted.append({'id': ps.id, 'model': ps.modelcode, 'plan': ps.plan})
+
+                wip_status = {
+                    'active_date': ghost_date.strftime('%m/%d/%Y'),
+                    'active_models': active_models,
+                    'unstarted': unstarted
+                }
+        else:
+            # All Lines View: Find max(date) with unfinished work per line
+            subq = db.session.query(
+                WorkSched.lineno, 
+                db.func.max(WorkSched.date).label('max_date')
+            ).filter(
+                WorkSched.date < parsed_date,
+                WorkSched.act < WorkSched.plan
+            ).group_by(WorkSched.lineno).all()
+            
+            lines_list = [{'line': r[0], 'date': r[1].strftime('%m/%d/%Y')} for r in subq if r[0]]
+            if lines_list:
+                wip_status = {
+                    'active_date': 'multiple',
+                    'lines_with_wip': lines_list
+                }
+
+    from sqlalchemy import or_
+    if ghost_date and lineno_str:
+        query = query.filter(
+            or_(
+                WorkSched.date == parsed_date,
+                (WorkSched.date == ghost_date) & (WorkSched.act < WorkSched.plan)
+            )
+        )
+    elif parsed_date and not lineno_str and wip_status and 'lines_with_wip' in wip_status:
+        # In all view, pull today's schedules PLUS any unfinished schedules from each line's max_date
+        subq = db.session.query(
+            WorkSched.lineno, 
+            db.func.max(WorkSched.date).label('max_date')
+        ).filter(
+            WorkSched.date < parsed_date,
+            WorkSched.act < WorkSched.plan
+        ).group_by(WorkSched.lineno).subquery()
+        
+        query = query.outerjoin(
+            subq,
+            WorkSched.lineno == subq.c.lineno
+        ).filter(
+            or_(
+                WorkSched.date == parsed_date,
+                (WorkSched.date == subq.c.max_date) & (WorkSched.act < WorkSched.plan)
+            )
+        )
+    else:
+        query = query.filter(WorkSched.date == parsed_date)
+
+    schedules = query.order_by(WorkSched.date.asc(), WorkSched.lineno, WorkSched.seq).all()
 
     # Build set of valid modelcodes for has_bom flag
     valid_models = set(
         mc for (mc,) in db.session.query(PartRef.modelcode).distinct().all()
     )
 
+    from app.models.linestat import LineStat
+    linestat_dict = {ls.lineno: ls for ls in LineStat.query.all()}
+
     schedules_data = []
     total_qty = 0
     for s in schedules:
-        total_qty += s.plan
+        is_ghost = False
+        if parsed_date and s.date < parsed_date and s.act < s.plan:
+            is_ghost = True
+            
+        if not is_ghost:
+            total_qty += s.plan
+            
+        is_locked = False
+        is_queued_at_crs = False
+        ls = linestat_dict.get(s.lineno)
+        if ls:
+            is_on_belt = (ls.crsmodelcode == s.modelcode or ls.attmodelcode == s.modelcode or ls.gmsmodelcode == s.modelcode or ls.inmodelcode == s.modelcode or ls.outmodelcode == s.modelcode)
+            if s.act > 0:
+                is_locked = True
+            elif is_on_belt:
+                if ls.attmodelcode == s.modelcode or ls.gmsmodelcode == s.modelcode or ls.inmodelcode == s.modelcode or ls.outmodelcode == s.modelcode:
+                    is_locked = True
+                elif ls.crsmodelcode == s.modelcode and ls.crsvar < s.plan:
+                    is_locked = True
+            
+            is_queued_at_crs = is_on_belt and not is_locked
+
         schedules_data.append({
             'id': s.id,
             'line_code': s.lineno,
@@ -106,13 +236,206 @@ def get_schedules():
             'has_discrepancy': (s.act - s.plan > 0),
             'total_work_time_seconds': s.plan * s.takttime,
             'has_bom': s.modelcode in valid_models,
+            'is_ghost': is_ghost,
+            'is_locked': is_locked,
+            'is_queued_at_crs': is_queued_at_crs,
         })
 
     return jsonify({
         'date': date_str,
         'total_qty': total_qty,
         'schedules': schedules_data,
+        'wip_status': wip_status,
     })
+
+@admin_bp.route('/admin/api/wip-resolve', methods=['POST'])
+@login_required
+@admin_required
+def wip_resolve():
+    from app.models.worksched import WorkSched
+    from app.models.linestat import LineStat
+    
+    data = request.get_json()
+    line_code = data.get('line_id')
+    action = data.get('action') # 'clear' or 'continue'
+    crs_new_plan = data.get('crs_new_plan')
+    unstarted_plans = data.get('unstarted_plans', {})
+    
+    if not line_code:
+        return jsonify({'success': False, 'error': 'Missing line code'})
+        
+    lineno = line_code if str(line_code).startswith('L') else f"L{line_code}"
+    from datetime import datetime
+    today_date = datetime.now().date()
+    
+    # Find the most recent date before today that has schedules
+    ghost_date = db.session.query(db.func.max(WorkSched.date)).filter(
+        WorkSched.date < today_date,
+        WorkSched.lineno == lineno
+    ).scalar()
+    
+    if not ghost_date:
+        return jsonify({'success': False, 'error': 'No past schedules found to resolve.'})
+        
+    unfinished_scheds = WorkSched.query.filter(
+        WorkSched.lineno == lineno,
+        WorkSched.date == ghost_date,
+        WorkSched.act < WorkSched.plan
+    ).all()
+    
+    if not unfinished_scheds:
+        return jsonify({'success': False, 'error': 'No unfinished schedules found on the most recent date.'})
+        
+    if action == 'clear':
+        # Discard & Clear all
+        for sched in unfinished_scheds:
+            sched.plan = sched.act
+            
+        linestat = LineStat.query.filter_by(lineno=lineno).first()
+        if linestat:
+            from datetime import datetime
+            linestat.status = 'No Work'
+            linestat.active_date = None
+            linestat.crsmodelcode = None
+            linestat.crsvar = 0
+            linestat.attmodelcode = None
+            linestat.attvar = 0
+            linestat.gmsmodelcode = None
+            linestat.gmsvar = 0
+            linestat.inmodelcode = None
+            linestat.invar = 0
+            linestat.inuniqe = None
+            linestat.inpart1mod = None
+            linestat.inpart1desc = None
+            linestat.inpart2mod = None
+            linestat.inpart2desc = None
+            linestat.inpart3mod = None
+            linestat.inpart3desc = None
+            linestat.inpart4mod = None
+            linestat.inpart4desc = None
+            linestat.inpart5mod = None
+            linestat.inpart5desc = None
+            linestat.inpart6mod = None
+            linestat.inpart6desc = None
+            linestat.outmodelcode = None
+            linestat.outvar = 0
+            linestat.outpart1mod = None
+            linestat.outpart1desc = None
+            linestat.outpart2mod = None
+            linestat.outpart2desc = None
+            linestat.outpart3mod = None
+            linestat.outpart3desc = None
+            linestat.compmod = None
+            linestat.fan1mod = None
+            linestat.fan2mod = None
+            linestat.crspart1mod = None
+            linestat.crspart1desc = None
+            linestat.crspart2mod = None
+            linestat.crspart2desc = None
+            linestat.crspart3mod = None
+            linestat.crspart3desc = None
+            linestat.crspart4mod = None
+            linestat.crspart4desc = None
+            linestat.area = None
+            linestat.serialstart = None
+            linestat.gascharge = 0
+            linestat.updtime = datetime.now()
+            
+        db.session.commit()
+        return jsonify({'success': True})
+        
+    elif action == 'continue':
+        linestat = LineStat.query.filter_by(lineno=lineno).first()
+        active_model_codes = set()
+        
+        if linestat and linestat.active_date == ghost_date:
+            if linestat.crsvar and linestat.crsvar > 0:
+                active_model_codes.add(linestat.crsmodelcode)
+            if linestat.attvar and linestat.attvar > 0:
+                active_model_codes.add(linestat.attmodelcode)
+            if linestat.gmsvar and linestat.gmsvar > 0:
+                active_model_codes.add(linestat.gmsmodelcode)
+            if linestat.invar and linestat.invar > 0:
+                active_model_codes.add(linestat.inmodelcode)
+            if linestat.outvar and linestat.outvar > 0:
+                active_model_codes.add(linestat.outmodelcode)
+                
+        # Get next sequence number for today
+        last_sched = WorkSched.query.filter_by(lineno=lineno, date=today_date).order_by(WorkSched.seq.desc()).first()
+        next_seq = 0 if not last_sched else last_sched.seq + 1
+        
+        for sched in unfinished_scheds:
+            if sched.modelcode not in active_model_codes:
+                # Unstarted schedule
+                if str(sched.id) in unstarted_plans:
+                    # User checked it -> create new schedule for today
+                    
+                    new_plan_val = sched.plan
+                    try:
+                        if unstarted_plans[str(sched.id)]:
+                            new_plan_val = int(unstarted_plans[str(sched.id)])
+                    except ValueError:
+                        pass
+                        
+                    new_sched = WorkSched(
+                        lineno=lineno,
+                        seq=next_seq,
+                        modelcode=sched.modelcode,
+                        plan=new_plan_val,
+                        act=0,
+                        takttime=sched.takttime,
+                        date=today_date
+                    )
+                    db.session.add(new_sched)
+                    next_seq += 1
+                
+                # Close out yesterday's schedule
+                sched.plan = sched.act
+                
+            else:
+                # Active model on the conveyor
+                max_var = 0
+                if linestat.crsmodelcode == sched.modelcode and linestat.crsvar:
+                    max_var = max(max_var, linestat.crsvar)
+                if linestat.attmodelcode == sched.modelcode and linestat.attvar:
+                    max_var = max(max_var, linestat.attvar)
+                if linestat.gmsmodelcode == sched.modelcode and linestat.gmsvar:
+                    max_var = max(max_var, linestat.gmsvar)
+                if linestat.inmodelcode == sched.modelcode and linestat.invar:
+                    max_var = max(max_var, linestat.invar)
+                if linestat.outmodelcode == sched.modelcode and linestat.outvar:
+                    max_var = max(max_var, linestat.outvar)
+                    
+                final_plan = max_var
+                
+                # If they updated the plan for the CRS model, check if it's higher
+                if linestat.crsmodelcode == sched.modelcode and crs_new_plan:
+                    try:
+                        crs_plan_val = int(crs_new_plan)
+                        if crs_plan_val > final_plan:
+                            final_plan = crs_plan_val
+                    except ValueError:
+                        pass
+                
+                if final_plan > 0:
+                    new_sched = WorkSched(
+                        lineno=lineno,
+                        seq=next_seq,
+                        modelcode=sched.modelcode,
+                        plan=final_plan,
+                        act=0, 
+                        takttime=sched.takttime,
+                        date=today_date
+                    )
+                    db.session.add(new_sched)
+                    next_seq += 1
+                    
+                sched.plan = sched.act
+                
+        db.session.commit()
+        return jsonify({'success': True})
+        
+    return jsonify({'success': False, 'error': 'Invalid action'})
 
 @admin_bp.route('/admin/api/next-sequence', methods=['GET'])
 @login_required
@@ -178,7 +501,6 @@ def add_schedule():
     )
     db.session.add(new_sched)
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'CREATE', 'worksched', new_sched.id, {'modelcode': modelcode, 'plan': new_sched.plan})
     return jsonify({'success': True, 'id': new_sched.id})
 
 @admin_bp.route('/admin/api/schedule/<int:sid>', methods=['PUT', 'DELETE'])
@@ -186,7 +508,34 @@ def add_schedule():
 @admin_required
 def edit_delete_schedule(sid):
     sched = db.get_or_404(WorkSched, sid)
+    
+    linestat = LineStat.query.filter_by(lineno=sched.lineno).first()
+    is_on_belt = False
+    if linestat:
+        if linestat.crsmodelcode == sched.modelcode or linestat.attmodelcode == sched.modelcode or linestat.gmsmodelcode == sched.modelcode or linestat.inmodelcode == sched.modelcode or linestat.outmodelcode == sched.modelcode:
+            is_on_belt = True
+
+    is_locked = False
+    if sched.act > 0:
+        is_locked = True
+    elif is_on_belt:
+        if linestat.attmodelcode == sched.modelcode or linestat.gmsmodelcode == sched.modelcode or linestat.inmodelcode == sched.modelcode or linestat.outmodelcode == sched.modelcode:
+            is_locked = True
+        elif linestat.crsmodelcode == sched.modelcode and linestat.crsvar < sched.plan:
+            is_locked = True
+
+    is_queued_at_crs = is_on_belt and not is_locked
+
     if request.method == 'DELETE':
+        if is_locked:
+            return jsonify({'success': False, 'error': 'Cannot delete: This schedule is actively running on the conveyor belt or has already produced units.'})
+            
+        if is_queued_at_crs:
+            linestat.crsmodelcode = None
+            linestat.crsvar = 0
+            if linestat.status == 'Work' and not linestat.attmodelcode and not linestat.gmsmodelcode and not linestat.inmodelcode and not linestat.outmodelcode:
+                linestat.status = 'No Work'
+                
         lineno = sched.lineno
         date_val = sched.date
         db.session.delete(sched)
@@ -197,18 +546,29 @@ def edit_delete_schedule(sid):
         for idx, s in enumerate(remaining):
             s.seq = idx
         db.session.commit()
-        log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'worksched', sid)
         return jsonify({'success': True})
 
     data = request.get_json()
-    if 'model_number' in data:
+    if 'model_number' in data and data['model_number'] != sched.modelcode:
+        if is_on_belt or sched.act > 0:
+            return jsonify({'success': False, 'error': 'Cannot change the Model Code while it is on the conveyor belt or has produced units.'})
         sched.modelcode = data['model_number']
+        
     if 'planned_qty' in data:
-        sched.plan = data['planned_qty']
+        if is_locked:
+            return jsonify({'success': False, 'error': 'Plan is locked: This model has already started running (units deducted) or advanced past CRS.'})
+        try:
+            new_plan = int(data['planned_qty'])
+            if is_queued_at_crs:
+                linestat.crsvar = new_plan
+            sched.plan = new_plan
+        except ValueError:
+            pass
+            
     if 'takt_time' in data:
         sched.takttime = data['takt_time']
+        
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'worksched', sid, data)
     return jsonify({'success': True})
 
 @admin_bp.route('/admin/api/module-schedules', methods=['GET', 'PUT', 'DELETE'])
@@ -222,7 +582,7 @@ def module_schedules():
 @admin_bp.route('/admin/api/models', methods=['GET'])
 @login_required
 def get_models():
-    models = db.session.query(ModelRef.modelcode).order_by(ModelRef.modelcode).all()
+    models = db.session.query(PartRef.modelcode).distinct().order_by(PartRef.modelcode).all()
     return jsonify([{
         'id': mcode,
         'model_number': mcode,
@@ -241,13 +601,145 @@ def add_model():
 @login_required
 @admin_required
 def delete_model(modelcode):
-    """Delete all BOM rows for the given model code."""
+    """Delete all BOM rows and modelref for the given model code."""
     deleted = PartRef.query.filter_by(modelcode=modelcode).delete()
+    from app.models.modelref import ModelRef
+    ModelRef.query.filter_by(modelcode=modelcode).delete()
+    SPAMSIUniqueRef.query.filter_by(modelcode=modelcode).delete()
+    SpamsoOutmodelRef.query.filter_by(modelcode=modelcode).delete()
     db.session.commit()
     if deleted == 0:
         return jsonify({'success': False, 'error': 'Model not found.'}), 404
-    log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'partref', modelcode, {'deleted_parts': deleted})
     return jsonify({'success': True, 'deleted_parts': deleted})
+
+
+@admin_bp.route('/admin/api/modelref/<modelcode>', methods=['GET'])
+@login_required
+def get_modelref(modelcode):
+    from app.models.modelref import ModelRef
+    ref = ModelRef.query.filter_by(modelcode=modelcode).first()
+    if not ref:
+        return jsonify({'found': False})
+    data = ref.to_dict()
+    unique_ref = SPAMSIUniqueRef.query.filter_by(modelcode=modelcode).first()
+    data['spamsi_unique_code'] = unique_ref.unique_code if unique_ref else None
+    return jsonify({'found': True, 'data': data})
+
+@admin_bp.route('/admin/api/modelref', methods=['GET'])
+@login_required
+def get_all_modelrefs():
+    from app.models.modelref import ModelRef
+    refs = ModelRef.query.all()
+    unique_codes = {
+        unique_ref.modelcode: unique_ref.unique_code
+        for unique_ref in SPAMSIUniqueRef.query.all()
+    }
+    entries = []
+    for ref in refs:
+        entry = ref.to_dict()
+        entry['spamsi_unique_code'] = unique_codes.get(ref.modelcode)
+        entries.append(entry)
+    return jsonify({'entries': entries})
+
+@admin_bp.route('/admin/api/modelref/<modelcode>', methods=['PUT'])
+@login_required
+@admin_required
+def update_modelref(modelcode):
+    from app.models.modelref import ModelRef
+    data = request.get_json() or {}
+    
+    # Check if this is a new model being created
+    ref = ModelRef.query.filter_by(modelcode=modelcode).first()
+    is_new_model = ref is None
+    
+    unique_code = None
+    if 'spamsi_unique_code' in data:
+        unique_code = str(data['spamsi_unique_code'] or '').strip()
+        
+        # SPAMSI Unique Code is required for new models
+        if is_new_model and not unique_code:
+            return jsonify({
+                'success': False,
+                'error': 'SPAMSI Unique Code is required for new models.'
+            }), 400
+        
+        if len(unique_code) > 4:
+            return jsonify({
+                'success': False,
+                'error': 'SPAMSI Unique Code must be 4 characters or fewer.'
+            }), 400
+        if unique_code:
+            assigned = SPAMSIUniqueRef.query.filter_by(unique_code=unique_code).first()
+            if assigned and assigned.modelcode != modelcode:
+                return jsonify({
+                    'success': False,
+                    'error': 'This SPAMSI Unique Code is already assigned to another model.'
+                }), 409
+    
+    if not ref:
+        ref = ModelRef(modelcode=modelcode)
+        db.session.add(ref)
+    
+    # Keep the PLC-compatible string contract while enforcing configured values.
+    if 'area' in data:
+        requested_area = (data['area'] or '').strip()
+        if requested_area:
+            area = Area.query.filter_by(name=requested_area).first()
+            retaining_inactive_area = (
+                ref.area == requested_area and area is not None and not area.is_active
+            )
+            if area is None or (not area.is_active and not retaining_inactive_area):
+                return jsonify({
+                    'success': False,
+                    'error': 'Select an active configured area.'
+                }), 400
+        data['area'] = requested_area or None
+
+    # Update fields
+    import re
+    for field in ['area', 'serialstart', 'program_h', 'program_f', 
+                  'gmstolpos', 'gmstolneg', 'op_current_base', 'op_current_tolpos', 'op_current_tolneg',
+                  'in_power_base', 'in_power_tolpos', 'in_power_tolneg', 'temp_diff_base', 'temp_diff_tolpos', 'temp_diff_tolneg']:
+        if field in data:
+            val = data[field]
+            if field in ['program_h', 'program_f']:
+                if val == '':
+                    val = None
+                elif val is not None and not re.match(r'^\d{2}:\d{2}$', str(val)):
+                    return jsonify({'success': False, 'error': f'Invalid format for {field}. Must be NN:NN.'}), 400
+            elif val == '' and field not in ['area', 'serialstart']:
+                val = 0
+            setattr(ref, field, val)
+
+    if 'spamsi_unique_code' in data:
+        unique_ref = SPAMSIUniqueRef.query.filter_by(modelcode=modelcode).first()
+        if unique_code:
+            if unique_ref:
+                unique_ref.unique_code = unique_code
+            else:
+                db.session.add(SPAMSIUniqueRef(
+                    modelcode=modelcode,
+                    unique_code=unique_code,
+                ))
+        elif unique_ref:
+            db.session.delete(unique_ref)
+    
+    if 'spamso_outmodel' in data:
+        spamso_outmodel_val = str(data['spamso_outmodel'] or '').strip() or None
+        outmodel_ref = SpamsoOutmodelRef.query.filter_by(modelcode=modelcode).first()
+        if spamso_outmodel_val:
+            if outmodel_ref:
+                outmodel_ref.outmodel = spamso_outmodel_val
+            else:
+                db.session.add(SpamsoOutmodelRef(
+                    modelcode=modelcode,
+                    outmodel=spamso_outmodel_val,
+                ))
+        elif outmodel_ref:
+            db.session.delete(outmodel_ref)
+    
+    db.session.commit()
+    return jsonify({'success': True})
 
 @admin_bp.route('/admin/api/bom', methods=['GET'])
 @login_required
@@ -259,9 +751,15 @@ def get_bom():
     # Order by ID ascending first to ensure new entries go to the bottom of their group
     entries = PartRef.query.filter_by(modelcode=modelcode).order_by(PartRef.id).all()
     
-    # Sort modules in the order: CRS, GMS, SPAMS, CB
-    module_order = {'crs': 1, 'gms': 2, 'spams': 3, 'cb': 4}
+    # Sort modules in the order: CRS, GMS, SPAMSI, SPAMSO, CB
+    module_order = {'crs': 1, 'gms': 2, 'spamsi': 3, 'spamso': 4, 'cb': 5}
     entries.sort(key=lambda e: module_order.get((e.module or '').lower(), 99))
+    
+    from app.models.modelref import ModelRef
+    model_config = {}
+    ref = ModelRef.query.filter_by(modelcode=modelcode).first()
+    if ref:
+        model_config = ref.to_dict()
 
     return jsonify({
         'parts': [{
@@ -272,6 +770,7 @@ def get_bom():
             'usage_qty': float(e.usage),
             'tag': e.tag,
         } for e in entries],
+        'model_config': model_config
     })
 
 @admin_bp.route('/admin/api/is-production-running', methods=['GET'])
@@ -300,7 +799,6 @@ def add_bom():
     )
     db.session.add(new_part)
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'CREATE', 'partref', new_part.id, {'modelcode': modelcode, 'partno': new_part.partno})
     return jsonify({'success': True, 'id': new_part.id})
 
 @admin_bp.route('/admin/api/bom/<int:bid>', methods=['PUT', 'DELETE'])
@@ -311,7 +809,6 @@ def edit_delete_bom(bid):
     if request.method == 'DELETE':
         db.session.delete(part)
         db.session.commit()
-        log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'partref', bid)
         return jsonify({'success': True})
 
     data = request.get_json()
@@ -329,78 +826,11 @@ def edit_delete_bom(bid):
         part.tag = data['tag']
 
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'partref', bid, data)
     return jsonify({'success': True})
 
 # ── Model Reference (Serial Start) CRUD ─────────────────────────────────────
 
 VALID_AREAS = ('Domestic', 'HongKong', 'Export', 'Taiwan')
-
-@admin_bp.route('/admin/api/modelref', methods=['GET'])
-@login_required
-def get_modelref():
-    """List all serial-start reference entries, optionally filtered by area."""
-    area = request.args.get('area')
-    query = ModelRef.query
-    if area:
-        query = query.filter_by(area=area)
-    entries = query.order_by(ModelRef.modelcode, ModelRef.area).all()
-    return jsonify({
-        'entries': [{
-            'id':          e.id,
-            'modelcode':   e.modelcode,
-            'area':        e.area,
-            'serialstart': e.serialstart,
-        } for e in entries]
-    })
-
-@admin_bp.route('/admin/api/modelref', methods=['POST'])
-@login_required
-@admin_required
-def add_modelref():
-    """Add a new serial-start reference entry."""
-    data = request.get_json()
-    modelcode   = (data.get('modelcode') or '').strip()
-    area        = (data.get('area') or '').strip()
-    serialstart = (data.get('serialstart') or '').strip()
-
-    if not modelcode or not area or not serialstart:
-        return jsonify({'success': False, 'error': 'modelcode, area, and serialstart are required.'}), 400
-    if area not in VALID_AREAS:
-        return jsonify({'success': False, 'error': f'area must be one of: {", ".join(VALID_AREAS)}'}), 400
-
-    entry = ModelRef(modelcode=modelcode, area=area, serialstart=serialstart)
-    db.session.add(entry)
-    db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'CREATE', 'modelref', entry.id,
-              {'modelcode': modelcode, 'area': area, 'serialstart': serialstart})
-    return jsonify({'success': True, 'id': entry.id})
-
-@admin_bp.route('/admin/api/modelref/<int:rid>', methods=['PUT', 'DELETE'])
-@login_required
-@admin_required
-def edit_delete_modelref(rid):
-    """Edit or delete a serial-start reference entry."""
-    entry = db.get_or_404(ModelRef, rid)
-    if request.method == 'DELETE':
-        db.session.delete(entry)
-        db.session.commit()
-        log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'modelref', rid)
-        return jsonify({'success': True})
-
-    data = request.get_json()
-    if 'modelcode' in data:
-        entry.modelcode = (data['modelcode'] or '').strip()
-    if 'area' in data:
-        area = (data['area'] or '').strip()
-        if area not in VALID_AREAS:
-            return jsonify({'success': False, 'error': f'area must be one of: {", ".join(VALID_AREAS)}'}), 400
-        entry.area = area
-    if 'serialstart' in data:
-        entry.serialstart = (data['serialstart'] or '').strip()
-    db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'modelref', rid, data)
-    return jsonify({'success': True})
 
 @admin_bp.route('/admin/api/settings', methods=['GET'])
 @login_required
@@ -513,7 +943,7 @@ def reopen_day():
 @login_required
 def get_crs_data():
     page     = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     date_str = request.args.get('date', '').strip()
     serial   = request.args.get('serial', '').strip()
     sort_by  = request.args.get('sort_by', 'time').strip()
@@ -580,7 +1010,6 @@ def update_crs_data(id):
     if request.method == 'DELETE':
         db.session.delete(record)
         db.session.commit()
-        log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'crs', id)
         return jsonify({'success': True})
     
     data = request.get_json()
@@ -589,7 +1018,6 @@ def update_crs_data(id):
         if f in data:
             setattr(record, f, data[f])
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'crs', id, data)
     return jsonify({'success': True})
 
 
@@ -599,7 +1027,7 @@ def update_crs_data(id):
 @login_required
 def get_gms_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
         GMS, page, per_page, 
         request.args.get('date', '').strip(), 
@@ -621,7 +1049,7 @@ def get_gms_data():
             'gascharge': float(r.gascharge),
             'status':    r.status,
             'inspector': r.inspector or '—',
-            'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')
+            'remarks': '[Past NG History]' if ng.get(r.serial) else ''
         } for r in records],
     })
 
@@ -633,7 +1061,6 @@ def update_gms_data(id):
     if request.method == 'DELETE':
         db.session.delete(record)
         db.session.commit()
-        log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'gms', id)
         return jsonify({'success': True})
     
     data = request.get_json()
@@ -642,7 +1069,6 @@ def update_gms_data(id):
     if 'gascharge' in data: record.gascharge = data['gascharge']
     if 'status' in data: record.status = data['status']
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'gms', id, data)
     return jsonify({'success': True})
 
 
@@ -652,7 +1078,7 @@ def update_gms_data(id):
 @login_required
 def get_att_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
         ATT, page, per_page, 
         request.args.get('date', '').strip(), 
@@ -671,6 +1097,7 @@ def get_att_data():
             'time':      r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '',
             'modelcode': r.modelcode or '',
             'serial':    r.serial or '',
+            'lineno':    r.lineno or '',
             'status':    r.status,
             'status1':   r.status1 or '',
             'status2':   r.status2 or '',
@@ -695,7 +1122,6 @@ def update_att_data(id):
     if request.method == 'DELETE':
         db.session.delete(record)
         db.session.commit()
-        log_audit(getattr(current_user, 'username', 'system'), 'DELETE', 'att', id)
         return jsonify({'success': True})
     
     data = request.get_json()
@@ -712,34 +1138,9 @@ def update_att_data(id):
     if 'brazzer6' in data: record.brazzer6 = data['brazzer6']
     if 'brazzer7' in data: record.brazzer7 = data['brazzer7']
     db.session.commit()
-    log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'att', id, data)
     return jsonify({'success': True})
 
-# ── Audit Log Viewer ──────────────────────────────────────────────────────────
 
-@admin_bp.route('/admin/api/audit-logs', methods=['GET'])
-@login_required
-@admin_required
-def get_audit_logs():
-    page     = max(1, int(request.args.get('page', 1)))
-    per_page = 50
-    query = AuditLog.query.order_by(AuditLog.timestamp.desc())
-    total = query.count()
-    records = query.offset((page - 1) * per_page).limit(per_page).all()
-    return jsonify({
-        'total': total,
-        'page': page,
-        'per_page': per_page,
-        'records': [{
-            'id': r.id,
-            'timestamp': r.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-            'username': r.username,
-            'action': r.action,
-            'table_name': r.table_name,
-            'record_id': r.record_id,
-            'details': r.details
-        } for r in records]
-    })
 
 # ── Print Production Tag ──────────────────────────────────────────────────────
 
@@ -754,13 +1155,13 @@ def print_tag(serial):
     
     from app.models.insp2 import INSP2
     from app.models.insp3_run import INSP3Run
-    from app.models.insp3_vib import INSP3Vib
     from app.models.insp4 import INSP4
+    from app.models.packaging import Packaging
     
     insp2_record = INSP2.query.filter_by(serial=serial).order_by(INSP2.id.desc()).first()
     insp3_run_record = INSP3Run.query.filter_by(serial=serial).order_by(INSP3Run.id.desc()).first()
-    insp3_vib_record = INSP3Vib.query.filter_by(serial=serial).order_by(INSP3Vib.id.desc()).first()
     insp4_record = INSP4.query.filter_by(serial=serial).order_by(INSP4.id.desc()).first()
+    pack_record = Packaging.query.filter_by(serial=serial).order_by(Packaging.id.desc()).first()
     
     # Determine the time to calculate shift (Day/Night) and Date
     production_time = crs_record.time if crs_record else datetime.now()
@@ -831,8 +1232,7 @@ def print_tag(serial):
         'insp3_run_in_cool': insp3_run_record.in_power_cool if insp3_run_record else '',
         'insp3_run_in_heat': insp3_run_record.in_power_heat if insp3_run_record else '',
         
-        'insp3_vib_status': insp3_vib_record.status if insp3_vib_record else '',
-        'insp3_vib_inspector': insp3_vib_record.inspector if insp3_vib_record else '',
+
         
         'insp4_status': insp4_record.status if insp4_record else '',
         'insp4_inspector': insp4_record.inspector if insp4_record else '',
@@ -846,6 +1246,12 @@ def print_tag(serial):
         'insp4_grille_eel': insp4_record.grille_eel if insp4_record else '',
         'insp4_grille_model': insp4_record.grille_model if insp4_record else '',
         'insp4_grille_logo': insp4_record.grille_logo if insp4_record else '',
+        
+        'pack_status1': pack_record.status1 if pack_record else '',
+        'pack_status2': pack_record.status2 if pack_record else '',
+        'pack_status3': pack_record.status3 if pack_record else '',
+        'pack_status4': pack_record.status4 if pack_record else '',
+        'pack_inspector': pack_record.inspector if pack_record else '',
     }
     return render_template('admin/print_tag.html', unit=unit_data)
 
@@ -853,14 +1259,7 @@ def print_tag(serial):
 
 
 def _check_ng_history(records):
-    if not records:
-        return {}
-    serials = list(set([r.serial for r in records if getattr(r, 'serial', None)]))
-    if not serials:
-        return {}
-    repaired = db.session.query(Repair.serial).filter(Repair.serial.in_(serials)).all()
-    ng_serials = {r[0] for r in repaired}
-    return {s: (s in ng_serials) for s in serials}
+    return {}
 
 def _get_paginated_data(model_class, page, per_page, date_str, serial, sort_by='time', sort_dir='desc'):
     query = model_class.query
@@ -887,13 +1286,13 @@ def _get_paginated_data(model_class, page, per_page, date_str, serial, sort_by='
     records = query.offset((page - 1) * per_page).limit(per_page).all()
     return total, records
 
-@admin_bp.route('/admin/api/spams-data', methods=['GET'])
+@admin_bp.route('/admin/api/spamsi-data', methods=['GET'])
 @login_required
-def get_spams_data():
+def get_spamsi_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
-        SPAMS, page, per_page, 
+        SPAMSI, page, per_page, 
         request.args.get('date', '').strip(), 
         request.args.get('serial', '').strip(),
         request.args.get('sort_by', 'time').strip(),
@@ -902,16 +1301,30 @@ def get_spams_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
+        'records': [{
+            'id': r.id, 
+            'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 
+            'modelcode': r.modelcode, 
+            'serial': r.serial, 
+            'inspector': r.inspector or '—', 
+            'inserial': r.inserial,
+            'part1mod': r.part1mod, 'part1desc': r.part1desc, 'part1serial': r.part1serial,
+            'part2mod': r.part2mod, 'part2desc': r.part2desc, 'part2serial': r.part2serial,
+            'part3mod': r.part3mod, 'part3desc': r.part3desc, 'part3serial': r.part3serial,
+            'part4mod': r.part4mod, 'part4desc': r.part4desc, 'part4serial': r.part4serial,
+            'part5mod': r.part5mod, 'part5desc': r.part5desc, 'part5serial': r.part5serial,
+            'part6mod': r.part6mod, 'part6desc': r.part6desc, 'part6serial': r.part6serial,
+            'lineno': r.lineno
+        } for r in records]
     })
 
-@admin_bp.route('/admin/api/cbpcb-data', methods=['GET'])
+@admin_bp.route('/admin/api/spamso-data', methods=['GET'])
 @login_required
-def get_cbpcb_data():
+def get_spamso_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
-        CBPCB, page, per_page, 
+        SPAMSO, page, per_page, 
         request.args.get('date', '').strip(), 
         request.args.get('serial', '').strip(),
         request.args.get('sort_by', 'time').strip(),
@@ -920,14 +1333,28 @@ def get_cbpcb_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
+        'records': [{
+            'id': r.id, 
+            'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 
+            'modelcode': r.modelcode, 
+            'serial': r.serial, 
+            'inspector': r.inspector or '—', 
+            'outmodel': r.outmodel,
+            'outserial': r.outserial,
+            'part1mod': r.part1mod, 'part1desc': r.part1desc, 'part1serial': r.part1serial,
+            'part2mod': r.part2mod, 'part2desc': r.part2desc, 'part2serial': r.part2serial,
+            'part3mod': r.part3mod, 'part3desc': r.part3desc, 'part3serial': r.part3serial,
+            'lineno': r.lineno
+        } for r in records]
     })
+
+
 
 @admin_bp.route('/admin/api/insp2-data', methods=['GET'])
 @login_required
 def get_insp2_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
         INSP2, page, per_page, 
         request.args.get('date', '').strip(), 
@@ -945,7 +1372,7 @@ def get_insp2_data():
 @login_required
 def get_insp3run_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
         INSP3Run, page, per_page, 
         request.args.get('date', '').strip(), 
@@ -956,32 +1383,80 @@ def get_insp3run_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'insulation_resistance': r.insulation_resistance or '', 'withstand_voltage': r.withstand_voltage or '', 'leak_status': r.leak_status or '', 'leak_location': r.leak_location or '', 'prog_check_h': r.prog_check_h or '', 'prog_check_f': r.prog_check_f or '', 'airswing': r.airswing or '', 'comp_operation': r.comp_operation or '', 'fan_operation': r.fan_operation or '', 'evap_tubes': r.evap_tubes or '', 'cond_tubes': r.cond_tubes or '', 'operating_current': r.operating_current or '', 'input_power': r.input_power or '', 'temp_diff': r.temp_diff or '', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
+        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'insulation_resistance': r.insulation_resistance or '', 'withstand_voltage': r.withstand_voltage or '', 'leak_status': r.leak_status or '', 'leak_location': r.leak_location or '', 'prog_check_h': r.prog_check_h or '', 'prog_check_f': r.prog_check_f or '', 'airswing': r.airswing or '', 'comp_operation': r.comp_operation or '', 'fan_operation': r.fan_operation or '', 'evap_tubes': r.evap_tubes_cool or r.evap_tubes_heat or '', 'cond_tubes': r.cond_tubes_cool or r.cond_tubes_heat or '', 'operating_current': str(r.operating_current) if r.operating_current is not None else '', 'input_power': str(r.input_power) if r.input_power is not None else '', 'temp_diff': str(r.temp_diff) if r.temp_diff is not None else '', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
     })
 
-@admin_bp.route('/admin/api/insp3vib-data', methods=['GET'])
-@login_required
-def get_insp3vib_data():
-    page = max(1, int(request.args.get('page', 1)))
+
+
+
+@admin_bp.route('/admin/api/packaging-data', methods=['GET'])
+def get_packaging_data():
+    page = request.args.get('page', 1, type=int)
     per_page = 50
-    total, records = _get_paginated_data(
-        INSP3Vib, page, per_page, 
-        request.args.get('date', '').strip(), 
-        request.args.get('serial', '').strip(),
-        request.args.get('sort_by', 'time').strip(),
-        request.args.get('sort_dir', 'desc').strip()
-    )
-    ng = _check_ng_history(records)
+    sort_by = request.args.get('sort_by', 'time')
+    sort_dir = request.args.get('sort_dir', 'desc')
+    date_filter = request.args.get('date', '')
+    serial_filter = request.args.get('serial', '')
+
+    query = Packaging.query
+
+    if date_filter:
+        try:
+            target_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(db.func.date(Packaging.time) == target_date)
+        except ValueError:
+            pass
+    if serial_filter:
+        query = query.filter(Packaging.serial.ilike(f'%{serial_filter}%'))
+
+    if sort_by == 'time':
+        order_col = Packaging.time.desc() if sort_dir == 'desc' else Packaging.time.asc()
+    elif sort_by == 'modelcode':
+        order_col = Packaging.modelcode.desc() if sort_dir == 'desc' else Packaging.modelcode.asc()
+    elif sort_by == 'serial':
+        order_col = Packaging.serial.desc() if sort_dir == 'desc' else Packaging.serial.asc()
+    elif sort_by == 'status':
+        order_col = Packaging.status1.desc() if sort_dir == 'desc' else Packaging.status1.asc()
+    elif sort_by == 'inspector':
+        order_col = Packaging.inspector.desc() if sort_dir == 'desc' else Packaging.inspector.asc()
+    else:
+        order_col = Packaging.time.desc()
+
+    query = query.order_by(order_col)
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
     return jsonify({
-        'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
+        'total': pagination.total,
+        'page': page,
+        'per_page': per_page,
+        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'status1': r.status1, 'status2': r.status2, 'status3': r.status3, 'status4': r.status4, 'inspector': r.inspector or '—'} for r in pagination.items]
     })
+
+@admin_bp.route('/admin/api/packaging-data/<int:id>', methods=['PUT', 'DELETE'])
+def handle_packaging_record(id):
+    record = Packaging.query.get(id)
+    if not record:
+        return jsonify({'error': 'Record not found'}), 404
+
+    if request.method == 'DELETE':
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({'success': True})
+    else:
+        data = request.get_json() or {} or {}
+        if 'status1' in data: record.status1 = data['status1']
+        if 'status2' in data: record.status2 = data['status2']
+        if 'status3' in data: record.status3 = data['status3']
+        if 'status4' in data: record.status4 = data['status4']
+        if 'inspector' in data: record.inspector = data['inspector']
+        db.session.commit()
+        return jsonify({'success': True, 'record': record.to_dict()})
 
 @admin_bp.route('/admin/api/insp4-data', methods=['GET'])
 @login_required
 def get_insp4_data():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     total, records = _get_paginated_data(
         INSP4, page, per_page, 
         request.args.get('date', '').strip(), 
@@ -992,32 +1467,16 @@ def get_insp4_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'insulation_resistance': r.insulation_resistance or '', 'operating_current': r.operating_current or '', 'nameplate_match': r.nameplate_match or '', 'model_label': r.model_label or '', 'manual_remote': r.manual_remote or '', 'manual_warranty': r.manual_warranty or '', 'manual_screws': r.manual_screws or '', 'grille_eel': r.grille_eel or '', 'grille_model': r.grille_model or '', 'grille_logo': r.grille_logo or '', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
+        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'insulation_resistance': r.insulation_resistance or '', 'operating_current': r.operating_current or '', 'nameplate_match': r.nameplate_match or '', 'model_label': r.model_label or '', 'manual_remote': r.manual_remote or '', 'manual_warranty': r.manual_warranty or '', 'manual_screws': r.manual_screws or '', 'grille_eel': r.grille_eel or '', 'grille_model': r.grille_model or '', 'grille_logo': r.grille_logo or '', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
     })
 
-@admin_bp.route('/admin/api/repair-data', methods=['GET'])
-@login_required
-def get_repair_data():
-    page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
-    total, records = _get_paginated_data(
-        Repair, page, per_page, 
-        request.args.get('date', '').strip(), 
-        request.args.get('serial', '').strip(),
-        request.args.get('sort_by', 'time').strip(),
-        request.args.get('sort_dir', 'desc').strip()
-    )
-    ng = _check_ng_history(records)
-    return jsonify({
-        'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'status': r.status, 'inspector': r.inspector or '—', 'station_origin': r.station_origin or '', 'defect_type': r.defect_type or '', 'action_taken': r.action_taken or '', 'remarks': (r.remarks or '') + (' [Past NG History]' if ng.get(r.serial) else '')} for r in records]
-    })
+
 
 @admin_bp.route('/admin/api/prod-tag-tracker', methods=['GET'])
 @login_required
 def get_prod_tag_tracker():
     page = max(1, int(request.args.get('page', 1)))
-    per_page = 50
+    per_page = max(1, int(request.args.get('per_page', 50)))
     date_str = request.args.get('date', '').strip()
     serial = request.args.get('serial', '').strip()
 
@@ -1040,6 +1499,13 @@ def get_prod_tag_tracker():
     if not serials:
         return jsonify({'total': 0, 'page': page, 'per_page': per_page, 'records': []})
 
+    def standardize_status(st):
+        if not st: return 'PENDING'
+        st_upper = str(st).upper()
+        if st_upper == 'GOOD': return 'GOOD'
+        if st_upper in ('NG', 'NO GOOD', 'FAIL', 'FAILED'): return 'NO GOOD'
+        return st_upper
+
     def get_latest_statuses(model):
         subquery = db.session.query(model.serial, func.max(model.time).label('maxtime')).filter(model.serial.in_(serials)).group_by(model.serial).subquery()
         records = db.session.query(model).join(subquery, db.and_(model.serial == subquery.c.serial, model.time == subquery.c.maxtime)).all()
@@ -1047,36 +1513,33 @@ def get_prod_tag_tracker():
 
     att_status = get_latest_statuses(ATT)
     gms_status = get_latest_statuses(GMS)
-    spams_status = get_latest_statuses(SPAMS)
-    cb_status = get_latest_statuses(CBPCB)
+    spamsi_status = get_latest_statuses(SPAMSI)
+    spamso_status = get_latest_statuses(SPAMSO)
     insp2_status = get_latest_statuses(INSP2)
     insp3run_status = get_latest_statuses(INSP3Run)
-    insp3vib_status = get_latest_statuses(INSP3Vib)
+    packaging_status = get_latest_statuses(Packaging)
     insp4_status = get_latest_statuses(INSP4)
-    repair_status = get_latest_statuses(Repair)
-
     results = []
     for r in crs_records:
         s = r.serial
         # A serial is considered Ready to Print if ALL inspection stations are OK.
         stations = {
             'CRS': 'GOOD',
-            'ATT': att_status.get(s, 'PENDING'),
-            'GMS': gms_status.get(s, 'PENDING'),
-            'SPAMS': spams_status.get(s, 'PENDING'),
-            'CB': cb_status.get(s, 'PENDING'),
-            'INSP2': insp2_status.get(s, 'PENDING'),
-            'INSP3Run': insp3run_status.get(s, 'PENDING'),
-            'INSP3Vib': insp3vib_status.get(s, 'PENDING'),
-            'INSP4': insp4_status.get(s, 'PENDING'),
-            'Repair': repair_status.get(s, 'N/A')
+            'ATT': standardize_status(att_status.get(s)),
+            'GMS': standardize_status(gms_status.get(s)),
+            'SPAMSI': standardize_status(spamsi_status.get(s)),
+            'SPAMSO': standardize_status(spamso_status.get(s)),
+            'INSP2': standardize_status(insp2_status.get(s)),
+            'INSP3Run': standardize_status(insp3run_status.get(s)),
+            'INSP4': standardize_status(insp4_status.get(s)),
+            'Packaging': standardize_status(packaging_status.get(s))
         }
         
-        # Check if all required stations are GOOD
-        required_stations = ['CRS', 'ATT', 'GMS', 'SPAMS', 'CB', 'INSP2', 'INSP3Run', 'INSP3Vib', 'INSP4']
+        # Check if all required stations are GOOD/PASS/OK
+        required_stations = ['CRS', 'ATT', 'GMS', 'SPAMSI', 'SPAMSO', 'INSP2', 'INSP3Run', 'INSP4', 'Packaging']
         all_good = True
         for st in required_stations:
-            if stations[st].upper() not in ('OK', 'GOOD', 'PASS'):
+            if stations[st].upper() not in ('GOOD', 'PASS', 'OK'):
                 all_good = False
                 break
                 
@@ -1085,16 +1548,15 @@ def get_prod_tag_tracker():
         results.append({
             'modelcode': r.modelcode,
             'serial': s,
-            'crs': stations['CRS'],
-            'att': stations['ATT'],
-            'gms': stations['GMS'],
-            'spams': stations['SPAMS'],
-            'cb': stations['CB'],
-            'insp2': stations['INSP2'],
-            'insp3': stations['INSP3Run'],
-            'vib': stations['INSP3Vib'],
-            'insp4': stations['INSP4'],
-            'repair': stations['Repair'],
+            'crs': standardize_status(stations['CRS']),
+            'att': standardize_status(stations['ATT']),
+            'gms': standardize_status(stations['GMS']),
+            'spamsi': standardize_status(stations['SPAMSI']),
+            'spamso': standardize_status(stations['SPAMSO']),
+            'insp2': standardize_status(stations['INSP2']),
+            'insp3': standardize_status(stations['INSP3Run']),
+            'insp4': standardize_status(stations['INSP4']),
+            'packaging': standardize_status(stations['Packaging']),
             'tag_status': tag_status
         })
 
@@ -1302,6 +1764,92 @@ def get_active_tags():
     return jsonify([{'id': t.id, 'name': t.name} for t in tags])
 
 
+# Areas are configuration labels. modelref.area remains the string consumed by
+# the line-state stored procedure and is intentionally not a foreign key.
+@admin_bp.route('/sys/api/areas', methods=['GET'])
+@login_required
+@admin_required
+def get_areas():
+    areas = Area.query.order_by(Area.id).all()
+    return jsonify([{
+        'id': area.id,
+        'name': area.name,
+        'description': area.description,
+        'is_active': area.is_active,
+        'created_at': str(area.created_at),
+    } for area in areas])
+
+
+@admin_bp.route('/sys/api/area', methods=['POST'])
+@login_required
+@admin_required
+def create_area():
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
+    description = data.get('description', '').strip()
+
+    if not name:
+        return jsonify({'success': False, 'error': 'Area name is required.'}), 400
+    if len(name) > 50:
+        return jsonify({'success': False, 'error': 'Area name must be 50 characters or fewer.'}), 400
+    if Area.query.filter_by(name=name).first():
+        return jsonify({'success': False, 'error': f'Area "{name}" already exists.'}), 409
+
+    area = Area(name=name, description=description, is_active=True)
+    db.session.add(area)
+    db.session.commit()
+    return jsonify({'success': True, 'id': area.id})
+
+
+@admin_bp.route('/sys/api/area/<int:area_id>', methods=['PUT', 'DELETE'])
+@login_required
+@admin_required
+def edit_delete_area(area_id):
+    area = db.get_or_404(Area, area_id)
+    from app.models.modelref import ModelRef
+    referenced = ModelRef.query.filter_by(area=area.name).first()
+
+    if request.method == 'DELETE':
+        if referenced:
+            return jsonify({
+                'success': False,
+                'error': 'This area is assigned to model references and cannot be deleted. Set it inactive instead.'
+            }), 409
+        db.session.delete(area)
+        db.session.commit()
+        return jsonify({'success': True})
+
+    data = request.get_json() or {}
+    if 'name' in data:
+        name = data['name'].strip()
+        if not name:
+            return jsonify({'success': False, 'error': 'Area name is required.'}), 400
+        if len(name) > 50:
+            return jsonify({'success': False, 'error': 'Area name must be 50 characters or fewer.'}), 400
+        if name != area.name:
+            if referenced:
+                return jsonify({
+                    'success': False,
+                    'error': 'This area is assigned to model references and cannot be renamed.'
+                }), 409
+            if Area.query.filter_by(name=name).first():
+                return jsonify({'success': False, 'error': f'Area "{name}" already exists.'}), 409
+            area.name = name
+    if 'description' in data:
+        area.description = data['description'].strip()
+    if 'is_active' in data:
+        area.is_active = bool(data['is_active'])
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@admin_bp.route('/api/areas/active', methods=['GET'])
+@login_required
+def get_active_areas():
+    areas = Area.query.filter_by(is_active=True).order_by(Area.name).all()
+    return jsonify([{'id': area.id, 'name': area.name} for area in areas])
+
+
 # ── Users API ─────────────────────────────────────────────────────────────────
 
 @admin_bp.route('/sys/api/users', methods=['GET'])
@@ -1374,6 +1922,15 @@ def edit_delete_user(uid):
         return jsonify({'success': True})
 
     data = request.get_json()
+    
+    if 'username' in data and data['username'].strip():
+        new_username = data['username'].strip()
+        if new_username != user.username:
+            existing = User.query.filter_by(username=new_username).first()
+            if existing:
+                return jsonify({'success': False, 'error': f"Username '{new_username}' is already in use."}), 400
+            user.username = new_username
+
     if 'full_name' in data:
         user.full_name = data['full_name'].strip() or None
     if 'role' in data:
@@ -1441,8 +1998,9 @@ def print_specific_qc():
     }
     
     # For Arrival date from other modules
-    spams_record = SPAMS.query.filter_by(modelcode=model, serial=serial).first()
-    cb_record = CBPCB.query.filter_by(modelcode=model, serial=serial).first()
+    spamsi_record = SPAMSI.query.filter_by(modelcode=model, serial=serial).first()
+    spamso_record = SPAMSO.query.filter_by(modelcode=model, serial=serial).first()
+    packaging_record = Packaging.query.filter_by(modelcode=model, serial=serial).first()
     
     for part in bom:
         p_serial = crs_parts_map.get(part.partno)
@@ -1451,10 +2009,12 @@ def print_specific_qc():
         arv_date = ""
         if part.module.upper() == 'CRS':
             arv_date = crs_record.time.strftime("%m/%d/%Y") if crs_record.time else ""
-        elif part.module.upper() == 'SPAMS':
-            arv_date = spams_record.time.strftime("%m/%d/%Y") if spams_record and spams_record.time else ""
-        elif part.module.upper() == 'CB':
-            arv_date = cb_record.time.strftime("%m/%d/%Y") if cb_record and cb_record.time else ""
+        elif part.module.upper() == 'SPAMSI':
+            arv_date = spamsi_record.time.strftime("%m/%d/%Y") if spamsi_record and spamsi_record.time else ""
+        elif part.module.upper() == 'SPAMSO':
+            arv_date = spamso_record.time.strftime("%m/%d/%Y") if spamso_record and spamso_record.time else ""
+        elif part.module.upper() == 'PACKAGING':
+            arv_date = packaging_record.time.strftime("%m/%d/%Y") if packaging_record and packaging_record.time else ""
             
         parts_list.append({
             'partno': part.partno,
@@ -1473,3 +2033,516 @@ def print_specific_qc():
         parts_list=parts_list,
         current_time=datetime.now()
     )
+
+@admin_bp.route('/admin/api/linestat-viewer', methods=['GET'])
+@login_required
+@admin_required
+def get_linestat_viewer():
+    from app.models.linestat import LineStat
+    try:
+        entries = LineStat.query.order_by(LineStat.lineno).all()
+        return jsonify([{
+            'id': e.id,
+            'lineno': e.lineno,
+            'status': e.status,
+            'crsmodelcode': e.crsmodelcode,
+            'crsvar': e.crsvar,
+            'attmodelcode': e.attmodelcode,
+            'attvar': e.attvar,
+            'gmsmodelcode': e.gmsmodelcode,
+            'gmsvar': e.gmsvar,
+            'inmodelcode': e.inmodelcode,
+            'invar': e.invar,
+            'inuniqe': e.inuniqe,
+            'inpart1mod': e.inpart1mod,
+            'inpart1desc': e.inpart1desc,
+            'inpart2mod': e.inpart2mod,
+            'inpart2desc': e.inpart2desc,
+            'inpart3mod': e.inpart3mod,
+            'inpart3desc': e.inpart3desc,
+            'inpart4mod': e.inpart4mod,
+            'inpart4desc': e.inpart4desc,
+            'inpart5mod': e.inpart5mod,
+            'inpart5desc': e.inpart5desc,
+            'inpart6mod': e.inpart6mod,
+            'inpart6desc': e.inpart6desc,
+            'outmodelcode': e.outmodelcode,
+            'outvar': e.outvar,
+            'outpart1mod': e.outpart1mod,
+            'outpart1desc': e.outpart1desc,
+            'outpart2mod': e.outpart2mod,
+            'outpart2desc': e.outpart2desc,
+            'outpart3mod': e.outpart3mod,
+            'outpart3desc': e.outpart3desc,
+            'wcmodelcode': e.wcmodelcode,
+            'wcvar': e.wcvar,
+            'rimodelcode': e.rimodelcode,
+            'rivar': e.rivar,
+            'fimodelcode': e.fimodelcode,
+            'fivar': e.fivar,
+            'packmodelcode': e.packmodelcode,
+            'packvar': e.packvar,
+            'gascharge': float(e.gascharge) if e.gascharge is not None else 0.00,
+            'updtime': e.updtime.strftime('%Y-%m-%d %H:%M:%S') if e.updtime else None,
+            'compmod': e.compmod,
+            'fan1mod': e.fan1mod,
+            'fan2mod': e.fan2mod,
+            'crspart1mod': e.crspart1mod,
+            'crspart2mod': e.crspart2mod,
+            'crspart3mod': e.crspart3mod,
+            'crspart4mod': e.crspart4mod,
+            'area': e.area,
+            'serialstart': e.serialstart,
+            'active_date': e.active_date.strftime('%Y-%m-%d') if e.active_date else None
+        } for e in entries])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_bp.route('/admin/api/conveyor/status/<line_code>', methods=['GET'])
+@login_required
+def get_conveyor_status(line_code):
+    from app.models.linestat import LineStat
+    try:
+        stat = LineStat.query.filter_by(lineno=line_code).first()
+        if not stat:
+            return jsonify({'success': True, 'models': []})
+        
+        models = []
+        if stat.packvar and stat.packvar > 0 and stat.packmodelcode:
+            models.append({'model': stat.packmodelcode, 'station': 'PACK', 'qty': stat.packvar})
+        if stat.fivar and stat.fivar > 0 and stat.fimodelcode:
+            models.append({'model': stat.fimodelcode, 'station': 'FI', 'qty': stat.fivar})
+        if stat.rivar and stat.rivar > 0 and stat.rimodelcode:
+            models.append({'model': stat.rimodelcode, 'station': 'RI', 'qty': stat.rivar})
+        if stat.wcvar and stat.wcvar > 0 and stat.wcmodelcode:
+            models.append({'model': stat.wcmodelcode, 'station': 'WC', 'qty': stat.wcvar})
+        if stat.outvar and stat.outvar > 0 and stat.outmodelcode:
+            models.append({'model': stat.outmodelcode, 'station': 'SPAMSO', 'qty': stat.outvar})
+        if stat.invar and stat.invar > 0 and stat.inmodelcode:
+            models.append({'model': stat.inmodelcode, 'station': 'SPAMSI', 'qty': stat.invar})
+        if stat.gmsvar and stat.gmsvar > 0 and stat.gmsmodelcode:
+            models.append({'model': stat.gmsmodelcode, 'station': 'GMS', 'qty': stat.gmsvar})
+        if stat.attvar and stat.attvar > 0 and stat.attmodelcode:
+            models.append({'model': stat.attmodelcode, 'station': 'ATT', 'qty': stat.attvar})
+        if stat.crsvar and stat.crsvar > 0 and stat.crsmodelcode:
+            models.append({'model': stat.crsmodelcode, 'station': 'CRS', 'qty': stat.crsvar})
+            
+        return jsonify({'success': True, 'models': models})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/admin/api/conveyor/action', methods=['POST'])
+@login_required
+@admin_required
+def post_conveyor_action():
+    try:
+        data = request.get_json()
+        line_code = data.get('line_code')
+        action = data.get('action')
+        
+        if action == 'clear_all':
+            from app.models.linestat import LineStat
+            from app.models.worksched import WorkSched
+            stat = LineStat.query.filter_by(lineno=line_code).first()
+            if stat:
+                stat.outvar = 0
+                stat.invar = 0
+                stat.gmsvar = 0
+                stat.attvar = 0
+                stat.crsvar = 0
+                
+            today_date = datetime.now().date()
+            ghost_date = db.session.query(db.func.max(WorkSched.date)).filter(
+                WorkSched.date < today_date,
+                WorkSched.lineno == line_code
+            ).scalar()
+            
+            if ghost_date:
+                unfinished_scheds = WorkSched.query.filter(
+                    WorkSched.lineno == line_code,
+                    WorkSched.date == ghost_date,
+                    WorkSched.act < WorkSched.plan
+                ).all()
+                for sched in unfinished_scheds:
+                    sched.plan = sched.act
+                    
+            db.session.commit()
+                
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ── SHIFTS API ───────────────────────────────────────────────────────────────
+
+@admin_bp.route('/admin/api/shifts', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def api_shifts():
+    if request.method == 'GET':
+        try:
+            shifts = Shift.query.order_by(Shift.start_time).all()
+            return jsonify([s.to_dict() for s in shifts])
+        except Exception as e:
+            logging.error(f"Error fetching shifts: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            if not data or not data.get('name') or not data.get('start_time') or not data.get('end_time'):
+                return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+            # Optional time formatting from string to time object if not handled natively
+            try:
+                start = datetime.strptime(data['start_time'], '%H:%M').time()
+                end = datetime.strptime(data['end_time'], '%H:%M').time()
+            except ValueError:
+                start = datetime.strptime(data['start_time'], '%H:%M:%S').time()
+                end = datetime.strptime(data['end_time'], '%H:%M:%S').time()
+
+            new_shift = Shift(
+                name=data['name'],
+                start_time=start,
+                end_time=end
+            )
+            db.session.add(new_shift)
+            db.session.commit()
+            return jsonify({'success': True, 'shift': new_shift.to_dict()})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@admin_bp.route('/admin/api/shifts/<int:shift_id>', methods=['PUT', 'DELETE'])
+@login_required
+@admin_required
+def api_shift_detail(shift_id):
+    shift = Shift.query.get_or_404(shift_id)
+
+    if request.method == 'PUT':
+        try:
+            data = request.get_json()
+            if 'name' in data:
+                shift.name = data['name']
+            if 'start_time' in data:
+                try:
+                    shift.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+                except ValueError:
+                    shift.start_time = datetime.strptime(data['start_time'], '%H:%M:%S').time()
+            if 'end_time' in data:
+                try:
+                    shift.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+                except ValueError:
+                    shift.end_time = datetime.strptime(data['end_time'], '%H:%M:%S').time()
+
+            db.session.commit()
+            return jsonify({'success': True, 'shift': shift.to_dict()})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    if request.method == 'DELETE':
+        try:
+            db.session.delete(shift)
+            db.session.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+# ---------------------------------------------------------------------------
+# SERIAL REFERENCE MANAGEMENT
+# ---------------------------------------------------------------------------
+
+from app.models.transfer_slip import TransferSlip
+# ── FGCP: Transfer Slip Endpoints ─────────────────────────────────────────────
+
+@admin_bp.route('/admin/api/transfer-slips/available-params', methods=['GET'])
+@login_required
+def get_transfer_slip_params():
+    date_str = request.args.get('date', '').strip()
+    if not date_str:
+        return jsonify({'success': False, 'error': 'Missing date parameter'}), 400
+        
+    try:
+        p_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid date format'}), 400
+        
+    try:
+        records = Packaging.query.filter(
+            func.date(Packaging.time) == p_date
+        ).all()
+        
+        lines = sorted(list(set(r.lineno for r in records if r.lineno)))
+        models = sorted(list(set(r.modelcode for r in records if r.modelcode)))
+        
+        shifts_active = Shift.query.all()
+        shift_names = set(s.name for s in shifts_active)
+        
+        ts_records = TransferSlip.query.with_entities(TransferSlip.shift).distinct().all()
+        for ts in ts_records:
+            if ts.shift:
+                shift_names.add(ts.shift)
+                
+        shifts = sorted(list(shift_names))
+        
+        return jsonify({
+            'success': True,
+            'lines': lines,
+            'models': models,
+            'shifts': shifts
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@admin_bp.route('/admin/api/transfer-slips', methods=['GET'])
+@login_required
+def get_transfer_slips():
+    page = max(1, int(request.args.get('page', 1)))
+    per_page = max(1, int(request.args.get('per_page', 50)))
+    
+    date_filter = request.args.get('date', '').strip()
+    line_filter = request.args.get('line', '').strip()
+    ref_filter = request.args.get('ref', '').strip()
+    
+    query = TransferSlip.query
+    
+    if date_filter:
+        try:
+            parsed = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(func.date(TransferSlip.production_date) == parsed)
+        except ValueError:
+            pass
+            
+    if line_filter and line_filter.lower() != 'all':
+        query = query.filter(TransferSlip.line == line_filter)
+        
+    if ref_filter:
+        query = query.filter(TransferSlip.ref_number.ilike(f'%{ref_filter}%'))
+        
+    total = query.count()
+    records = query.order_by(TransferSlip.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    
+    return jsonify({
+        'success': True,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'records': [{
+            'id': r.id,
+            'ref_number': r.ref_number,
+            'production_date': r.production_date.strftime('%Y-%m-%d'),
+            'line': r.line,
+            'shift': r.shift,
+            'modelcode': r.modelcode,
+            'total_qty': r.total_qty,
+            'created_by': r.created_by
+        } for r in records]
+    })
+
+
+@admin_bp.route('/admin/api/transfer-slips', methods=['POST'])
+@login_required
+def create_transfer_slip():
+    data = request.get_json() or {}
+    date_str = data.get('date')
+    line = data.get('line')
+    shift = data.get('shift')
+    modelcode = data.get('modelcode')
+    
+    if not all([date_str, line, shift, modelcode]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+    try:
+        p_date = datetime.strptime(str(date_str), '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid date format'}), 400
+
+    import json
+    
+    # Check already assigned serials for this date
+    existing_slips = TransferSlip.query.filter(
+        func.date(TransferSlip.production_date) == p_date
+    ).all()
+    
+    assigned_serials = set()
+    for slip in existing_slips:
+        if slip.serials_json:
+            try:
+                sl_list = json.loads(slip.serials_json)
+                assigned_serials.update(sl_list)
+            except:
+                pass
+
+    # 1. Fetch serials from Packaging that passed
+    pkg_records = Packaging.query.filter(
+        func.date(Packaging.time) == p_date,
+        Packaging.lineno == line,
+        Packaging.modelcode == modelcode
+    ).all()
+    
+    serials = [p.serial for p in pkg_records if p.status == 'GOOD' and p.serial not in assigned_serials]
+    total_qty = len(serials)
+    
+    if total_qty == 0:
+        return jsonify({'success': False, 'error': 'No completed units found for these parameters.'}), 404
+
+    # 2. Generate Ref Number (Format: Line No. | Last 2 digit of year | Month | Series)
+    # Series is 4-digit count of slips created in this month
+    year2 = str(p_date.year)[-2:]
+    month2 = f"{p_date.month:02d}"
+    
+    day_slips_count = TransferSlip.query.filter(
+        func.date(TransferSlip.production_date) == p_date
+    ).count()
+    
+    series4 = f"{day_slips_count + 1:04d}"
+    ref_number = f"{line}{year2}{month2}{series4}"
+    
+    # 3. Create Slip
+    import json
+    new_slip = TransferSlip(
+        ref_number=ref_number,
+        production_date=p_date,
+        line=line,
+        shift=shift,
+        modelcode=modelcode,
+        total_qty=total_qty,
+        created_by=session.get('user', 'System'),
+        serials_json=json.dumps(serials)
+    )
+    
+    db.session.add(new_slip)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'slip_id': new_slip.id, 'ref_number': new_slip.ref_number})
+
+
+@admin_bp.route('/admin/print-transfer-slip/<int:slip_id>', methods=['GET'])
+@login_required
+def print_transfer_slip(slip_id):
+    slip = TransferSlip.query.get_or_404(slip_id)
+    import json
+    serials = json.loads(slip.serials_json) if slip.serials_json else []
+    
+    # 5 serials per row, 22 rows per page = 110 serials per page
+    rows = [serials[i:i+5] for i in range(0, len(serials), 5)]
+    pages = [rows[i:i+22] for i in range(0, len(rows), 22)]
+    total_pages = len(pages) if pages else 1
+    
+    print_date = datetime.now().strftime('%m-%d-%Y %H:%M:%S')
+    finished_date = slip.time.strftime('%m-%d-%Y') if slip.time else '--'
+    start_time = '--:--:--'
+    end_time = slip.time.strftime('%H:%M:%S') if slip.time else '--:--:--'
+
+    return render_template(
+        'admin/print_transfer_slip.html', 
+        slip=slip, 
+        pages=pages,
+        total_pages=total_pages,
+        print_date=print_date,
+        finished_date=finished_date,
+        start_time=start_time,
+        end_time=end_time
+    )
+
+# ── FGCP: Print Reports & Tags Endpoints ──────────────────────────────────────
+
+@admin_bp.route('/admin/api/qc-print-units', methods=['GET'])
+@login_required
+def get_qc_print_units():
+    date_filter = request.args.get('date', '').strip()
+    line_filter = request.args.get('line', '').strip()
+    serial_filter = request.args.get('serial', '').strip()
+    
+    query = Packaging.query
+    
+    if date_filter:
+        try:
+            parsed = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(func.date(Packaging.time) == parsed)
+        except ValueError:
+            pass
+            
+    if line_filter and line_filter.lower() != 'all':
+        query = query.filter(Packaging.lineno == line_filter)
+        
+    if serial_filter:
+        query = query.filter(Packaging.serial.ilike(f'%{serial_filter}%'))
+        
+    records = query.order_by(Packaging.time.desc()).limit(100).all()
+    
+    return jsonify({
+        'success': True,
+        'records': [{
+            'id': r.id,
+            'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '',
+            'modelcode': r.modelcode,
+            'serial': r.serial,
+            'line': r.lineno,
+            'status': r.status
+        } for r in records]
+    })
+
+
+@admin_bp.route('/admin/print-qc-report', methods=['GET'])
+@login_required
+def print_qc_report():
+    serials_str = request.args.get('serials', '')
+    if not serials_str:
+        return "No serials provided", 400
+        
+    serial_list = [s.strip() for s in serials_str.split(',') if s.strip()]
+    
+    units_data = []
+    
+    # Import necessary models
+    from app.models.crs import CRS
+    from app.models.att import ATT
+    from app.models.gms import GMS
+    from app.models.spamsi import SPAMSI
+    from app.models.spamso import SPAMSO
+    from app.models.insp2 import INSP2
+    from app.models.insp3_run import INSP3Run
+    from app.models.insp4 import INSP4
+    from app.models.packaging import Packaging
+    
+    for s in serial_list:
+        crs = CRS.query.filter_by(serial=s).order_by(CRS.time.desc()).first()
+        att = ATT.query.filter_by(serial=s).order_by(ATT.time.desc()).first()
+        gms = GMS.query.filter_by(serial=s).order_by(GMS.time.desc()).first()
+        spamsi = SPAMSI.query.filter_by(serial=s).order_by(SPAMSI.time.desc()).first()
+        spamso = SPAMSO.query.filter_by(serial=s).order_by(SPAMSO.time.desc()).first()
+        insp2 = INSP2.query.filter_by(serial=s).order_by(INSP2.time.desc()).first()
+        insp3 = INSP3Run.query.filter_by(serial=s).order_by(INSP3Run.time.desc()).first()
+        insp4 = INSP4.query.filter_by(serial=s).order_by(INSP4.time.desc()).first()
+        pack = Packaging.query.filter_by(serial=s).order_by(Packaging.time.desc()).first()
+        
+        # Determine model
+        model = ''
+        if pack and pack.modelcode: model = pack.modelcode
+        elif insp4 and insp4.modelcode: model = insp4.modelcode
+        elif insp3 and insp3.modelcode: model = insp3.modelcode
+        elif insp2 and insp2.modelcode: model = insp2.modelcode
+        elif spamso and spamso.modelcode: model = spamso.modelcode
+        elif spamsi and spamsi.modelcode: model = spamsi.modelcode
+        elif gms and gms.modelcode: model = gms.modelcode
+        elif crs and crs.modelcode: model = crs.modelcode
+            
+        units_data.append({
+            'serial': s,
+            'model': model,
+            'crs_record': crs,
+            'att_record': att,
+            'gms_record': gms,
+            'spamsi_record': spamsi,
+            'spamso_record': spamso,
+            'insp2_record': insp2,
+            'insp3_record': insp3,
+            'insp4_record': insp4,
+            'pack_record': pack
+        })
+        
+    return render_template('admin/qc_report_print.html', units_data=units_data, current_time=datetime.now())
+

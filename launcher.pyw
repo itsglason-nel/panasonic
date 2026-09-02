@@ -398,6 +398,42 @@ class LauncherApp:
     def _startup_sequence(self):
         self.root.after(0, self.log, "--- Starting PMPC Data Logger System ---")
         
+        # 0. Force Start MySQL
+        self.root.after(0, self.log, "Checking MySQL Service...")
+        try:
+            startupinfo = None
+            if STARTUPINFO:
+                startupinfo = STARTUPINFO()
+                startupinfo.dwFlags |= 0x00000080
+            
+            # Check if MySQL is running
+            query_proc = subprocess.run(["sc.exe", "query", "mysql80"], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW, startupinfo=startupinfo)
+            if "STATE" in query_proc.stdout and "RUNNING" not in query_proc.stdout:
+                self.root.after(0, self.log, "MySQL is stopped. Attempting to force start (may prompt for Administrator)...")
+                subprocess.run([
+                    "powershell.exe", 
+                    "-Command", 
+                    "Start-Process cmd -ArgumentList '/c net start mysql80' -Verb RunAs -WindowStyle Hidden"
+                ], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW, startupinfo=startupinfo)
+                
+                self.root.after(0, self.log, "Waiting for MySQL service to start (Please accept the Admin prompt if it appears)...")
+                started = False
+                for _ in range(30):  # Wait up to 30 seconds
+                    chk = subprocess.run(["sc.exe", "query", "mysql80"], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW, startupinfo=startupinfo)
+                    if "STATE" in chk.stdout and "RUNNING" in chk.stdout:
+                        started = True
+                        break
+                    time.sleep(1)
+                
+                if started:
+                    self.root.after(0, self.log, "MySQL Service started successfully!")
+                else:
+                    self.root.after(0, self.log, "Warning: MySQL Service did not start within 30 seconds.")
+            else:
+                self.root.after(0, self.log, "MySQL Service is running.")
+        except Exception as e:
+            self.root.after(0, self.log, f"Could not force start MySQL: {e}")
+
         # 1. Initialize Database
         self.root.after(0, self.log, "Initializing Database (Timeout: 15s)...")
         db_proc = None

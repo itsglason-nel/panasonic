@@ -142,10 +142,6 @@ def change_password():
     from app.models import db
     db.session.commit()
     
-    try:
-        from app.models.audit import log_audit
-        log_audit(getattr(current_user, 'username', 'system'), 'UPDATE', 'users', current_user.id, {'action': 'changed_password'})
-    except Exception:
-        pass
+
     
     return jsonify({'success': True, 'message': 'Password changed successfully.'})

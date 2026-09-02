@@ -4,11 +4,15 @@ import redis as _redis_lib
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from datetime import datetime, date as date_type
+from decimal import Decimal
 from app.models import db
 from app.models.crs import CRS
 from app.models.att import ATT
 from app.models.gms import GMS
-from app.models.modelref import ModelRef
+
+from app.models.spamsi import SPAMSI
+from app.models.packaging import Packaging
+from app.models.spamso import SPAMSO
 from app.models.partref import PartRef
 from app.models.worksched import WorkSched
 from app.services.barcode_parser import decode_safety_part_qr
@@ -44,6 +48,8 @@ def get_unit(serial):
     # Check downstream statuses
     att_record = ATT.query.filter_by(serial=serial).order_by(ATT.time.desc()).first()
     gms_record = GMS.query.filter_by(serial=serial).order_by(GMS.time.desc()).first()
+    spamsi_record = SPAMSI.query.filter_by(serial=serial).order_by(SPAMSI.time.desc()).first()
+    spamso_record = SPAMSO.query.filter_by(serial=serial).order_by(SPAMSO.time.desc()).first()
 
     return jsonify({
         'found': True,
@@ -59,6 +65,8 @@ def get_unit(serial):
         'att_status': att_record.status if att_record else None,
         'gms_status': gms_record.status if gms_record else None,
         'gms_charge_kg': float(gms_record.gascharge) if gms_record else None,
+        'spamsi_status': 'GOOD' if spamsi_record else None,
+        'spamso_status': 'GOOD' if spamso_record else None,
     })
 
 
@@ -80,11 +88,12 @@ def get_bom(model_number, module_code):
     })
 
 
-# ── Model Reference (Serial Start) lookup ─────────────────────────────────────
-@api_bp.route('/modelref/<modelcode>', methods=['GET'])
+# ── Serial Reference (Serial Start) lookup ─────────────────────────────────────
+@api_bp.route('/serialref/<modelcode>', methods=['GET'])
 @login_required
-def get_modelref(modelcode):
+def get_serialref(modelcode):
     """Return all serial-start entries for a given model code."""
+    from app.models.modelref import ModelRef
     entries = ModelRef.query.filter_by(modelcode=modelcode).order_by(ModelRef.area).all()
     if not entries:
         return jsonify({'found': False, 'modelcode': modelcode})
@@ -241,7 +250,7 @@ def submit_station(station_code):
             return jsonify({'success': False, 'error': f'Missing fields: {", ".join(missing)}'}), 400
 
         try:
-            gascharge = float(data['gascharge'])
+            gascharge = Decimal(str(data['gascharge']))
         except (ValueError, TypeError):
             return jsonify({'success': False, 'error': 'gascharge must be a number.'}), 400
 
@@ -262,18 +271,64 @@ def submit_station(station_code):
         db.session.commit()
         return jsonify({'success': True, 'scan_id': record.id, 'station': 'GMS'})
 
-    # ── SPAMS (Safety Parts) ────────────────────────────────────────────────
+    # ── SPAMSI (Indoor Safety Parts) ────────────────────────────────────────
+    elif station_lower in ('spamsi',):
+        required = ['modelcode', 'serial']
+        missing = [f for f in required if not data.get(f)]
+        if missing:
+            return jsonify({'success': False, 'error': f'Missing fields: {", ".join(missing)}'}), 400
+            
+        record = SPAMSI(
+            modelcode = data.get('modelcode', ''),
+            serial    = data.get('serial', ''),
+            inserial  = data.get('inserial', ''),
+            part1mod  = data.get('part1mod'), part1desc = data.get('part1desc'), part1serial = data.get('part1serial'),
+            part2mod  = data.get('part2mod'), part2desc = data.get('part2desc'), part2serial = data.get('part2serial'),
+            part3mod  = data.get('part3mod'), part3desc = data.get('part3desc'), part3serial = data.get('part3serial'),
+            part4mod  = data.get('part4mod'), part4desc = data.get('part4desc'), part4serial = data.get('part4serial'),
+            part5mod  = data.get('part5mod'), part5desc = data.get('part5desc'), part5serial = data.get('part5serial'),
+            part6mod  = data.get('part6mod'), part6desc = data.get('part6desc'), part6serial = data.get('part6serial'),
+            time      = now,
+            inspector = getattr(current_user, 'username', 'system'),
+            lineno    = data.get('lineno', 'L1')
+        )
+        db.session.add(record)
+        db.session.commit()
+        return jsonify({'success': True, 'scan_id': record.id, 'station': 'SPAMSI'})
+
+    # ── SPAMSO (Outdoor Safety Parts) ───────────────────────────────────────
+    elif station_lower in ('spamso',):
+        required = ['modelcode', 'serial']
+        missing = [f for f in required if not data.get(f)]
+        if missing:
+            return jsonify({'success': False, 'error': f'Missing fields: {", ".join(missing)}'}), 400
+            
+        record = SPAMSO(
+            modelcode = data.get('modelcode', ''),
+            serial    = data.get('serial', ''),
+            outmodel  = data.get('outmodel', ''),
+            outserial = data.get('outserial', ''),
+            part1mod  = data.get('part1mod'), part1desc = data.get('part1desc'), part1serial = data.get('part1serial'),
+            part2mod  = data.get('part2mod'), part2desc = data.get('part2desc'), part2serial = data.get('part2serial'),
+            part3mod  = data.get('part3mod'), part3desc = data.get('part3desc'), part3serial = data.get('part3serial'),
+            time      = now,
+            inspector = getattr(current_user, 'username', 'system'),
+            lineno    = data.get('lineno', 'L1')
+        )
+        db.session.add(record)
+        db.session.commit()
+        return jsonify({'success': True, 'scan_id': record.id, 'station': 'SPAMSO'})
+
+    # ── SPAMS (Legacy / Safety Parts QR Parser) ─────────────────────────────
     elif station_lower in ('spams', 'safety'):
         raw_qr = data.get('raw_qr', '')
         if not raw_qr:
             return jsonify({'success': False, 'error': 'Missing raw_qr.'}), 400
             
-        # Utilize the orphaned barcode parser
         parsed_data = decode_safety_part_qr(raw_qr)
         if not parsed_data:
             return jsonify({'success': False, 'error': 'Failed to parse QR code.'}), 400
             
-        # In the future this will save to station_scans / unit_parts
         return jsonify({
             'success': True,
             'station': 'SPAMS',
@@ -290,15 +345,6 @@ def submit_station(station_code):
             'station': station_code,
         }), 501
 
-
-# ── Repair submit ─────────────────────────────────────────────────────────────
-@api_bp.route('/repair/submit', methods=['POST'])
-@login_required
-def submit_repair():
-    return jsonify({
-        'success': False,
-        'error': 'Repair station submission is not yet implemented. No repair table exists.',
-    }), 501
 
 
 # ── PIT record ────────────────────────────────────────────────────────────────

@@ -90,8 +90,7 @@ CREATE TABLE IF NOT EXISTS `tags` (
 
 INSERT IGNORE INTO `tags` (`name`, `description`) VALUES
     ('Compressor', 'Compressor Registration System'),
-    ('Fan1 Motor', 'Fan1 Motor'),
-    ('Fan2 Motor', 'Fan2 Motor'),
+    ('Fan Motor', 'Fan Motor'),
     ('Safety Part', 'Safety Part'),
     ('Gas Charge', 'Gas Charge');
 
@@ -144,9 +143,9 @@ select * from worksched_today;
 
 
 -- ────────────────────────────────────────────
--- 2. Part Reference (BOM) — formerly `modelref`
+-- 2. Part Reference (BOM) — formerly `serialref`
 -- ────────────────────────────────────────────
--- NOTE: If `modelref` already exists in DB, run: RENAME TABLE `modelref` TO `partref`;
+-- NOTE: If `serialref` already exists in DB, run: RENAME TABLE `serialref` TO `partref`;
 -- Then skip the CREATE TABLE below (it's guarded by IF NOT EXISTS).
 
 CREATE TABLE IF NOT EXISTS `partref` (
@@ -174,12 +173,7 @@ VALUES
 --     so inspectors can identify which series a unit belongs to.
 --     area values: 'Domestic', 'HongKong', 'Export', 'Taiwan'
 -- ────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `modelref` (
-    `id`          INT AUTO_INCREMENT PRIMARY KEY,
-    `modelcode`   VARCHAR(14) NULL,
-    `area`        VARCHAR(14) NULL,
-    `serialstart` VARCHAR(6)  NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 -- ────────────────────────────────────────────
@@ -190,23 +184,23 @@ CREATE TABLE IF NOT EXISTS `crs` (
     `modelcode`   VARCHAR(14) NOT NULL,
     `serial`      VARCHAR(14) NOT NULL,
     `compmod`     VARCHAR(14) NOT NULL,
-    `compserial`  VARCHAR(30) NOT NULL,
+    `compserial`  VARCHAR(60) NOT NULL,
     `fan1mod`     VARCHAR(14) NULL,
-    `fan1serial`  VARCHAR(30) NULL,
+    `fan1serial`  VARCHAR(60) NULL,
     `fan2mod`     VARCHAR(14) NULL,
-    `fan2serial`  VARCHAR(30) NULL,
+    `fan2serial`  VARCHAR(60) NULL,
     `part1mod`    VARCHAR(14) NULL,
     `part1desc`   VARCHAR(30) NULL,
-    `part1serial` VARCHAR(30) NULL,
+    `part1serial` VARCHAR(60) NULL,
     `part2mod`    VARCHAR(14) NULL,
     `part2desc`   VARCHAR(30) NULL,
-    `part2serial` VARCHAR(30) NULL,
+    `part2serial` VARCHAR(60) NULL,
     `part3mod`    VARCHAR(14) NULL,
     `part3desc`   VARCHAR(30) NULL,
-    `part3serial` VARCHAR(30) NULL,
+    `part3serial` VARCHAR(60) NULL,
     `part4mod`    VARCHAR(14) NULL,
     `part4desc`   VARCHAR(30) NULL,
-    `part4serial` VARCHAR(30) NULL,
+    `part4serial` VARCHAR(60) NULL,
 	`time`        TIMESTAMP NOT NULL,
     `inspector`   VARCHAR(20) NULL,
     `lineno`	  VARCHAR(4) NOT NULL, -- newly added
@@ -249,16 +243,16 @@ CREATE TABLE IF NOT EXISTS `crs` (
     `fan2serial`  VARCHAR(60) NULL, -- change
     `part1mod`    VARCHAR(14) NULL,
     `part1desc`   VARCHAR(30) NULL,
-    `part1serial` VARCHAR(34) NULL, -- change
+    `part1serial` VARCHAR(60) NULL, -- change
     `part2mod`    VARCHAR(14) NULL,
     `part2desc`   VARCHAR(30) NULL,
-    `part2serial` VARCHAR(34) NULL, -- change
+    `part2serial` VARCHAR(60) NULL, -- change
     `part3mod`    VARCHAR(14) NULL,
     `part3desc`   VARCHAR(30) NULL,
-    `part3serial` VARCHAR(34) NULL, -- change
+    `part3serial` VARCHAR(60) NULL, -- change
     `part4mod`    VARCHAR(14) NULL,
     `part4desc`   VARCHAR(30) NULL,
-    `part4serial` VARCHAR(34) NULL, -- change
+    `part4serial` VARCHAR(60) NULL, -- change
 	`time`        TIMESTAMP NOT NULL,
     `inspector`   VARCHAR(20) NULL,
     `lineno`	  VARCHAR(4) NOT NULL, -- newly added
@@ -304,7 +298,7 @@ CREATE TABLE IF NOT EXISTS `gms` (
     `id`        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `modelcode` VARCHAR(14) NOT NULL,
     `serial`    VARCHAR(14) NOT NULL,
-    `gascharge` REAL NOT NULL,
+    `gascharge` DECIMAL(4,2) NOT NULL,
     `status`    VARCHAR(12) NOT NULL,
     `time`      TIMESTAMP NOT NULL,
     `inspector`   VARCHAR(20) NULL,
@@ -313,13 +307,13 @@ CREATE TABLE IF NOT EXISTS `gms` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `gms` 
-    (`modelcode`, `serial`, `gascharge`, `status`, `time`) 
+    (`modelcode`, `serial`, `gascharge`, `status`, `time`, `lineno`) 
 VALUES 
-    ('CW-U921JPH', 'JPH-0001', 0.41, 'GOOD',  '2026-07-03 08:15:00'),
-    ('CW-U921JPH', 'JPH-0002', 0.41, 'GOOD',  '2026-07-03 08:20:00'),
-    ('CU-HZ12BWA', 'BWA-0001', 0.66, 'NO GOOD',  '2026-07-03 09:05:00'),
-    ('CU-HZ12BWA', 'BWA-0002', 0.66, 'GOOD',  '2026-07-03 09:10:00'),
-    ('CU-HZ12BWA', 'BWA-0003', 0.66, 'NO GOOD', '2026-07-03 09:15:00');
+    ('CW-U921JPH', 'JPH-0001', 0.41, 'GOOD',  '2026-07-03 08:15:00', 'L1'),
+    ('CW-U921JPH', 'JPH-0002', 0.41, 'GOOD',  '2026-07-03 08:20:00', 'L1'),
+    ('CU-HZ12BWA', 'BWA-0001', 0.66, 'NO GOOD',  '2026-07-03 09:05:00', 'L2'),
+    ('CU-HZ12BWA', 'BWA-0002', 0.66, 'GOOD',  '2026-07-03 09:10:00', 'L2'),
+    ('CU-HZ12BWA', 'BWA-0003', 0.66, 'NO GOOD', '2026-07-03 09:15:00', 'L2');
 
 CREATE TABLE IF NOT EXISTS system_state (
                `key_name`   VARCHAR(50)  NOT NULL PRIMARY KEY,
@@ -333,16 +327,7 @@ INSERT IGNORE INTO `system_state` (`key_name`, `value`) VALUES (	'last_autoclose
 -- ────────────────────────────────────────────
 -- 9. Audit Logs
 -- ────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `audit_logs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `action` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `table_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `record_id` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `details` text COLLATE utf8mb4_unicode_ci,
-  `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ────────────────────────────────────────────
 -- 0. PLC View
@@ -368,7 +353,7 @@ where date = current_date();
 select * from worksched_today;
 
 -- ────────────────────────────────────────────
--- Part Reference Sort View (formerly modelref_sort)
+-- Part Reference Sort View (formerly serialref_sort)
 -- ────────────────────────────────────────────
 
 -- DROP VIEW IF EXISTS `partref_sort`;
@@ -421,3 +406,145 @@ SET GLOBAL general_log = 'OFF';
 SHOW VARIABLES LIKE 'general_log_file';
 
 SHOW GLOBAL STATUS LIKE 'Aborted_clients';
+
+-- ================================================================
+-- Panasonic Data Logger — Quality Tracking Schema Extension
+-- MySQL 8.x | InnoDB | utf8mb4_unicode_ci
+-- Schema: plcdata
+-- ================================================================
+
+USE plcdata;
+
+-- ────────────────────────────────────────────
+-- 1. Modify ATT — add test detail columns
+-- ────────────────────────────────────────────
+ALTER TABLE `att`
+  ADD COLUMN `test_no_clogged` ENUM('GOOD','NG') NULL AFTER `inspector`,
+  ADD COLUMN `test_no_leak`    ENUM('GOOD','NG') NULL AFTER `test_no_clogged`,
+  ADD COLUMN `test_exp_valve`  ENUM('GOOD','NG') NULL AFTER `test_no_leak`,
+  ADD COLUMN `remarks`         TEXT NULL AFTER `test_exp_valve`;
+
+-- ────────────────────────────────────────────
+-- 2. Modify GMS — add remarks
+-- ────────────────────────────────────────────
+ALTER TABLE `gms`
+  ADD COLUMN `remarks` TEXT NULL AFTER `inspector`;
+
+-- ────────────────────────────────────────────
+-- 3. Safety Parts Monitoring System (SPAMS)
+-- ────────────────────────────────────────────
+
+
+-- ────────────────────────────────────────────
+-- 4. Control Board & Power Control Board (CB/PCB)
+-- ────────────────────────────────────────────
+
+
+-- ────────────────────────────────────────────
+-- 5. Inner Line & Construction (INSP2)
+-- ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `insp2` (
+    `id`                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `modelcode`         VARCHAR(14) NOT NULL,
+    `serial`            VARCHAR(14) NOT NULL,
+    `status`            VARCHAR(12) NOT NULL,
+    `inspector`         VARCHAR(20) NULL,
+    `time`              TIMESTAMP NOT NULL,
+    `test_wiring_seq`   ENUM('GOOD','NG') NULL COMMENT 'Correct sequence of wirings',
+    `test_no_touching`  ENUM('GOOD','NG') NULL COMMENT 'No touching materials (tubes, rings, spm)',
+    `test_no_misaligned` ENUM('GOOD','NG') NULL COMMENT 'No misaligned tubes',
+    `test_no_lacking`   ENUM('GOOD','NG') NULL COMMENT 'No lacking parts',
+    `remarks`           TEXT NULL,
+    INDEX idx_insp2_serial (serial),
+    INDEX idx_insp2_time (time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ────────────────────────────────────────────
+-- 6. Running Inspection (INSP3 — Running)
+-- ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `insp3_run` (
+    `id`                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `modelcode`             VARCHAR(14) NOT NULL,
+    `serial`                VARCHAR(14) NOT NULL,
+    `status`                VARCHAR(12) NOT NULL,
+    `inspector`             VARCHAR(20) NULL,
+    `time`                  TIMESTAMP NOT NULL,
+    `insulation_resistance` VARCHAR(20) NULL COMMENT 'Insulation Resistance reading',
+    `withstand_voltage`     VARCHAR(20) NULL COMMENT 'Withstand Voltage reading',
+    `leak_status`           ENUM('NO LEAK','LEAK') NULL,
+    `leak_location`         VARCHAR(60) NULL COMMENT 'Location if leak found',
+    `prog_check_h`          VARCHAR(20) NULL COMMENT 'Program Check H value',
+    `prog_check_f`          VARCHAR(20) NULL COMMENT 'Program Check F value',
+    `airswing`              ENUM('GOOD','NG') NULL COMMENT 'Airswing working & not noisy',
+    `comp_operation`        ENUM('GOOD','NG') NULL COMMENT 'No noisy/abnormal compressor op',
+    `fan_operation`         ENUM('GOOD','NG') NULL COMMENT 'No noisy/abnormal fan motor op',
+    `evap_tubes_cool`       ENUM('GOOD','NG') NULL,
+    `evap_tubes_heat`       ENUM('GOOD','NG') NULL,
+    `cond_tubes_cool`       ENUM('GOOD','NG') NULL,
+    `cond_tubes_heat`       ENUM('GOOD','NG') NULL,
+    `op_current_cool`       ENUM('GOOD','NG') NULL,
+    `op_current_heat`       ENUM('GOOD','NG') NULL,
+    `in_power_cool`         ENUM('GOOD','NG') NULL,
+    `in_power_heat`         ENUM('GOOD','NG') NULL,
+    `operating_current`     DECIMAL(8,2) NULL COMMENT 'Current reading',
+    `input_power`           DECIMAL(8,2) NULL COMMENT 'Wattage reading',
+    `temp_diff`             DECIMAL(8,2) NULL COMMENT 'Temp reading',
+    `remarks`               TEXT NULL,
+    INDEX idx_insp3run_serial (serial),
+    INDEX idx_insp3run_time (time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ────────────────────────────────────────────
+-- 7. Vibration Test (INSP3 — Vibration)
+-- ────────────────────────────────────────────
+
+
+-- ────────────────────────────────────────────
+-- 8. Final Inspection (INSP4)
+-- ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `insp4` (
+    `id`                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `modelcode`             VARCHAR(14) NOT NULL,
+    `serial`                VARCHAR(14) NOT NULL,
+    `status`                VARCHAR(12) NOT NULL,
+    `inspector`             VARCHAR(20) NULL,
+    `time`                  TIMESTAMP NOT NULL,
+    `insulation_resistance` VARCHAR(20) NULL COMMENT 'Insulation Resistance / Withstand Voltage',
+    `operating_current`     VARCHAR(20) NULL COMMENT 'Operating Current / Input Power',
+    `nameplate_match`       ENUM('GOOD','NG') NULL COMMENT 'Nameplate & barcode same model/serial',
+    `model_label`           ENUM('GOOD','NG') NULL COMMENT 'Correct model label & badge',
+    `manual_remote`         ENUM('GOOD','NG') NULL COMMENT 'Remote and battery complete',
+    `manual_warranty`       ENUM('GOOD','NG') NULL COMMENT 'Operation instruction & warranty card',
+    `manual_screws`         ENUM('GOOD','NG') NULL COMMENT 'Screw bag & drain pan complete',
+    `grille_eel`            ENUM('GOOD','NG') NULL COMMENT 'EEL label present',
+    `grille_model`          ENUM('GOOD','NG') NULL COMMENT 'Correct model on grille',
+    `grille_logo`           ENUM('GOOD','NG') NULL COMMENT 'Flammable logo present',
+    `remarks`               TEXT NULL,
+    INDEX idx_insp4_serial (serial),
+    INDEX idx_insp4_time (time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ────────────────────────────────────────────
+-- 9. Repair Station
+-- ────────────────────────────────────────────
+
+-- --------------------------------------------
+-- 12. Audit Logs
+-- --------------------------------------------
+
+
+
+
+CREATE TABLE packaging(
+	id INTEGER NOT NULL AUTO_INCREMENT, 
+	modelcode VARCHAR(14), 
+	serial VARCHAR(14), 
+	status1 VARCHAR(12), 
+	status2 VARCHAR(12), 
+	status3 VARCHAR(12),
+	status4 VARCHAR(12),  
+	time TIMESTAMP NULL, 
+	inspector VARCHAR(20), 
+	lineno VARCHAR(4) NOT NULL, 
+	PRIMARY KEY (id)
+);

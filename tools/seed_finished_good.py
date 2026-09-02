@@ -45,8 +45,8 @@ def main():
 
         # 3. Insert into GMS (Gas Management System)
         cursor.execute("""
-        INSERT INTO gms (modelcode, serial, gascharge, status, time)
-        VALUES (%s, %s, 0.41, 'GOOD', NOW())
+        INSERT INTO gms (modelcode, serial, gascharge, status, time, lineno)
+        VALUES (%s, %s, 0.41, 'GOOD', NOW(), 'L1')
         """, (modelcode, serial))
 
         conn.commit()
@@ -76,8 +76,8 @@ def main():
         """, (modelcode, serial2))
 
         cursor.execute("""
-        INSERT INTO gms (modelcode, serial, gascharge, status, time)
-        VALUES (%s, %s, 0.41, 'GOOD', NOW())
+        INSERT INTO gms (modelcode, serial, gascharge, status, time, lineno)
+        VALUES (%s, %s, 0.41, 'GOOD', NOW(), 'L1')
         """, (modelcode, serial2))
 
         conn.commit()

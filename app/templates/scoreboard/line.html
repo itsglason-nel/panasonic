@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMPC Scoreboard - {{ line.lineno }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            background-color: #49b5e7; /* Matching the bright blue */
+            color: #000000;
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 20px 40px;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        /* ─── HEADER ─── */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 40px;
+            margin-top: 10px;
+        }
+        
+        /* ─── CAROUSEL ─── */
+        .carousel {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .view {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .view.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ─── VIEW 1: PRODUCTION ─── */
+        .prod-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .data-table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 30px;
+        }
+        .data-table th {
+            font-size: 30px;
+            padding-bottom: 20px;
+        }
+        .data-table td {
+            padding: 10px;
+        }
+        
+        /* Bottom: On-Going Production Panel */
+        .ongoing-panel {
+            background-color: #b5e495; /* Light green box */
+            padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-top: auto;
+            position: relative;
+        }
+        .ongoing-title {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 30px;
+        }
+        .ongoing-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+        }
+        .og-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .og-label {
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .og-value {
+            font-size: 72px;
+            font-weight: 900;
+        }
+        .og-value.model { font-size: 60px; }
+
+        /* Status Circle */
+        .status-circle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .status-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 70px;
+            font-weight: 900;
+            border: 3px solid black;
+        }
+        .status-text {
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        
+        .color-red { background-color: #ff0000; }
+        .color-yellow { background-color: #ffff00; color: black; }
+        .color-yellowgreen { background-color: #9acd32; color: black; }
+        .color-green { background-color: #008000; }
+
+        .legend {
+            position: absolute;
+            bottom: 0; right: 0;
+            background: #b5e495;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.2;
+            border-top: 2px solid #49b5e7;
+            border-left: 2px solid #49b5e7;
+        }
+
+        /* ─── VIEW 2: LOGS ─── */
+        .logs-table {
+            width: 90%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+        }
+        .logs-table th {
+            padding-bottom: 20px;
+        }
+        .logs-table td {
+            padding: 12px;
+        }
+
+        /* ─── VIEW 3: WIP ─── */
+        .wip-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            padding: 40px;
+        }
+        .wip-card {
+            background-color: #f0f0f0;
+            border: 4px solid #333;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 5px 5px 0px #333;
+        }
+        .wip-card-header {
+            background-color: #333;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 900;
+            padding: 10px;
+            text-transform: uppercase;
+        }
+        .wip-card-body {
+            font-size: 64px;
+            font-weight: 900;
+            padding: 20px;
+            background-color: #fff;
+            color: #000;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-header">
+        <div id="header-line">LINE {{ line.lineno }}</div>
+        <div id="header-date">FEBRUARY 18, 2026</div>
+        <div id="header-shift">SHIFT: DAY</div>
+    </div>
+
+    <div class="carousel">
+        <!-- VIEW 1: PRODUCTION STATUS -->
+        <div class="view active" id="view-1">
+            <div class="prod-layout">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>MODEL</th>
+                            <th>PLAN</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sched-tbody">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+
+                <div class="ongoing-panel">
+                    <div class="ongoing-title">ON-GOING PRODUCTION</div>
+                    <div class="ongoing-grid">
+                        <div class="og-col">
+                            <div class="og-label">MODEL</div>
+                            <div class="og-value model" id="og-model">—</div>
+                        </div>
+                        <div class="og-col">
+                            <div class="og-label">RUNNING<br>SCHEDULE</div>
+                            <div class="og-value" id="og-rsched">0</div>
+                        </div>
+                        <div class="og-col">
+                            <div class="og-label">RUNNING<br>ACTUAL</div>
+                            <div class="og-value" id="og-ract">0</div>
+                        </div>
+                        <div class="og-col">
+                            <div class="og-label">VARIANCE</div>
+                            <div class="og-value" id="og-var">0</div>
+                        </div>
+                        <div class="status-circle-container">
+                            <div class="og-label">STATUS</div>
+                            <div class="status-circle color-green" id="og-circle">!</div>
+                            <div class="status-text" id="og-status-text">Ahead</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="legend">
+                Note (Variance):<br>
+                Behind (Red) : more than 20<br>
+                Behind (Yellow) : less than 20<br>
+                On-Time (Yellow-Green): 0<br>
+                On-Time (Green): positive value
+            </div>
+        </div>
+
+        <!-- VIEW 2: LOGS -->
+        <div class="view" id="view-2">
+            <table class="logs-table">
+                <thead>
+                    <tr>
+                        <th>MODEL</th>
+                        <th>SERIAL</th>
+                        <th>STATUS</th>
+                        <th>REMARKS</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-tbody">
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- VIEW 3: WIP -->
+        <div class="view" id="view-3">
+            <div style="font-size: 48px; font-weight: 900; text-align: center; margin-top: 20px; text-transform: uppercase;">
+                WORK IN PROGRESS (REMAINING)
+            </div>
+            <div class="wip-grid">
+                <div class="wip-card">
+                    <div class="wip-card-header">ATT</div>
+                    <div class="wip-card-body" id="wip-att">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">GMS</div>
+                    <div class="wip-card-body" id="wip-gms">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">SPAMSI</div>
+                    <div class="wip-card-body" id="wip-spamsi">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">SPAMSO</div>
+                    <div class="wip-card-body" id="wip-spamso">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">W&C</div>
+                    <div class="wip-card-body" id="wip-wc">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">RUNNING</div>
+                    <div class="wip-card-body" id="wip-ri">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">FINAL</div>
+                    <div class="wip-card-body" id="wip-fi">0</div>
+                </div>
+                <div class="wip-card">
+                    <div class="wip-card-header">PACKAGING</div>
+                    <div class="wip-card-body" id="wip-pack">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const lineno = "{{ line.lineno }}";
+        
+        const updateDate = (dateStr) => {
+            const d = new Date(dateStr);
+            const options = { month: 'long', day: 'numeric', year: 'numeric' };
+            document.getElementById('header-date').innerText = d.toLocaleDateString('en-US', options).toUpperCase();
+        };
+
+        let currentView = 1;
+        const totalViews = 3;
+        setInterval(() => {
+            document.getElementById(`view-${currentView}`).classList.remove('active');
+            currentView = currentView === totalViews ? 1 : currentView + 1;
+            document.getElementById(`view-${currentView}`).classList.add('active');
+        }, 15000);
+
+        let serverData = null;
+
+        const renderProduction = () => {
+            if (!serverData) return;
+            const data = serverData;
+            
+            document.getElementById('header-shift').innerText = `SHIFT: ${data.shift_name.toUpperCase()}`;
+            document.getElementById('header-line').innerText = `LINE ${lineno.replace('L','')}`;
+            updateDate(data.date);
+
+            const shiftStart = new Date(`${data.date}T${data.shift_start}`);
+            const now = new Date(); 
+            let diffSeconds = Math.floor((now - shiftStart) / 1000);
+            if (diffSeconds < 0) diffSeconds = 0;
+
+            let remainingSeconds = diffSeconds;
+            let activeModel = null;
+            let activeRSched = 0;
+            let activeRAct = 0;
+            let activeVar = 0;
+
+            let tbodyHtml = '';
+            
+            data.data.forEach(sched => {
+                let rSched = 0;
+                let requiredSeconds = sched.plan * sched.takt_time;
+                
+                if (remainingSeconds >= requiredSeconds) {
+                    rSched = sched.plan;
+                    remainingSeconds -= requiredSeconds;
+                } else {
+                    rSched = Math.floor(remainingSeconds / (sched.takt_time || 1));
+                    remainingSeconds = 0;
+                }
+                
+                if (rSched > sched.plan) rSched = sched.plan;
+                let variance = sched.actual - rSched;
+                
+                if (sched.status === 'ON-GOING') {
+                    activeModel = sched.modelcode;
+                    activeRSched = rSched;
+                    activeRAct = sched.actual;
+                    activeVar = variance;
+                }
+                
+                tbodyHtml += `
+                    <tr>
+                        <td>${sched.modelcode}</td>
+                        <td>${sched.plan}</td>
+                        <td>${sched.status.replace(/-/g, ' ')}</td>
+                    </tr>
+                `;
+            });
+            
+            document.getElementById('sched-tbody').innerHTML = tbodyHtml;
+
+            if (activeModel) {
+                document.getElementById('og-model').innerText = activeModel;
+                document.getElementById('og-rsched').innerText = activeRSched;
+                document.getElementById('og-ract').innerText = activeRAct;
+                document.getElementById('og-var').innerText = activeVar;
+                
+                let circle = document.getElementById('og-circle');
+                let stext = document.getElementById('og-status-text');
+                
+                circle.className = 'status-circle'; 
+                if (activeVar < -20) {
+                    circle.classList.add('color-red');
+                    stext.innerText = 'Behind';
+                    circle.innerText = '!';
+                    circle.style.color = 'white';
+                } else if (activeVar < 0) {
+                    circle.classList.add('color-yellow');
+                    stext.innerText = 'Behind';
+                    circle.innerText = '!';
+                    circle.style.color = 'black';
+                } else if (activeVar === 0) {
+                    circle.classList.add('color-yellowgreen');
+                    stext.innerText = 'On-Time';
+                    circle.innerText = '✓';
+                    circle.style.color = 'black';
+                } else {
+                    circle.classList.add('color-green');
+                    stext.innerText = 'Ahead';
+                    circle.innerText = '✓';
+                    circle.style.color = 'white';
+                }
+            } else {
+                document.getElementById('og-model').innerText = '—';
+                document.getElementById('og-rsched').innerText = '0';
+                document.getElementById('og-ract').innerText = '0';
+                document.getElementById('og-var').innerText = '0';
+            }
+            
+            // Update WIP View
+            if (data.wip) {
+                document.getElementById('wip-att').innerText = data.wip.att || 0;
+                document.getElementById('wip-gms').innerText = data.wip.gms || 0;
+                document.getElementById('wip-spamsi').innerText = data.wip.spamsi || 0;
+                document.getElementById('wip-spamso').innerText = data.wip.spamso || 0;
+                document.getElementById('wip-wc').innerText = data.wip.wc || 0;
+                document.getElementById('wip-ri').innerText = data.wip.ri || 0;
+                document.getElementById('wip-fi').innerText = data.wip.fi || 0;
+                document.getElementById('wip-pack').innerText = data.wip.pack || 0;
+            }
+        };
+
+        const fetchProdData = () => {
+            fetch(`/api/scoreboard/data?line=${lineno}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        serverData = d;
+                        renderProduction();
+                    }
+                });
+        };
+
+        const fetchLogsData = () => {
+            fetch(`/api/scoreboard/logs?line=${lineno}&limit=12`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        let html = '';
+                        d.logs.forEach(log => {
+                            html += `
+                                <tr>
+                                    <td>${log.model}</td>
+                                    <td>${log.serial}</td>
+                                    <td>${log.status.replace(/-/g, ' ')}</td>
+                                    <td>${log.remarks || ''}</td>
+                                </tr>
+                            `;
+                        });
+                        if (d.logs.length === 0) {
+                            html = `<tr><td colspan="4" style="text-align:center;">No records found for today.</td></tr>`;
+                        }
+                        document.getElementById('logs-tbody').innerHTML = html;
+                    }
+                });
+        };
+
+        setInterval(renderProduction, 1000);
+        
+        socket.on('scoreboard_update', (msg) => {
+            if (msg.line === lineno) {
+                fetchProdData();
+                fetchLogsData();
+            }
+        });
+        
+        fetchProdData();
+        fetchLogsData();
+        setInterval(fetchProdData, 30000);
+        setInterval(fetchLogsData, 30000);
+    </script>
+</body>
+</html>

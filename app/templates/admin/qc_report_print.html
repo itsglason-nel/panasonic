@@ -6,16 +6,22 @@
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            line-height: 1.4;
+            font-size: 10pt;
+            line-height: 1.3;
             color: #000;
             background: #fff;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
         @page {
             size: A4;
-            margin: 20mm;
+            margin: 0;
+        }
+        .print-page {
+            padding: 15mm 20mm;
+            box-sizing: border-box;
+            page-break-after: always;
+            min-height: 297mm;
         }
         .header-title {
             font-weight: bold;
@@ -24,11 +30,11 @@
         .sub-header {
             font-weight: bold;
             font-size: 12pt;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         .meta-info {
             display: flex;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: bold;
             font-size: 11pt;
         }
@@ -39,23 +45,47 @@
             display: grid;
             grid-template-columns: auto auto auto auto;
             gap: 12px 20px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             font-weight: bold;
             align-items: center;
         }
-        .part-row {
-            display: grid;
-            grid-template-columns: 140px 220px 80px 160px 160px;
-            margin-bottom: 8px;
-            font-size: 10pt;
+        
+        .section-title {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 3px;
         }
-        .part-row div {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+
+        table.report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9pt;
         }
+        table.report-table th, table.report-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: left;
+        }
+        table.report-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .judgement-pass {
+            color: #000;
+            font-weight: bold;
+        }
+        .judgement-fail {
+            color: #d00;
+            font-weight: bold;
+        }
+
         .footer {
-            margin-top: 50px;
+            margin-top: 30px;
             text-align: right;
             font-style: italic;
             font-size: 9pt;
@@ -64,62 +94,222 @@
             body {
                 padding: 0;
             }
+            .print-page {
+                page-break-after: always;
+            }
+            .print-page:last-child {
+                page-break-after: auto;
+            }
         }
     </style>
 </head>
-<body onload="window.print()">
-    <div class="header-title">Panasonic Manufacturing Philippines Corporation</div>
-    <div class="header-title" style="margin-bottom: 5px;">Aircon Division</div>
-    <div class="sub-header">Parts Confirmation Report - Complete</div>
+<body onload="window.print()" onafterprint="window.close()">
+    {% for u in units_data %}
+    <div class="print-page">
+        <div class="header-title">Panasonic Manufacturing Philippines Corporation</div>
+        <div class="header-title" style="margin-bottom: 5px;">Aircon Division</div>
+        <div class="sub-header">QC Report - Master Audit Sheet</div>
 
-    <div class="meta-info" style="margin-bottom: 8px;">
-        <div>Line No: <span style="font-weight:normal;">{{ crs_record.lineno }}</span></div>
-    </div>
-    
-    <div class="meta-info" style="margin-bottom: 30px;">
-        <div>Production Date: <span style="font-weight:normal;">{{ current_time.strftime('%m/%d/%Y') }}</span></div>
-        <div>From: <span style="font-weight:normal;">{{ current_time.strftime('%H:%M:%S') }}</span></div>
-        <div>To: <span style="font-weight:normal;">{{ current_time.strftime('%H:%M:%S') }}</span></div>
-    </div>
-
-    <div class="details-grid">
-        <div style="grid-column: span 4; margin-bottom: 5px;">Model No: <span style="font-weight:normal;">{{ model }}</span></div>
-
-        <div style="grid-column: span 2;">Serial No: <span style="font-weight:normal;">{{ serial }}</span></div>
-        <div style="grid-column: span 2;">Date Scanned: <span style="font-weight:normal;">{{ crs_record.time.strftime('%m/%d/%Y %H:%M:%S') if crs_record.time else '' }}</span></div>
-
-        <div style="text-align: right; margin-left: 20px;">Compressor Part No:</div>
-        <div style="font-weight:normal;">{{ crs_record.compmod }}</div>
-        <div style="text-align: right;">Compressor Serial No:</div>
-        <div style="font-weight:normal;">{{ crs_record.compserial.split('~')[-1] if crs_record.compserial and '~' in crs_record.compserial else (crs_record.compserial or '') }}</div>
-
-        <div style="text-align: right; margin-left: 20px;">Fan Motor Part No:</div>
-        <div style="font-weight:normal;">{{ crs_record.fan1mod or '' }}</div>
-        <div style="text-align: right;">Fan Motor Serial No:</div>
-        <div style="font-weight:normal;">{{ crs_record.fan1serial.split('|')[-1].strip() if crs_record.fan1serial and '|' in crs_record.fan1serial else (crs_record.fan1serial or '') }}</div>
-
-        <div style="text-align: right; margin-left: 20px;">Gas Charge:</div>
-        <div style="font-weight:normal; grid-column: span 3;">{{ gas_charge if gas_charge is not none else '' }}</div>
-    </div>
-
-    <div style="margin-top: 40px; padding-left: 10px;">
-        {% for part in parts_list %}
-        <div class="part-row">
-            <div>{{ part.partno }}</div>
-            <div>{{ part.partdesc }}</div>
-            <div>{{ part.module }}</div>
-            <div><span style="font-weight:bold;">Mfg Date: </span>{{ part.mfg_date }}</div>
-            <div><span style="font-weight:bold;">Arv Date: </span>{{ part.arv_date }}</div>
+        <div class="meta-info" style="margin-bottom: 8px;">
+            <div>Line No: <span style="font-weight:normal;">{{ u.crs_record.lineno if u.crs_record else '' }}</span></div>
         </div>
-        <!-- Add a gap every 4 parts for readability, like the PDF -->
-        {% if loop.index % 4 == 0 and not loop.last %}
-        <div style="height: 15px;"></div>
-        {% endif %}
-        {% endfor %}
-    </div>
+        
+        <div class="meta-info" style="margin-bottom: 25px;">
+            <div>Production Date: <span style="font-weight:normal;">{{ current_time.strftime('%m/%d/%Y') }}</span></div>
+            <div>Start: <span style="font-weight:normal;">{{ u.crs_record.time.strftime('%H:%M:%S') if u.crs_record and u.crs_record.time else '—' }}</span></div>
+            <div>Finish: <span style="font-weight:normal;">{{ u.pack_record.time.strftime('%H:%M:%S') if u.pack_record and u.pack_record.time else '—' }}</span></div>
+        </div>
 
-    <div class="footer">
-        * - Replaced part
+        <div class="details-grid">
+            <div style="grid-column: span 4; margin-bottom: 5px;">Model No: <span style="font-weight:normal;">{{ u.model }}</span></div>
+            <div style="grid-column: span 2;">Serial No: <span style="font-weight:normal;">{{ u.serial }}</span></div>
+            <div style="grid-column: span 2;">Date Scanned: <span style="font-weight:normal;">{{ u.crs_record.time.strftime('%m/%d/%Y %H:%M:%S') if u.crs_record and u.crs_record.time else '—' }}</span></div>
+        </div>
+
+        <div class="section-title">SECTION 1: Parts Confirmation</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Station</th>
+                    <th>Part Type / Module</th>
+                    <th>Part Model No.</th>
+                    <th>Part Serial No.</th>
+                    <th>Inspector</th>
+                    <th>Judgement</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- CRS Station -->
+                {% if u.crs_record %}
+                    {% if u.crs_record.compmod %}
+                    <tr>
+                        <td>CRS</td><td>Compressor</td><td>{{ u.crs_record.compmod }}</td><td>{{ u.crs_record.compserial }}</td>
+                        <td>{{ u.crs_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                    {% endif %}
+                    {% if u.crs_record.fan1mod %}
+                    <tr>
+                        <td>CRS</td><td>Fan Motor 1</td><td>{{ u.crs_record.fan1mod }}</td><td>{{ u.crs_record.fan1serial }}</td>
+                        <td>{{ u.crs_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                    {% endif %}
+                    {% if u.crs_record.fan2mod %}
+                    <tr>
+                        <td>CRS</td><td>Fan Motor 2</td><td>{{ u.crs_record.fan2mod }}</td><td>{{ u.crs_record.fan2serial }}</td>
+                        <td>{{ u.crs_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                    {% endif %}
+                    {% for i in range(1, 5) %}
+                        {% set pmod = u.crs_record['part' ~ i ~ 'mod'] %}
+                        {% set pdesc = u.crs_record['part' ~ i ~ 'desc'] %}
+                        {% set pserial = u.crs_record['part' ~ i ~ 'serial'] %}
+                        {% if pmod %}
+                        <tr>
+                            <td>CRS</td><td>Safety Part - {{ pdesc }}</td><td>{{ pmod }}</td><td>{{ pserial }}</td>
+                            <td>{{ u.crs_record.inspector }}</td><td class="judgement-pass">OK</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" style="text-align:center;">No CRS Record</td></tr>
+                {% endif %}
+
+                <!-- ATT Station -->
+                {% if u.att_record %}
+                    <tr>
+                        <td>ATT</td><td>{{ u.att_record.partdesc }}</td><td>{{ u.att_record.partno }}</td><td>{{ u.att_record.partserial }}</td>
+                        <td>{{ u.att_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" style="text-align:center;">No ATT Record</td></tr>
+                {% endif %}
+
+                <!-- SPAMSI Station -->
+                {% if u.spamsi_record %}
+                    <tr>
+                        <td>SPAMSI</td><td>Indoor Unit Serial</td><td>—</td><td>{{ u.spamsi_record.inserial }}</td>
+                        <td>{{ u.spamsi_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                    {% for i in range(1, 7) %}
+                        {% set pmod = u.spamsi_record['part' ~ i ~ 'mod'] %}
+                        {% set pdesc = u.spamsi_record['part' ~ i ~ 'desc'] %}
+                        {% set pserial = u.spamsi_record['part' ~ i ~ 'serial'] %}
+                        {% if pmod %}
+                        <tr>
+                            <td>SPAMSI</td><td>{{ pdesc }}</td><td>{{ pmod }}</td><td>{{ pserial }}</td>
+                            <td>{{ u.spamsi_record.inspector }}</td><td class="judgement-pass">OK</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" style="text-align:center;">No SPAMSI Record</td></tr>
+                {% endif %}
+
+                <!-- SPAMSO Station -->
+                {% if u.spamso_record %}
+                    <tr>
+                        <td>SPAMSO</td><td>Outdoor Unit Serial</td><td>{{ u.spamso_record.outmodel }}</td><td>{{ u.spamso_record.outserial }}</td>
+                        <td>{{ u.spamso_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                    {% for i in range(1, 4) %}
+                        {% set pmod = u.spamso_record['part' ~ i ~ 'mod'] %}
+                        {% set pdesc = u.spamso_record['part' ~ i ~ 'desc'] %}
+                        {% set pserial = u.spamso_record['part' ~ i ~ 'serial'] %}
+                        {% if pmod %}
+                        <tr>
+                            <td>SPAMSO</td><td>{{ pdesc }}</td><td>{{ pmod }}</td><td>{{ pserial }}</td>
+                            <td>{{ u.spamso_record.inspector }}</td><td class="judgement-pass">OK</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="6" style="text-align:center;">No SPAMSO Record</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="section-title">SECTION 2: Quality Inspections</div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Station</th>
+                    <th>Test / Parameter</th>
+                    <th>Measured Value</th>
+                    <th>Inspector</th>
+                    <th>Judgement</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- GMS Station -->
+                {% if u.gms_record %}
+                    <tr>
+                        <td>GMS</td><td>Gas Charge Amount</td><td>{{ '{:.2f} kg'.format(u.gms_record.gascharge) if u.gms_record.gascharge is not none else '—' }}</td>
+                        <td>{{ u.gms_record.inspector }}</td><td class="judgement-pass">OK</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" style="text-align:center;">No GMS Record</td></tr>
+                {% endif %}
+
+                <!-- INSP2 Station (Weight Check) -->
+                {% if u.insp2_record %}
+                    <tr>
+                        <td>INSP2 (WC)</td><td>Overall Status</td><td>—</td>
+                        <td>{{ u.insp2_record.inspector }}</td>
+                        <td class="{{ 'judgement-pass' if (u.insp2_record.status == 'PASS' or u.insp2_record.status == 'OK') else 'judgement-fail' }}">{{ u.insp2_record.status }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" style="text-align:center;">No INSP2 Record</td></tr>
+                {% endif %}
+
+                <!-- INSP3 Station (Running Test) -->
+                {% if u.insp3_record %}
+                    <tr>
+                        <td>INSP3 (RI)</td><td>Leak Test</td><td>—</td>
+                        <td>{{ u.insp3_record.inspector }}</td>
+                        <td class="{{ 'judgement-pass' if (u.insp3_record.leak_status == 'PASS' or u.insp3_record.leak_status == 'OK') else 'judgement-fail' }}">{{ u.insp3_record.leak_status }}</td>
+                    </tr>
+                    <tr>
+                        <td>INSP3 (RI)</td><td>Current (A)</td><td>{{ u.insp3_record.operating_current }}</td>
+                        <td>{{ u.insp3_record.inspector }}</td>
+                        <td class="{{ 'judgement-pass' if (u.insp3_record.op_current_cool == 'PASS' or u.insp3_record.op_current_cool == 'OK') else 'judgement-fail' }}">{{ u.insp3_record.op_current_cool }}</td>
+                    </tr>
+                    <tr>
+                        <td>INSP3 (RI)</td><td>Power (W)</td><td>{{ u.insp3_record.input_power }}</td>
+                        <td>{{ u.insp3_record.inspector }}</td>
+                        <td class="{{ 'judgement-pass' if (u.insp3_record.in_power_cool == 'PASS' or u.insp3_record.in_power_cool == 'OK') else 'judgement-fail' }}">{{ u.insp3_record.in_power_cool }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" style="text-align:center;">No INSP3 Record</td></tr>
+                {% endif %}
+
+                <!-- INSP4 Station (Final Inspection) -->
+                {% if u.insp4_record %}
+                    <tr>
+                        <td>INSP4 (FI)</td><td>Overall Status</td><td>—</td>
+                        <td>{{ u.insp4_record.inspector }}</td>
+                        <td class="{{ 'judgement-pass' if (u.insp4_record.status == 'PASS' or u.insp4_record.status == 'OK') else 'judgement-fail' }}">{{ u.insp4_record.status }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" style="text-align:center;">No INSP4 Record</td></tr>
+                {% endif %}
+
+                <!-- PACKAGING Station -->
+                {% if u.pack_record %}
+                    <tr>
+                        <td>PACKAGING</td><td>Final Documentation</td><td>Statuses: {{ u.pack_record.status1 }}, {{ u.pack_record.status2 }}, {{ u.pack_record.status3 }}, {{ u.pack_record.status4 }}</td>
+                        <td>{{ u.pack_record.inspector }}</td>
+                        <td class="{{ 'judgement-pass' if (u.pack_record.status == 'PASS' or u.pack_record.status == 'OK') else 'judgement-fail' }}">{{ u.pack_record.status }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" style="text-align:center;">No Packaging Record</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <div class="footer" style="margin-bottom: 40px;">
+            * - Parts Confirmed & Quality Assured
+        </div>
     </div>
+    {% endfor %}
 </body>
 </html>

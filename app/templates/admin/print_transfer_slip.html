@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transfer Slip - {{ slip.slip_number }}</title>
+    <title>Transfer Slip - {{ slip.ref_number }}</title>
     <style>
         * {
             box-sizing: border-box;
@@ -352,6 +352,7 @@
     </div>
 
     {% for page_rows in pages %}
+    {% set page_index = loop.index0 %}
     <div class="page {% if not loop.last %}page-break{% endif %}">
         <!-- Header -->
         <div class="header">
@@ -373,11 +374,11 @@
             <div class="meta-grid">
                 <div class="meta-item">
                     <span class="meta-label">Reference No.</span>
-                    <span class="meta-value highlight">{{ slip.slip_number }}</span>
+                    <span class="meta-value highlight">{{ slip.ref_number }}</span>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Model</span>
-                    <span class="meta-value highlight">{{ slip.model.model_number }}</span>
+                    <span class="meta-value highlight">{{ slip.modelcode }}</span>
                 </div>
 
                 <div class="meta-item">
@@ -391,7 +392,7 @@
 
                 <div class="meta-item">
                     <span class="meta-label">Line</span>
-                    <span class="meta-value">{{ slip.line.name }} ({{ slip.line.line_code }})</span>
+                    <span class="meta-value">{{ slip.line }}</span>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Shift</span>
@@ -420,7 +421,7 @@
             <table class="serials-table">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th>No.</th>
                         <th>Col 1</th>
                         <th>Col 2</th>
                         <th>Col 3</th>
@@ -430,9 +431,8 @@
                 </thead>
                 <tbody>
                     {% for row in page_rows %}
-                    {% set row_offset = (loop.index0 + ((loop.index0 // 1) * 0)) %}
                     <tr>
-                        <td class="row-num">{{ (loop.index0 * 5) + 1 + ((loop.parentloop.index0) * 22 * 5) }}</td>
+                        <td class="row-num">{{ (loop.index0 * 5) + 1 + (page_index * 22 * 5) }}</td>
                         {% for serial in row %}
                             <td>{{ serial }}</td>
                         {% endfor %}
@@ -451,7 +451,7 @@
         <!-- Totals -->
         <div class="totals-section">
             <div>
-                <span style="font-size: 13px; color: #64748b;">{{ slip.model.model_number }}</span>
+                <span style="font-size: 13px; color: #64748b;">{{ slip.modelcode }}</span>
             </div>
             <div class="total-badge">
                 <span class="total-label">Total</span>

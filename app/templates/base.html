@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PMPC Data Logger — Production Line Traceability System">
     <title>{% block title %}Panasonic{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23000000'/><text x='50' y='72' font-size='65' font-family='Arial, sans-serif' font-weight='bold' fill='white' text-anchor='middle'>P</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
@@ -84,11 +85,6 @@
                         <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
                         SFIS 5: Packaging
                     </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='repair') }}"
-                       class="sidebar-item {% if request.path.endswith('/repair') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2l2.5 5.5H17l-4 3.5 1.5 6-4.5-3-4.5 3 1.5-6-4-3.5h4.5z"/></svg>
-                        Repair
-                    </a>
                     {% endif %}
 
                     {% if current_user.role in ('admin', 'supervisor', 'super_admin') %}
@@ -116,7 +112,7 @@
                     </a>
                     <a href="{{ url_for('admin.admin_page') }}#model-ref" class="sidebar-item">
                         <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"/></svg>
-                        Model Reference
+                        Serial Reference
                     </a>
                     <a href="{{ url_for('admin.admin_page') }}#module-ctrl" class="sidebar-item">
                         <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><circle cx="6" cy="10" r="3"/><circle cx="14" cy="10" r="3"/></svg>

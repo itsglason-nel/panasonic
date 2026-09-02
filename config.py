@@ -58,8 +58,8 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'     # Prevents CSRF via cross-site requests
     SESSION_COOKIE_NAME = 'pmpc_session'  # Non-guessable cookie name
 
-    # SocketIO CORS — set to the server's LAN address in production
-    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://127.0.0.1:8080')
+    # SocketIO CORS — set to '*' to allow localhost vs 127.0.0.1 origins
+    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '*')
 
     # Serial Port — Weighing Indicator (Instru-Tech FI05-150K-4252C)
     SERIAL_PORT = os.environ.get('SERIAL_PORT', 'COM3')

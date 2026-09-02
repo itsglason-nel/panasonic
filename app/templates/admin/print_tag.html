@@ -591,10 +591,10 @@
                     SHIFT
                 </div>
                 <div class="shift-cell">
-                    <input type="checkbox" id="chk-day"> <label for="chk-day">DAY</label>
+                    <input type="checkbox" id="chk-day" {% if 'day' in unit.shift|lower %}checked{% endif %}> <label for="chk-day">DAY</label>
                 </div>
                 <div class="shift-cell" style="border-right:none;">
-                    <input type="checkbox" id="chk-night"> <label for="chk-night">NIGHT</label>
+                    <input type="checkbox" id="chk-night" {% if 'night' in unit.shift|lower %}checked{% endif %}> <label for="chk-night">NIGHT</label>
                 </div>
             </div>
         </div>
@@ -1626,7 +1626,7 @@
                 const setAttCheck = (rowIdx, val) => {
                     const tds = attRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) {
-                        if (val === 'GOOD' || (unitData.att_status === 'GOOD' && !val)) tds[0].checked = true;
+                        if (val === 'GOOD' || val === 'PASS' || val === 'OK' || (['GOOD','PASS','OK'].includes(unitData.att_status) && !val)) tds[0].checked = true;
                         else if (val === 'NG') tds[1].checked = true;
                     }
                 };
@@ -1634,7 +1634,7 @@
                 setAttCheck(1, unitData.att_status2);
                 setAttCheck(2, unitData.att_status3);
                 // Other rows assume GOOD if overall is GOOD
-                if (unitData.att_status === 'GOOD') {
+                if (['GOOD', 'PASS', 'OK'].includes(unitData.att_status)) {
                     setAttCheck(3, 'GOOD');
                     setAttCheck(4, 'GOOD');
                     setAttCheck(5, 'GOOD');
@@ -1650,7 +1650,7 @@
             if (gasChargeInput && unitData.gms_gascharge) {
                 gasChargeInput.value = unitData.gms_gascharge;
             }
-            if (unitData.gms_status === 'GOOD') {
+            if (['GOOD', 'PASS', 'OK'].includes(unitData.gms_status)) {
                 inspectorSections[1].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;
@@ -1683,7 +1683,7 @@
             // We use CRS inspector here per old logic, or insp2_inspector if applicable. 
             // The original logic used CRS for Inspector 4, so let's stick to it, but check GOOD status.
             if (insp4Input) insp4Input.value = unitData.crs_inspector || unitData.insp2_inspector || '';
-            if (unitData.insp2_status === 'GOOD' || unitData.att_status === 'GOOD') { // Fallback if no specific construction status
+            if (['GOOD', 'PASS', 'OK'].includes(unitData.insp2_status) || ['GOOD', 'PASS', 'OK'].includes(unitData.att_status)) { // Fallback if no specific construction status
                 inspectorSections[3].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;
@@ -1694,12 +1694,20 @@
         // Packaging Inspection (Left Column 5th block)
         if (inspectorSections.length > 4) {
             const inspPkgInput = inspectorSections[4].querySelector('.sig-row input');
-            if (inspPkgInput) inspPkgInput.value = unitData.insp4_inspector || '';
-            if (unitData.insp4_status === 'GOOD') {
-                inspectorSections[4].querySelectorAll('tbody tr').forEach(tr => {
-                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) tds[0].checked = true;
-                });
+            if (inspPkgInput) inspPkgInput.value = unitData.pack_inspector || '';
+            const pkgRows = inspectorSections[4].querySelectorAll('tbody tr');
+            if (pkgRows.length >= 4) {
+                const setPkgCheck = (rowIdx, val) => {
+                    const tds = pkgRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) {
+                        if (val === 'GOOD' || val === 'OK' || val === 'PASS') tds[0].checked = true;
+                        else if (val === 'NG' || val === 'NO GOOD') tds[1].checked = true;
+                    }
+                };
+                setPkgCheck(0, unitData.pack_status1);
+                setPkgCheck(1, unitData.pack_status2);
+                setPkgCheck(2, unitData.pack_status3);
+                setPkgCheck(3, unitData.pack_status4);
             }
         }
         
@@ -1710,7 +1718,7 @@
             const leakRows = rightTables[0].querySelectorAll('tbody tr');
             if (leakRows.length >= 3) {
                 // Row 0: Insulation
-                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand) {
+                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand || ['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status)) {
                     const tds = leakRows[0].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true; // Value present implies checked
                 }
@@ -1720,7 +1728,7 @@
                 if (tdsLeak.length >= 2) {
                     if (unitData.insp3_run_leak_status === 'LEAK' || unitData.insp3_run_leak_location) {
                         tdsLeak[1].checked = true; // NO GOOD
-                    } else if (unitData.insp3_run_status === 'GOOD' || unitData.insp3_run_leak_status === 'NO LEAK') {
+                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status) || unitData.insp3_run_leak_status === 'NO LEAK') {
                         tdsLeak[0].checked = true; // GOOD
                     }
                 }
@@ -1730,7 +1738,7 @@
             const runRows = rightTables[1].querySelectorAll('tbody tr');
             if (runRows.length > 10) {
                 // Row 0: Insulation
-                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand) {
+                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand || ['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status)) {
                     const tds = runRows[0].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;
                 }
@@ -1740,7 +1748,7 @@
                     if (runRows[rowIdx]) {
                         const tds = runRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                         if (tds.length >= 2) {
-                            if (val === 'GOOD') tds[0].checked = true;
+                            if (val === 'GOOD' || val === 'PASS' || val === 'OK' || (['GOOD','PASS','OK'].includes(unitData.insp3_run_status) && !val)) tds[0].checked = true;
                             else if (val === 'NG') tds[1].checked = true;
                         }
                     }
@@ -1767,7 +1775,7 @@
                 // Temp Difference (Row 11)
                 const tdsTemp = runRows[11].querySelectorAll('td.center input[type="checkbox"]');
                 if (tdsTemp.length >= 2) {
-                    if (unitData.insp3_run_status === 'GOOD' && unitData.insp3_run_temp_diff) {
+                    if (['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status)) {
                         tdsTemp[0].checked = true; // GOOD
                     } else if (unitData.insp3_run_status === 'NG' && unitData.insp3_run_temp_diff) {
                         tdsTemp[1].checked = true; // NO GOOD
@@ -1781,7 +1789,7 @@
                 if (tdsRunLeak.length >= 2) {
                     if (unitData.insp3_run_leak_status === 'LEAK' || unitData.insp3_run_leak_location) {
                         tdsRunLeak[1].checked = true; // NO GOOD
-                    } else if (unitData.insp3_run_status === 'GOOD' || unitData.insp3_run_leak_status === 'NO LEAK') {
+                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status) || unitData.insp3_run_leak_status === 'NO LEAK') {
                         tdsRunLeak[0].checked = true; // GOOD
                     }
                 }
@@ -1796,10 +1804,25 @@
                 });
             }
         }
-        
+        // Brazing / Prep Processes
+        const brazingRows = document.querySelectorAll('.remarks-section .insp-table tbody tr');
+        if (brazingRows.length >= 7) {
+            const setBraz = (idx, val) => {
+                const input = brazingRows[idx].querySelector('input[type="text"]');
+                if (input && val) input.value = val;
+            };
+            setBraz(0, unitData.att_brazzer1);
+            setBraz(1, unitData.att_brazzer2);
+            setBraz(2, unitData.att_brazzer3);
+            setBraz(3, unitData.att_brazzer4);
+            setBraz(4, unitData.att_brazzer5);
+            setBraz(5, unitData.att_brazzer6);
+            setBraz(6, unitData.att_brazzer7);
+        }
+
         // Right Column: Final Inspection (INSP4)
         if (rightTables.length > 2) {
-            if (unitData.insp4_status === 'GOOD') {
+            if (['GOOD', 'PASS', 'OK'].includes(unitData.insp4_status)) {
                 rightTables[2].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;

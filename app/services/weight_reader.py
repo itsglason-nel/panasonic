@@ -79,6 +79,16 @@ class WeightReader:
         plc_format = os.environ.get('PLC_WEIGHT_FORMAT', 'float')
         
         while self.running:
+            if self.port.lower() == 'mock':
+                if not getattr(self, 'mock_logged', False):
+                    print("WeightReader running in MOCK mode. Emitting simulated weights...")
+                    self.mock_logged = True
+                import random
+                while self.running:
+                    self.set_weight(round(random.uniform(5.0, 15.0), 3))
+                    time.sleep(1.0)
+                return
+
             ser = None
             sock = None
             try:

@@ -22,10 +22,10 @@ class ATT(db.Model):
 
     @property
     def status(self):
-        """Computed overall status: GOOD only if all three sub-statuses are GOOD."""
+        """Computed overall status: GOOD only if all three sub-statuses are GOOD or PASS."""
         vals = [self.status1, self.status2, self.status3]
-        if all(v and v.upper() == 'GOOD' for v in vals):
+        if all(v and v.upper() in ('GOOD', 'PASS') for v in vals):
             return 'GOOD'
-        if any(v and v.upper() in ('NO GOOD', 'NG', 'FAIL') for v in vals):
+        if any(v and v.upper() in ('NO GOOD', 'NG', 'FAIL', 'FAILED') for v in vals):
             return 'NO GOOD'
         return 'PENDING'
