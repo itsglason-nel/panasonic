@@ -9,5 +9,5 @@ class PartRef(db.Model):
     module    = db.Column(db.String(8),  nullable=False)
     partno    = db.Column(db.String(14), nullable=False)
     partdesc  = db.Column(db.String(60), nullable=False)
-    usage     = db.Column(db.Float,      nullable=False)
-    tag       = db.Column(db.String(14), nullable=False)
+    usage     = db.Column(db.Numeric(4, 2), nullable=False)
+    tag       = db.Column(db.String(30), nullable=False)

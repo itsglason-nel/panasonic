@@ -9,10 +9,10 @@ from app.models.att import ATT
 from app.models.gms import GMS
 from app.models.spamsi import SPAMSI
 from app.models.spamso import SPAMSO
-from app.models.insp2 import INSP2
-from app.models.insp3_run import INSP3Run
-from app.models.insp4 import INSP4
-from app.models.packaging import Packaging
+from app.models.wci import WCI
+from app.models.rit import RIT
+from app.models.fit import FIT
+from app.models.pit import PIT
 from app.models.linestat import LineStat
 
 from sqlalchemy import func
@@ -33,15 +33,19 @@ def line_scoreboard(line_no):
 
 @scoreboard_bp.route('/api/scoreboard/data', methods=['GET'])
 def get_scoreboard_data():
-    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date_str = request.args.get('date', '').strip()
+    if not date_str:
+        date_str = datetime.now().strftime('%Y-%m-%d')
     line_no = request.args.get('line')
     if line_no == 'all':
         line_no = None
     
-    try:
-        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid date format'}), 400
+    target_date = None
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid date format'}), 400
         
     now = datetime.now()
     current_time = now.time()
@@ -64,11 +68,19 @@ def get_scoreboard_data():
                 shift_start = s.start_time.strftime('%H:%M')
                 break
 
-    query = WorkSched.query.filter_by(date=target_date)
+    query = WorkSched.query
+    if target_date:
+        from sqlalchemy import or_, and_
+        query = query.filter(
+            or_(
+                WorkSched.date == target_date,
+                and_(WorkSched.date < target_date, WorkSched.act < WorkSched.plan)
+            )
+        )
     if line_no:
         query = query.filter_by(lineno=line_no)
         
-    schedule = query.order_by(WorkSched.lineno, WorkSched.seq).all()
+    schedule = query.order_by(WorkSched.lineno, WorkSched.date.asc(), WorkSched.seq.asc()).all()
     
     data = []
     active_seq_found = False
@@ -92,56 +104,51 @@ def get_scoreboard_data():
             'status': status
         })
 
-    # Calculate WIP
-    wip = {}
-    
-    def get_count_with_lineno(table):
-        query = db.session.query(func.count(table.id)).filter(func.date(table.time) == target_date)
-        if line_no:
-            query = query.filter(table.lineno == line_no)
-        return query.scalar() or 0
-        
-    def get_count_no_lineno(table):
-        return db.session.query(func.count(table.id)).filter(func.date(table.time) == target_date).scalar() or 0
-
-    c_crs = get_count_with_lineno(CRS)
-    c_att = get_count_with_lineno(ATT)
-    c_gms = get_count_with_lineno(GMS)
-    c_spamsi = get_count_no_lineno(SPAMSI)
-    c_spamso = get_count_no_lineno(SPAMSO)
-    c_wc = get_count_no_lineno(INSP2)
-    c_ri = get_count_no_lineno(INSP3Run)
-    c_fi = get_count_no_lineno(INSP4)
-    c_pack = get_count_with_lineno(Packaging)
-
-    # Get active models for WIP
-    def get_active_model(model_class, has_lineno=True):
-        q = model_class.query
-        if line_no and has_lineno:
-            q = q.filter_by(lineno=line_no)
-        res = q.order_by(model_class.time.desc()).first()
-        return res.modelcode if res else '—'
-
+    # Calculate WIP directly from LineStat vars
     wip = {
-        'att': max(0, c_crs - c_att),
-        'gms': max(0, c_att - c_gms),
-        'spamsi': max(0, c_gms - c_spamsi),
-        'spamso': max(0, c_spamsi - c_spamso),
-        'wc': max(0, c_spamso - c_wc),
-        'ri': max(0, c_wc - c_ri),
-        'fi': max(0, c_ri - c_fi),
-        'pack': max(0, c_fi - c_pack),
+        'crs': 0, 'att': 0, 'gms': 0, 'spamsi': 0, 'spamso': 0,
+        'wc': 0, 'ri': 0, 'fi': 0, 'pit': 0,
         'models': {
-            'att': get_active_model(ATT),
-            'gms': get_active_model(GMS),
-            'spamsi': get_active_model(SPAMSI, has_lineno=False),
-            'spamso': get_active_model(SPAMSO, has_lineno=False),
-            'wc': get_active_model(INSP2, has_lineno=False),
-            'ri': get_active_model(INSP3Run, has_lineno=False),
-            'fi': get_active_model(INSP4, has_lineno=False),
-            'pack': get_active_model(Packaging)
+            'crs': '—', 'att': '—', 'gms': '—', 'spamsi': '—', 'spamso': '—',
+            'wc': '—', 'ri': '—', 'fi': '—', 'pit': '—'
         }
     }
+    
+    # Query the latest active linestat for the current line(s)
+    # If line_no is provided, fetch just that line, else fetch all active lines and sum the WIP
+    linestat_query = LineStat.query.filter_by(status='Work')
+    if line_no:
+        linestat_query = linestat_query.filter_by(lineno=line_no)
+        
+    active_linestats = linestat_query.all()
+    
+    for ls in active_linestats:
+        wip['crs'] += (ls.crsvar or 0)
+        wip['att'] += (ls.attvar or 0)
+        wip['gms'] += (ls.gmsvar or 0)
+        wip['spamsi'] += (ls.invar or 0)
+        wip['spamso'] += (ls.outvar or 0)
+        wip['wc'] += (ls.wcivar or 0)
+        wip['ri'] += (ls.ritvar or 0)
+        wip['fi'] += (ls.fitvar or 0)
+        wip['pit'] += (ls.pitvar or 0)
+        
+    # Get active models for WIP (take from the first active linestat if available, or fetch last from tables if needed)
+    # To keep it consistent, we pull the modelcode from linestat directly
+    if active_linestats:
+        if len(active_linestats) == 1 or line_no:
+            ls = sorted(active_linestats, key=lambda x: x.id, reverse=True)[0]
+            wip['models'] = {
+            'crs': ls.crsmodelcode or '—',
+            'att': ls.attmodelcode or ls.crsmodelcode or '—',
+            'gms': ls.gmsmodelcode or ls.crsmodelcode or '—',
+            'spamsi': ls.inmodelcode or ls.crsmodelcode or '—',
+            'spamso': ls.outmodelcode or ls.crsmodelcode or '—',
+            'wc': ls.wcimodelcode or ls.crsmodelcode or '—',
+            'ri': ls.ritmodelcode or ls.crsmodelcode or '—',
+            'fi': ls.fitmodelcode or ls.crsmodelcode or '—',
+            'pit': ls.pitmodelcode or ls.crsmodelcode or '—'
+        }
         
     return jsonify({
         'success': True,
@@ -160,17 +167,23 @@ def get_scoreboard_logs():
         line_no = None
         
     limit = request.args.get('limit', 15, type=int)
-    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date_str = request.args.get('date', '').strip()
+    if not date_str:
+        date_str = datetime.now().strftime('%Y-%m-%d')
     
     model_filter = request.args.get('model', '').strip()
     sort_order = request.args.get('sort', 'desc').strip().lower()
     
-    try:
-        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid date format'}), 400
+    target_date = None
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid date format'}), 400
 
-    query = CRS.query.filter(func.date(CRS.time) == target_date)
+    query = CRS.query
+    if target_date:
+        query = query.filter(func.date(CRS.time) == target_date)
     if line_no:
         query = query.filter(CRS.lineno == line_no)
     
@@ -193,30 +206,30 @@ def get_scoreboard_logs():
         
         # Check downstream stations for failures
         if status == 'GOOD':
-            pack_rec = Packaging.query.filter_by(serial=serial).order_by(Packaging.time.desc()).first()
-            if pack_rec:
-                pack_statuses = [pack_rec.status1, pack_rec.status2, pack_rec.status3, pack_rec.status4]
+            pit_rec = PIT.query.filter_by(serial=serial).order_by(PIT.time.desc()).first()
+            if pit_rec:
+                pack_statuses = [pit_rec.status1, pit_rec.status2, pit_rec.status3, pit_rec.status4]
                 if any(s in ['NG', 'NO GOOD'] for s in pack_statuses if s):
                     status = 'NO GOOD'
-                    remarks = 'NO GOOD AT PACKAGING'
+                    remarks = 'NO GOOD AT PIT'
 
         if status == 'GOOD':
-            insp4_rec = INSP4.query.filter_by(serial=serial).order_by(INSP4.time.desc()).first()
-            if insp4_rec and insp4_rec.status in ['NG', 'NO GOOD']:
+            fit_rec = FIT.query.filter_by(serial=serial).order_by(FIT.time.desc()).first()
+            if fit_rec and fit_rec.overallstatus in ['NG', 'NO GOOD']:
                 status = 'NO GOOD'
-                remarks = insp4_rec.remarks or 'NO GOOD AT FINAL INSP'
+                remarks = 'NO GOOD AT FINAL INSP'
                 
         if status == 'GOOD':
-            insp3_rec = INSP3Run.query.filter_by(serial=serial).order_by(INSP3Run.time.desc()).first()
-            if insp3_rec and insp3_rec.status in ['NG', 'NO GOOD']:
+            rit_rec = RIT.query.filter_by(serial=serial).order_by(RIT.time.desc()).first()
+            if rit_rec and rit_rec.overallstatus in ['NG', 'NO GOOD']:
                 status = 'NO GOOD'
-                remarks = insp3_rec.remarks or 'NO GOOD AT RUNNING INSP'
+                remarks = 'NO GOOD AT RUNNING INSP'
 
         if status == 'GOOD':
-            insp2_rec = INSP2.query.filter_by(serial=serial).order_by(INSP2.time.desc()).first()
-            if insp2_rec and insp2_rec.status in ['NG', 'NO GOOD']:
+            wci_rec = WCI.query.filter_by(serial=serial).order_by(WCI.time.desc()).first()
+            if wci_rec and wci_rec.overallstatus in ['NG', 'NO GOOD']:
                 status = 'NO GOOD'
-                remarks = insp2_rec.remarks or 'NO GOOD AT WIRING'
+                remarks = 'NO GOOD AT WIRING'
 
         if status == 'GOOD':
             gms_rec = GMS.query.filter_by(serial=serial).order_by(GMS.time.desc()).first()
@@ -243,14 +256,20 @@ def get_scoreboard_models():
     if line_no == 'all':
         line_no = None
         
-    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date_str = request.args.get('date', '').strip()
+    if not date_str:
+        date_str = datetime.now().strftime('%Y-%m-%d')
     
-    try:
-        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'success': False, 'error': 'Invalid date format'}), 400
+    target_date = None
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid date format'}), 400
 
-    query = db.session.query(CRS.modelcode).filter(func.date(CRS.time) == target_date)
+    query = db.session.query(CRS.modelcode)
+    if target_date:
+        query = query.filter(func.date(CRS.time) == target_date)
     if line_no:
         query = query.filter(CRS.lineno == line_no)
         

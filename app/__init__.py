@@ -216,7 +216,7 @@ def create_app(config_name=None):
                        attmodelcode = NULL, attvar = 0,
                        gmsmodelcode = NULL, gmsvar = 0,
                        inmodelcode = NULL, invar = 0,
-                       inuniqe = NULL,
+                       inunique = NULL,
                        inpart1mod = NULL, inpart1desc = NULL,
                        inpart2mod = NULL, inpart2desc = NULL,
                        inpart3mod = NULL, inpart3desc = NULL,
@@ -224,6 +224,7 @@ def create_app(config_name=None):
                        inpart5mod = NULL, inpart5desc = NULL,
                        inpart6mod = NULL, inpart6desc = NULL,
                        outmodelcode = NULL, outvar = 0,
+                       outmodel = NULL,
                        outpart1mod = NULL, outpart1desc = NULL,
                        outpart2mod = NULL, outpart2desc = NULL,
                        outpart3mod = NULL, outpart3desc = NULL,
@@ -269,6 +270,29 @@ def create_app(config_name=None):
         if app.config.get('DEBUG'):
             db.create_all()
             logger.info('db.create_all() completed (development mode only).')
+
+        # ── PLC restart notification ───────────────────────────────────────────
+        # Stamp updtime = NOW() on every application startup so the PLC detects
+        # the change and re-requests linestat data. The PLC is directly wired to
+        # this PC; on shutdown/restart it loses all cached linestat values and
+        # relies on an advancing updtime to know it must resync.
+        # This runs unconditionally (bypasses the auto_close_previous_days gate
+        # which only fires once per calendar day and would miss same-day restarts).
+        try:
+            from sqlalchemy import text as _startup_text
+            db.session.execute(_startup_text("UPDATE linestat SET updtime = NOW()"))
+            db.session.commit()
+            logger.info('linestat.updtime stamped on startup — PLC will resync data.')
+        except Exception as _startup_err:
+            db.session.rollback()
+            logger.warning('Startup linestat updtime bump failed (DB may not be ready): %s', _startup_err)
+
+    # ── Start Background Workers ──────────────────────────────────────────────
+    try:
+        from app.services.pdf_observer import start_pdf_observer
+        start_pdf_observer(app)
+    except Exception as e:
+        logger.warning('Failed to start PDF observer thread: %s', e)
 
     logger.info('PMPC Data Logger started in "%s" mode.', config_name)
     return app

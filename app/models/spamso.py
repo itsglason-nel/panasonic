@@ -7,7 +7,7 @@ class SPAMSO(db.Model):
     modelcode = db.Column(db.String(14))
     serial = db.Column(db.String(14))
     outmodel = db.Column(db.String(14))
-    outserial = db.Column(db.String(30))
+    outserial = db.Column(db.String(44))
     
     part1mod = db.Column(db.String(14))
     part1desc = db.Column(db.String(30))

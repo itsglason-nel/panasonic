@@ -37,6 +37,22 @@ def initialize_line(lineno):
             text("CALL sp_linestat_shift_sequence('spamso', :lineno, NULL)"),
             {'lineno': lineno}
         )
+        db.session.execute(
+            text("CALL sp_linestat_shift_sequence('wci', :lineno, NULL)"),
+            {'lineno': lineno}
+        )
+        db.session.execute(
+            text("CALL sp_linestat_shift_sequence('rit', :lineno, NULL)"),
+            {'lineno': lineno}
+        )
+        db.session.execute(
+            text("CALL sp_linestat_shift_sequence('fit', :lineno, NULL)"),
+            {'lineno': lineno}
+        )
+        db.session.execute(
+            text("CALL sp_linestat_shift_sequence('pit', :lineno, NULL)"),
+            {'lineno': lineno}
+        )
         db.session.commit()
         return True
     except Exception as e:

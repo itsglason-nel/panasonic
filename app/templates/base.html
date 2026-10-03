@@ -32,60 +32,7 @@
 
             <nav class="sidebar-nav">
                 {% if current_user.is_authenticated %}
-                    {% if current_user.role in ('operator', 'inspector') %}
-                    <div class="sidebar-separator">Stations — Line {{ current_user.line_id or '?' }}</div>
-                    {% set lid = session.get('line_id', 1) %}
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='sfis1') }}"
-                       class="sidebar-item {% if request.path.endswith('/sfis1') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
-                        SFIS 1: CRS
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='insp1') }}"
-                       class="sidebar-item {% if request.path.endswith('/insp1') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="7"/></svg>
-                        INSP 1: Airtight
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='sfis2') }}"
-                       class="sidebar-item {% if request.path.endswith('/sfis2') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
-                        SFIS 2: Gas Charge
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='sfis4') }}"
-                       class="sidebar-item {% if request.path.endswith('/sfis4') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
-                        SFIS 4: CB / PCB
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='sfis3') }}"
-                       class="sidebar-item {% if request.path.endswith('/sfis3') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
-                        SFIS 3: SPAMS
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='insp2') }}"
-                       class="sidebar-item {% if request.path.endswith('/insp2') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="7"/></svg>
-                        INSP 2: Wiring
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='insp3_run') }}"
-                       class="sidebar-item {% if request.path.endswith('/insp3_run') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="7"/></svg>
-                        INSP 3: Running
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='insp3_vib') }}"
-                       class="sidebar-item {% if request.path.endswith('/insp3_vib') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="7"/></svg>
-                        INSP 3: Vibration
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='insp4') }}"
-                       class="sidebar-item {% if request.path.endswith('/insp4') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="7"/></svg>
-                        INSP 4: Final
-                    </a>
-                    <a href="{{ url_for('operator.station_page', lid=lid, station='sfis5') }}"
-                       class="sidebar-item {% if request.path.endswith('/sfis5') %}active{% endif %}">
-                        <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>
-                        SFIS 5: Packaging
-                    </a>
-                    {% endif %}
+
 
                     {% if current_user.role in ('admin', 'supervisor', 'super_admin') %}
                     <div class="sidebar-separator">Scoreboard</div>

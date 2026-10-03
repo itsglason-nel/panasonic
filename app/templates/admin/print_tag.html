@@ -10,13 +10,58 @@
         body {
             font-family: Arial, Helvetica, sans-serif;
             font-size: 10px;
-            background: transparent;
+            background: #f3f4f6;
             padding: 20px;
+        }
+
+        /* ── Toolbar (screen only) ── */
+        .toolbar {
+            max-width: 740px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #f3f4f6;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: #2d3748;
+            border-color: #2d3748;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a202c;
+            box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
         }
 
         .page {
             width: 740px;
-            min-height: 1046px; /* A4 proportional at 740px width */
+            min-height: 1000px; /* Safely within A4 bounds */
             background: transparent;
             margin: 0 auto;
             border: 3px solid #000;
@@ -331,6 +376,10 @@
             cursor: text;
             overflow: hidden;
         }
+        .right-table .inspector-wrapper {
+            justify-content: center;
+            height: 100% !important;
+        }
         .inspector-input {
             width: 100%;
             border: none;
@@ -381,7 +430,7 @@
         .remarks-area {
             border: none;
             width: 100%;
-            height: 192px;
+            height: 64px;
             outline: none;
             background-color: transparent;
             background-image: repeating-linear-gradient(
@@ -415,7 +464,7 @@
         .sig-cell {
             flex: 1;
             border-right: 1px solid #000;
-            padding: 5px 6px;
+            padding: 3px 6px;
         }
         .sig-cell:last-child { border-right: none; }
         .sig-cell .sig-label {
@@ -426,7 +475,7 @@
             margin-bottom: 4px;
         }
         .sig-cell .sig-line {
-            height: 24px;
+            height: 18px;
             width: 100%;
             border: none;
             outline: none;
@@ -437,7 +486,7 @@
             text-align: center;
         }
 
-        /* â”€â”€ Footer â”€â”€ */
+        /* ── Footer ── */
         .footer {
             border-top: 2px solid #000;
             display: flex;
@@ -446,43 +495,10 @@
             font-size: 8.5px;
         }
 
-        /* â”€â”€ Print â”€â”€ */
-        .no-print {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .print-btn {
-            padding: 10px 30px;
-            font-size: 15px;
-            background: transparent;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .print-btn:hover { background: transparent; }
-
+        /* ── Print ── */
         @page {
             size: A4 portrait;
-            margin: 6mm 6mm 6mm 6mm;
-        }
-
-        @media print {
-            html, body {
-                width: 210mm;
-                height: 297mm;
-                background: transparent;
-                padding: 0;
-                margin: 0;
-                font-size: 10px;
-            }
-            head { display: none; }
-            .page {
-                width: 100%;
-                min-height: 100%;
-                border: 3px solid #000;
-            }
-            .no-print { display: none; }
+            margin: 0;
         }
 
         /* Utility */
@@ -493,7 +509,7 @@
         input[type="text"] { text-transform: uppercase; }
         input:focus { background: transparent !important; }
 
-        /* â”€â”€ Formal checkboxes â€” LINE and SHIFT groups (identical size) â”€â”€ */
+        /* ── Formal checkboxes — LINE and SHIFT groups (identical size) ── */
         .line-cell input[type="checkbox"],
         .shift-cell input[type="checkbox"] {
             -webkit-appearance: none;
@@ -528,26 +544,115 @@
             color: #000;
             line-height: 1;
         }
+
+        /* ── Toolbar (screen only) ── */
+        .toolbar {
+            max-width: 740px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+            color: #374151;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #f3f4f6;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background-color: #2d3748;
+            border-color: #2d3748;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a202c;
+            box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
+        }
+
+        /* ── PRINT STYLES ── */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                overflow: hidden !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .toolbar, .no-print {
+                display: none !important;
+            }
+            .page {
+                width: 198mm !important;
+                height: 284mm !important; /* Slightly under 285mm to avoid 1px floating point overflow */
+                margin: 6mm auto !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                border: 3px solid #000 !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                overflow: hidden !important;
+                min-height: 0 !important;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="toolbar">
+        <button onclick="window.print()" class="btn btn-primary">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Print Tag
+        </button>
+        <button onclick="window.close()" class="btn">Close</button>
+    </div>
 
 <div class="page">
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ════════════════════ HEADER ════════════════════ -->
     <div class="header">
         <div class="top-line">AIR CONDITIONER BUSINESS DIVISION</div>
         <h1>Product Information Tag</h1>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODEL / LINE / SHIFT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ════════════════════ MODEL / LINE / SHIFT ════════════════════ -->
     <div class="top-info">
         <div class="model-block">
             <!-- Model row: "Model:" label + "CW" prefix box + dash + individual char boxes -->
             <div class="char-row" style="display:flex; align-items:center; gap:3px; margin-bottom:4px;">
                 <span class="bold" style="font-size:10px; white-space:nowrap; min-width:44px;">Model:</span>
                 <span class="bold" style="font-size:10px; border:1px solid #000; width:32px; height:18px; display:flex; align-items:center; justify-content:center; background: transparent;">CW</span>
-                <span style="font-size:10px; font-weight:bold;">-</span>
+                <input type="text" maxlength="1" value="-" readonly style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
                 <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
                 <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
                 <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
@@ -562,7 +667,7 @@
             <div class="char-row" style="display:flex; align-items:center; gap:3px;">
                 <span style="min-width:44px; display:inline-block;"></span>
                 <span class="bold" style="font-size:10px; border:1px solid #000; width:32px; height:18px; display:flex; align-items:center; justify-content:center; background: transparent;">RC</span>
-                <span style="font-size:10px; font-weight:bold;">-</span>
+                <input type="text" maxlength="1" value="-" readonly style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
                 <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
                 <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
                 <input type="text" maxlength="1" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
@@ -600,11 +705,24 @@
         </div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SERIAL / PRODUCTION DATE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ════════════════════ SERIAL / PRODUCTION DATE ════════════════════ -->
     <div class="serial-date">
         <div class="serial-row">
             <span class="bold" style="font-size:10px; min-width:105px;">Serial Number:</span>
-            <input type="text" style="flex:1; border:none; border-bottom:1px solid #000; outline:none; font-size:10px; max-width:220px;">
+            <div style="display:flex; align-items:center; gap:3px;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+                <input type="text" maxlength="1" class="serial-box" style="width:16px;height:18px;border:1px solid #000;text-align:center;font-size:10px;outline:none;padding:0;">
+            </div>
         </div>
         <div class="date-row">
             <span class="bold" style="font-size:10px; min-width:105px;">Production Date:</span>
@@ -638,10 +756,10 @@
         </div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN BODY â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ════════════════════ MAIN BODY ════════════════════ -->
     <div class="main-body">
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ LEFT COLUMN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ───────────── LEFT COLUMN ───────────── -->
         <div class="left-col">
 
             <!-- INSPECTOR 1: Airtight Test -->
@@ -882,7 +1000,7 @@
 
         </div><!-- /left-col -->
 
-        <!-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ RIGHT COLUMN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- ───────────── RIGHT COLUMN ───────────── -->
         <div class="right-col">
 
             <!-- LEAK INSPECTOR 1 sub-section -->
@@ -952,11 +1070,11 @@
                                         <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
                                             <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
                                                 <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">H:</span>
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_h_1_t1" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                             <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
                                             <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_h_2_t1" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                         </div>
                                     </td>
@@ -966,11 +1084,11 @@
                                         <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
                                             <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
                                                 <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">F:</span>
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_f_1_t1" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                             <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
                                             <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_f_2_t1" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                         </div>
                                     </td>
@@ -984,11 +1102,11 @@
                                         <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
                                             <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
                                                 <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">H:</span>
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_h_1_t2" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                             <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
                                             <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_h_2_t2" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                         </div>
                                     </td>
@@ -998,11 +1116,11 @@
                                         <div style="position:relative; display:flex; align-items:center; width:100%; justify-content:center; padding:2px 0;">
                                             <div style="width:50%; display:flex; justify-content:flex-end; padding-right:4px; align-items:flex-end;">
                                                 <span style="font-size:9px; margin-right:4px; font-weight:bold; line-height:1; width:10px; display:inline-block; padding-bottom:1px;">F:</span>
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_f_1_t2" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                             <span style="font-size:9px; line-height:1; font-weight:bold; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);">:</span>
                                             <div style="width:50%; display:flex; justify-content:flex-start; padding-left:4px; align-items:flex-end;">
-                                                <input type="text" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
+                                                <input type="text" id="prog_f_2_t2" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="prog-part" style="width:35px; text-align:center; border:none; border-bottom:1px solid #000; outline:none; font-size:9px; background:transparent; padding:0; height:12px;">
                                             </div>
                                         </div>
                                     </td>
@@ -1218,8 +1336,8 @@
                     </tr>
                     <tr>
                         <td>Operating Current / Input Power</td>
-                        <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
-                        <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
+                        <td class="center" style="padding:0;"><input type="text" id="fit_op_in_power" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
+                        <td class="center" style="padding:0;"><input type="text" id="fit_op_in_power_ng" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
                         <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
                         <td class="center" style="padding:0;"><input type="text" style="width:100%; height:16px; border:none; outline:none; background:transparent; text-align:center; font-size:10px; font-weight:bold;"></td>
                     </tr>
@@ -1287,7 +1405,7 @@
         </div><!-- /right-col -->
     </div><!-- /main-body -->
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• BOTTOM SIGNATURES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ════════════════════ BOTTOM SIGNATURES ════════════════════ -->
     <div class="bottom-sig" style="border-top:2px solid #000;">
         <div class="sig-cell">
             <div class="sig-label">REWORKED DONE:</div>
@@ -1303,7 +1421,7 @@
         </div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• FOOTER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- ════════════════════ FOOTER ════════════════════ -->
     <div class="footer">
         <span>Panasonic Manufacturing Philippines Corporation - Air Conditioner Business Division</span>
         <span>Form No. DACD53F09</span>
@@ -1311,9 +1429,7 @@
 
 </div><!-- /page -->
 
-<div class="no-print">
-    <button onclick="window.print()" class="print-btn">Print Tag</button>
-</div>
+
 
 
 <script>
@@ -1568,8 +1684,12 @@
         if (!unitData) return;
         
         // 1. Set Serial Number
-        const serialInput = document.querySelector('.serial-row input[type="text"]');
-        if (serialInput) serialInput.value = unitData.serial;
+        if (unitData.serial) {
+            const serialBoxes = document.querySelectorAll('.serial-row .serial-box');
+            for(let i = 0; i < unitData.serial.length && i < serialBoxes.length; i++) {
+                serialBoxes[i].value = unitData.serial[i];
+            }
+        }
         
         // 2. Set Production Date (MM-DD-YYYY)
         if (unitData.production_date) {
@@ -1607,7 +1727,7 @@
             else if (model.startsWith('RC-')) { model = model.substring(3); rowIndex = 1; }
             
             if (charRows.length > rowIndex) {
-                const inputs = charRows[rowIndex].querySelectorAll('input[type="text"]');
+                const inputs = charRows[rowIndex].querySelectorAll('input[type="text"]:not([readonly])');
                 for (let i = 0; i < inputs.length && i < model.length; i++) {
                     inputs[i].value = model[i];
                 }
@@ -1622,30 +1742,24 @@
             const insp1Input = inspectorSections[0].querySelector('.sig-row input');
             if (insp1Input) insp1Input.value = unitData.att_inspector || '';
             const attRows = inspectorSections[0].querySelectorAll('tbody tr');
-            if (attRows.length >= 6) {
+            if (attRows.length >= 3) {
                 const setAttCheck = (rowIdx, val) => {
                     const tds = attRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) {
-                        if (val === 'GOOD' || val === 'PASS' || val === 'OK' || (['GOOD','PASS','OK'].includes(unitData.att_status) && !val)) tds[0].checked = true;
+                        if (val === 'GOOD' || val === 'PASS' || val === 'OK' || val === 'REVIEW' || val === 'N/A' || (['GOOD','PASS','OK'].includes(unitData.att_status) && !val)) tds[0].checked = true;
                         else if (val === 'NG') tds[1].checked = true;
                     }
                 };
                 setAttCheck(0, unitData.att_status1);
                 setAttCheck(1, unitData.att_status2);
                 setAttCheck(2, unitData.att_status3);
-                // Other rows assume GOOD if overall is GOOD
-                if (['GOOD', 'PASS', 'OK'].includes(unitData.att_status)) {
-                    setAttCheck(3, 'GOOD');
-                    setAttCheck(4, 'GOOD');
-                    setAttCheck(5, 'GOOD');
-                }
             }
         }
         
         // Inspector 2 (GMS)
         if (inspectorSections.length > 1) {
-            const insp2Input = inspectorSections[1].querySelector('.sig-row input');
-            if (insp2Input) insp2Input.value = unitData.gms_inspector || '';
+            const wciInput = inspectorSections[1].querySelector('.sig-row input');
+            if (wciInput) wciInput.value = unitData.gms_inspector || '';
             const gasChargeInput = inspectorSections[1].querySelector('input[type="text"]');
             if (gasChargeInput && unitData.gms_gascharge) {
                 gasChargeInput.value = unitData.gms_gascharge;
@@ -1655,59 +1769,64 @@
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;
                 });
-            }
-        }
-        
-        // Inspector 3 & 4 (INSP2 / Construction)
-        if (inspectorSections.length > 2) {
-            const insp3Input = inspectorSections[2].querySelector('.sig-row input');
-            if (insp3Input) insp3Input.value = unitData.insp2_inspector || '';
-            const insp2Rows = inspectorSections[2].querySelectorAll('tbody tr');
-            if (insp2Rows.length >= 4) {
-                const setInsp2Check = (rowIdx, val) => {
-                    const tds = insp2Rows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) {
-                        if (val === 'GOOD' || (unitData.insp2_status === 'GOOD' && !val)) tds[0].checked = true;
-                        else if (val === 'NG') tds[1].checked = true;
-                    }
-                };
-                setInsp2Check(0, unitData.insp2_wiring_seq);
-                setInsp2Check(1, unitData.insp2_no_touching);
-                setInsp2Check(2, unitData.insp2_no_misaligned);
-                setInsp2Check(3, unitData.insp2_no_lacking);
-            }
-        }
-
-        if (inspectorSections.length > 3) {
-            const insp4Input = inspectorSections[3].querySelector('.sig-row input');
-            // We use CRS inspector here per old logic, or insp2_inspector if applicable. 
-            // The original logic used CRS for Inspector 4, so let's stick to it, but check GOOD status.
-            if (insp4Input) insp4Input.value = unitData.crs_inspector || unitData.insp2_inspector || '';
-            if (['GOOD', 'PASS', 'OK'].includes(unitData.insp2_status) || ['GOOD', 'PASS', 'OK'].includes(unitData.att_status)) { // Fallback if no specific construction status
-                inspectorSections[3].querySelectorAll('tbody tr').forEach(tr => {
+            } else if (['FAIL', 'NG', 'NO GOOD'].includes(unitData.gms_status)) {
+                inspectorSections[1].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) tds[0].checked = true;
+                    if (tds.length >= 2) tds[1].checked = true;
                 });
             }
         }
         
-        // Packaging Inspection (Left Column 5th block)
+        // Inspector 3 (WCI - Inner Line)
+        if (inspectorSections.length > 2) {
+            const insp3Input = inspectorSections[2].querySelector('.sig-row input');
+            if (insp3Input) insp3Input.value = unitData.wci_inspector || '';
+            const wciRows = inspectorSections[2].querySelectorAll('tbody tr');
+            if (wciRows.length >= 1) {
+                const tds = wciRows[0].querySelectorAll('td.center input[type="checkbox"]');
+                if (tds.length >= 2) {
+                    if (unitData.wci_status1 === 'GOOD' || (unitData.wci_status === 'GOOD' && !unitData.wci_status1)) tds[0].checked = true;
+                    else if (unitData.wci_status1 === 'NG') tds[1].checked = true;
+                }
+            }
+        }
+
+        // Inspector 4 (WCI - Construction)
+        if (inspectorSections.length > 3) {
+            const constrInput = inspectorSections[3].querySelector('.sig-row input');
+            if (constrInput) constrInput.value = unitData.wci_inspector || '';
+            const constrRows = inspectorSections[3].querySelectorAll('tbody tr');
+            if (constrRows.length >= 3) {
+                const setConstrCheck = (rowIdx, val) => {
+                    const tds = constrRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
+                    if (tds.length >= 2) {
+                        if (val === 'GOOD' || val === 'PASS' || val === 'OK') tds[0].checked = true;
+                        else if (val === 'NG') tds[1].checked = true;
+                    }
+                };
+                setConstrCheck(0, unitData.wci_status2); // No touching materials
+                setConstrCheck(1, unitData.wci_status3); // No misaligned tubes
+                setConstrCheck(2, unitData.wci_status4); // No lacking parts
+            }
+        }
+        
+        // PIT Inspection (Left Column 5th block)
         if (inspectorSections.length > 4) {
-            const inspPkgInput = inspectorSections[4].querySelector('.sig-row input');
-            if (inspPkgInput) inspPkgInput.value = unitData.pack_inspector || '';
+            const inspPitInput = inspectorSections[4].querySelector('.sig-row input');
+            if (inspPitInput) inspPitInput.value = unitData.pit_inspector || '';
             const pkgRows = inspectorSections[4].querySelectorAll('tbody tr');
             if (pkgRows.length >= 4) {
-                const setPkgCheck = (rowIdx, val) => {
+                const setPitCheck = (rowIdx, val) => {
                     const tds = pkgRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) {
                         if (val === 'GOOD' || val === 'OK' || val === 'PASS') tds[0].checked = true;
                         else if (val === 'NG' || val === 'NO GOOD') tds[1].checked = true;
                     }
                 };
-                setPkgCheck(0, unitData.pack_status1);
-                setPkgCheck(1, unitData.pack_status2);
-                setPkgCheck(2, unitData.pack_status3);
-                setPkgCheck(3, unitData.pack_status4);
+                setPitCheck(0, unitData.pit_status1);
+                setPitCheck(1, unitData.pit_status2);
+                setPitCheck(2, unitData.pit_status3);
+                setPitCheck(3, unitData.pit_status4);
             }
         }
         
@@ -1717,18 +1836,21 @@
             // Leak Inspector 1 (rightTables[0])
             const leakRows = rightTables[0].querySelectorAll('tbody tr');
             if (leakRows.length >= 3) {
-                // Row 0: Insulation
-                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand || ['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status)) {
+                // Row 0: Insulation Resistance (WCI Status 5)
+                if (unitData.wci_status5) {
                     const tds = leakRows[0].querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) tds[0].checked = true; // Value present implies checked
+                    if (tds.length >= 2) {
+                        if (['GOOD', 'PASS', 'OK'].includes(unitData.wci_status5)) tds[0].checked = true;
+                        else if (unitData.wci_status5 === 'NG') tds[1].checked = true;
+                    }
                 }
                 
-                // Row 1: Leak
+                // Row 1: Must be no Leak (WCI Status 6 / Status 7)
                 const tdsLeak = leakRows[1].querySelectorAll('td.center input[type="checkbox"]');
                 if (tdsLeak.length >= 2) {
-                    if (unitData.insp3_run_leak_status === 'LEAK' || unitData.insp3_run_leak_location) {
+                    if (unitData.wci_status6 === 'NG' || (unitData.wci_status7 && unitData.wci_status6 !== 'GOOD' && unitData.wci_status6 !== 'PASS' && unitData.wci_status6 !== 'OK')) {
                         tdsLeak[1].checked = true; // NO GOOD
-                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status) || unitData.insp3_run_leak_status === 'NO LEAK') {
+                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.wci_status6)) {
                         tdsLeak[0].checked = true; // GOOD
                     }
                 }
@@ -1736,71 +1858,71 @@
 
             // Running Inspector (INSP3_RUN specific logic)
             const runRows = rightTables[1].querySelectorAll('tbody tr');
-            if (runRows.length > 10) {
-                // Row 0: Insulation
-                if (unitData.insp3_run_insulation || unitData.insp3_run_withstand || ['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status)) {
-                    const tds = runRows[0].querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) tds[0].checked = true;
-                }
-                
-                // Rows 1-2: Comp/Fan
+            if (runRows.length > 0) {
                 const setCheck = (rowIdx, val) => {
                     if (runRows[rowIdx]) {
                         const tds = runRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                         if (tds.length >= 2) {
-                            if (val === 'GOOD' || val === 'PASS' || val === 'OK' || (['GOOD','PASS','OK'].includes(unitData.insp3_run_status) && !val)) tds[0].checked = true;
+                            if (val === 'GOOD' || val === 'PASS' || val === 'OK') tds[0].checked = true;
                             else if (val === 'NG') tds[1].checked = true;
                         }
                     }
                 };
-                setCheck(1, unitData.insp3_run_comp_operation);
-                setCheck(2, unitData.insp3_run_fan_operation);
                 
-                // Evap Tubes
-                setCheck(3, unitData.insp3_run_evap_cool);
-                setCheck(4, unitData.insp3_run_evap_heat);
-
-                // Cond Tubes
-                setCheck(5, unitData.insp3_run_cond_cool);
-                setCheck(6, unitData.insp3_run_cond_heat);
-
-                // Op Current
-                setCheck(7, unitData.insp3_run_op_cool);
-                setCheck(8, unitData.insp3_run_op_heat);
-
-                // In Power
-                setCheck(9, unitData.insp3_run_in_cool);
-                setCheck(10, unitData.insp3_run_in_heat);
+                // Explicitly map each row
+                // Rows 0-6: Direct mapped RIT specific tests
+                setCheck(0, unitData.rit_status1);
+                setCheck(1, unitData.rit_status2);
+                setCheck(2, unitData.rit_status3);
+                setCheck(3, unitData.rit_status4); // Evaporator Cooling
+                setCheck(4, unitData.rit_status5); // Evaporator Heating
+                setCheck(5, unitData.rit_status6); // Condenser Cooling
+                setCheck(6, unitData.rit_status7); // Condenser Heating
                 
-                // Temp Difference (Row 11)
-                const tdsTemp = runRows[11].querySelectorAll('td.center input[type="checkbox"]');
-                if (tdsTemp.length >= 2) {
-                    if (['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status)) {
-                        tdsTemp[0].checked = true; // GOOD
-                    } else if (unitData.insp3_run_status === 'NG' && unitData.insp3_run_temp_diff) {
-                        tdsTemp[1].checked = true; // NO GOOD
-                    } else if (unitData.insp3_run_status === 'NG') {
-                        tdsTemp[1].checked = true; // NO GOOD even if blank
-                    }
-                }
+                // Row 7: Operating Current (Cooling)
+                setCheck(7, unitData.rit_status8);
+                // Row 8: Operating Current (Heating) -> Reserve, left unchecked
+                
+                // Row 9: Input Power (Cooling)
+                setCheck(9, unitData.rit_status9);
+                // Row 10: Input Power (Heating) -> Reserve, left unchecked
+                
+                // Row 11: Temp Difference
+                setCheck(11, unitData.rit_status10);
+            }
 
-                // Leak (Row 12)
-                const tdsRunLeak = runRows[12].querySelectorAll('td.center input[type="checkbox"]');
-                if (tdsRunLeak.length >= 2) {
-                    if (unitData.insp3_run_leak_status === 'LEAK' || unitData.insp3_run_leak_location) {
-                        tdsRunLeak[1].checked = true; // NO GOOD
-                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.insp3_run_status) || unitData.insp3_run_leak_status === 'NO LEAK') {
-                        tdsRunLeak[0].checked = true; // GOOD
-                    }
+            // Final Inspection (FIT specific logic)
+            if (rightTables.length > 2) {
+                const fitRows = rightTables[2].querySelectorAll('tbody tr');
+                if (fitRows.length > 8) {
+                    const setFitCheck = (rowIdx, val) => {
+                        if (fitRows[rowIdx]) {
+                            const tds = fitRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
+                            if (tds.length >= 2) {
+                                if (val === 'GOOD' || val === 'PASS' || val === 'OK') tds[0].checked = true;
+                                else if (val === 'NG') tds[1].checked = true;
+                            }
+                        }
+                    };
+                    
+                    setFitCheck(0, unitData.fit_status3); // Insulation Resistance
+                    setFitCheck(1, unitData.fit_status1); // Must be no leak
+                    setFitCheck(2, unitData.fit_status4); // Nameplate & Barcode
+                    setFitCheck(3, unitData.fit_status5); // Correct Model Label
+                    setFitCheck(4, unitData.fit_status6); // Correct Manual Complete
+                    setFitCheck(5, unitData.fit_status7); // Remote and Battery
+                    setFitCheck(6, unitData.fit_status8); // Operation Instruction
+                    setFitCheck(7, unitData.fit_status9); // Screw Bag
+                    setFitCheck(8, unitData.fit_status10); // Grille Complete
                 }
             }
 
-            if (unitData.insp3_run_inspector) {
+            if (unitData.rit_inspector) {
                 rightTables[0].querySelectorAll('.inspector-input').forEach(div => {
-                    div.textContent = unitData.insp3_run_inspector;
+                    div.textContent = unitData.rit_inspector;
                 });
                 rightTables[1].querySelectorAll('.inspector-input').forEach(div => {
-                    div.textContent = unitData.insp3_run_inspector;
+                    div.textContent = unitData.rit_inspector;
                 });
             }
         }
@@ -1820,57 +1942,107 @@
             setBraz(6, unitData.att_brazzer7);
         }
 
-        // Right Column: Final Inspection (INSP4)
+        // Right Column: Final Inspection (FIT)
         if (rightTables.length > 2) {
-            if (['GOOD', 'PASS', 'OK'].includes(unitData.insp4_status)) {
-                rightTables[2].querySelectorAll('tbody tr').forEach(tr => {
-                    const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) tds[0].checked = true;
+            const fitRows = rightTables[2].querySelectorAll('tbody tr');
+            const runRows = rightTables[1] ? rightTables[1].querySelectorAll('tbody tr') : [];
+            
+            const isGood = val => (val === 'GOOD' || val === 'PASS' || val === 'OK');
+            
+            const setFitCheck = (tr, val) => {
+                if (!tr) return;
+                const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
+                if (tds.length >= 2) {
+                    if (isGood(val) || (isGood(unitData.fit_status) && !val)) tds[0].checked = true;
+                    else if (val === 'NG' || val === 'NO GOOD') tds[1].checked = true;
+                }
+            };
+
+            // status1 (Must be no Leak) -> maps to row 12 of Running Inspection table
+            if (runRows.length > 12) setFitCheck(runRows[12], unitData.fit_status1);
+            
+            // status3 (Insulation) -> maps to row 0 of FIT table
+            setFitCheck(fitRows[0], unitData.fit_status3);
+            
+            // status5 (Nameplate) -> maps to row 2 of FIT table
+            setFitCheck(fitRows[2], unitData.fit_status5);
+            
+            // status6 (Correct Model Label) -> maps to row 3 of FIT table
+            setFitCheck(fitRows[3], unitData.fit_status6);
+            
+            // status7 (1. Remote and Battery) -> maps to row 5 of FIT table
+            setFitCheck(fitRows[5], unitData.fit_status7);
+            
+            // status8 (2. Operation Instruction) -> maps to row 6 of FIT table
+            setFitCheck(fitRows[6], unitData.fit_status8);
+            
+            // status9 (3. Screw Bag) -> maps to row 7 of FIT table
+            setFitCheck(fitRows[7], unitData.fit_status9);
+            
+            // status10 (Correct Front Grille) -> maps to row 8 of FIT table
+            setFitCheck(fitRows[8], unitData.fit_status10);
+
+            // Derived Logic for Correct Manual Complete (Row 4)
+            // Checked ONLY when status7, status8, and status9 are GOOD
+            if (isGood(unitData.fit_status7) && isGood(unitData.fit_status8) && isGood(unitData.fit_status9)) {
+                setFitCheck(fitRows[4], 'GOOD');
+            }
+            
+            if (unitData.fit_inspector) {
+                rightTables[2].querySelectorAll('.inspector-input').forEach(div => {
+                    div.textContent = unitData.fit_inspector;
                 });
             }
-            if (unitData.insp4_inspector) {
-                rightTables[2].querySelectorAll('.inspector-input').forEach(div => {
-                    div.textContent = unitData.insp4_inspector;
-                });
+            
+            // Conditional formatting for status4 (Operating Current / Input Power)
+            const fitOpInPower = document.getElementById('fit_op_in_power');
+            const fitOpInPowerNg = document.getElementById('fit_op_in_power_ng');
+            if (unitData.fit_data1 || unitData.fit_data2) {
+                const d1 = unitData.fit_data1 || '';
+                const d2 = unitData.fit_data2 || '';
+                const combined = (d1 && d2) ? `${d1} / ${d2}` : (d1 || d2);
+                
+                if (isGood(unitData.fit_status4) || isGood(unitData.fit_status)) {
+                    if (fitOpInPower) fitOpInPower.value = combined;
+                } else if (unitData.fit_status4 === 'NG' || unitData.fit_status4 === 'NO GOOD') {
+                    if (fitOpInPowerNg) fitOpInPowerNg.value = combined;
+                }
             }
         }
 
         // Fill in dynamic text values for INSP3 RUN (Leak Location, Temp Difference, Current, Power, Program Check)
         const elLeak1 = document.getElementById('leak_loc_1');
         const elLeak2 = document.getElementById('leak_loc_2');
-        if (elLeak1) elLeak1.value = unitData.insp3_run_leak_location || '';
-        if (elLeak2) elLeak2.value = unitData.insp3_run_leak_location || '';
+        if (elLeak1) elLeak1.value = unitData.wci_status7 || '';
+        if (elLeak2) elLeak2.value = unitData.fit_status2 || '';
 
         const elOpCur = document.getElementById('op_current');
-        if (elOpCur) elOpCur.value = unitData.insp3_run_operating_current || '';
+        if (elOpCur) elOpCur.value = unitData.rit_data1 || '';
 
         const elInPow = document.getElementById('in_power');
-        if (elInPow) elInPow.value = unitData.insp3_run_input_power || '';
+        if (elInPow) elInPow.value = unitData.rit_data2 || '';
 
         const elTemp = document.getElementById('temp_read');
-        if (elTemp) elTemp.value = unitData.insp3_run_temp_diff || '';
+        if (elTemp) elTemp.value = unitData.rit_data3 || '';
 
-        // Program Check (H and F fields split by colon if exists)
-        const progInputs = document.querySelectorAll('.prog-part');
-        if (progInputs.length >= 4) {
-            if (unitData.insp3_run_prog_check_h) {
-                const hParts = String(unitData.insp3_run_prog_check_h).split(':');
-                if (hParts.length >= 2) {
-                    progInputs[0].value = hParts[0];
-                    progInputs[1].value = hParts[1];
-                } else {
-                    progInputs[0].value = hParts[0];
-                }
-            }
-            if (unitData.insp3_run_prog_check_f) {
-                const fParts = String(unitData.insp3_run_prog_check_f).split(':');
-                if (fParts.length >= 2) {
-                    progInputs[2].value = fParts[0];
-                    progInputs[3].value = fParts[1];
-                } else {
-                    progInputs[2].value = fParts[0];
-                }
-            }
+        if (unitData.rit_progh) {
+            const parts = unitData.rit_progh.split(':');
+            const h1 = parts[0] || '';
+            const h2 = parts[1] || '';
+            const h1_t1 = document.getElementById('prog_h_1_t1');
+            const h2_t1 = document.getElementById('prog_h_2_t1');
+            if (h1_t1) h1_t1.value = h1;
+            if (h2_t1) h2_t1.value = h2;
+        }
+
+        if (unitData.rit_progf) {
+            const parts = unitData.rit_progf.split(':');
+            const f1 = parts[0] || '';
+            const f2 = parts[1] || '';
+            const f1_t1 = document.getElementById('prog_f_1_t1');
+            const f2_t1 = document.getElementById('prog_f_2_t1');
+            if (f1_t1) f1_t1.value = f1;
+            if (f2_t1) f2_t1.value = f2;
         }
 
         // Set Line
@@ -1891,11 +2063,6 @@
                 shiftCheckboxes[1].checked = true;
             }
         }
-        
-        // 5. Trigger print dialog after a small delay
-        setTimeout(() => {
-            window.print();
-        }, 500);
     });
 </script>
 </body>

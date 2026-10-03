@@ -1,6 +1,5 @@
 from . import db
-from .spamsi_unique_ref import SPAMSIUniqueRef
-from .spamso_outmodel_ref import SpamsoOutmodelRef
+from .partref import PartRef
 
 class ModelRef(db.Model):
     __tablename__ = 'modelref'
@@ -17,33 +16,47 @@ class ModelRef(db.Model):
     gmstolpos = db.Column(db.Numeric(4, 2), default=0)
     gmstolneg = db.Column(db.Numeric(4, 2), default=0)
     
-    op_current_base = db.Column(db.Numeric(8, 2), default=0)
-    op_current_tolpos = db.Column(db.Numeric(2, 0), default=0)
-    op_current_tolneg = db.Column(db.Numeric(2, 0), default=0)
+    op_current_base = db.Column(db.Numeric(4, 2), default=0)
+    op_current_tolpos = db.Column(db.Numeric(4, 2), default=0)
+    op_current_tolneg = db.Column(db.Numeric(4, 2), default=0)
     
-    in_power_base = db.Column(db.Numeric(8, 2), default=0)
-    in_power_tolpos = db.Column(db.Numeric(2, 0), default=0)
-    in_power_tolneg = db.Column(db.Numeric(2, 0), default=0)
+    in_power_base = db.Column(db.Numeric(4, 2), default=0)
+    in_power_tolpos = db.Column(db.Numeric(4, 2), default=0)
+    in_power_tolneg = db.Column(db.Numeric(4, 2), default=0)
     
-    temp_diff_base = db.Column(db.Numeric(8, 2), default=0)
-    temp_diff_tolpos = db.Column(db.Numeric(2, 0), default=0)
-    temp_diff_tolneg = db.Column(db.Numeric(2, 0), default=0)
+    temp_diff_base = db.Column(db.Numeric(4, 2), default=0)
+    temp_diff_tolpos = db.Column(db.Numeric(4, 2), default=0)
+    temp_diff_tolneg = db.Column(db.Numeric(4, 2), default=0)
+    
+    ritheat1 = db.Column(db.String(2), nullable=True)
+    ritheat2 = db.Column(db.String(2), nullable=True)
+    
+    pittws = db.Column(db.String(2), nullable=True)
+    
+    spamsi_unique = db.Column(db.String(4), unique=True, nullable=True)
     
     created_at = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp())
     updated_at = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(), server_onupdate=db.func.current_timestamp())
     
     def to_dict(self):
-        # Query for SPAMSI unique code, which is stored in a separate reference table.
-        spamsi_ref = SPAMSIUniqueRef.query.filter_by(modelcode=self.modelcode).first()
-        spamso_ref = SpamsoOutmodelRef.query.filter_by(modelcode=self.modelcode).first()
+        # Outmodel is now sourced from partref with tag='Outdoor Control Board'
+        outmodel_ref = PartRef.query.filter_by(
+            modelcode=self.modelcode, module='SPAMSO', tag='Outdoor Control Board'
+        ).first()
+        
+        # Gas charge base is sourced from partref with module='GMS'
+        gms_ref = PartRef.query.filter_by(
+            modelcode=self.modelcode, module='GMS'
+        ).first()
         
         return {
             'id': self.id,
             'modelcode': self.modelcode,
             'area': self.area,
             'serialstart': self.serialstart,
-            'spamsi_unique_code': spamsi_ref.unique_code if spamsi_ref else None,
-            'spamso_outmodel': spamso_ref.outmodel if spamso_ref else None,
+            'spamsi_unique_code': self.spamsi_unique,
+            'spamso_outmodel': outmodel_ref.partno if outmodel_ref else None,
+            'gascharge_base': float(gms_ref.usage) if gms_ref and gms_ref.usage is not None else 0.00,
             'program_h': self.program_h,
             'program_f': self.program_f,
             'gmstolpos': float(self.gmstolpos) if self.gmstolpos is not None else 0,
@@ -56,5 +69,8 @@ class ModelRef(db.Model):
             'in_power_tolneg': float(self.in_power_tolneg) if self.in_power_tolneg is not None else 0,
             'temp_diff_base': float(self.temp_diff_base) if self.temp_diff_base is not None else 0,
             'temp_diff_tolpos': float(self.temp_diff_tolpos) if self.temp_diff_tolpos is not None else 0,
-            'temp_diff_tolneg': float(self.temp_diff_tolneg) if self.temp_diff_tolneg is not None else 0
+            'temp_diff_tolneg': float(self.temp_diff_tolneg) if self.temp_diff_tolneg is not None else 0,
+            'ritheat1': self.ritheat1,
+            'ritheat2': self.ritheat2,
+            'pittws': self.pittws
         }

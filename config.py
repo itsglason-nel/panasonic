@@ -82,6 +82,12 @@ class Config:
         os.path.join(os.path.dirname(__file__), 'DATA FROM DATA LOGGER.xlsx')
     )
 
+    # PDF Save Path
+    TAG_PDF_PATH = os.environ.get(
+        'TAG_PDF_PATH',
+        r'C:\Users\DELL\Desktop\Product Info Tag'
+    )
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""

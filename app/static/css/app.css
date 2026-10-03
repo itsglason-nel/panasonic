@@ -2096,3 +2096,280 @@ input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, 
 
 .bom-row-cb { background-color: rgba(139, 92, 246, 0.03) !important; border-left: 3px solid #8b5cf6 !important; }
 .bom-row-cb:hover, .bom-row-cb.selected { background-color: rgba(139, 92, 246, 0.08) !important; }
+
+/* ── Password Toggle ── */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    padding-right: 46px;
+    flex: 1;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    outline: none;
+    width: 32px;
+    height: 32px;
+}
+
+.password-toggle svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -10px;
+    margin-left: -10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
+}
+
+.password-toggle .eye-icon {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+}
+
+.password-toggle .eye-off-icon {
+    opacity: 0;
+    transform: scale(0.5) rotate(-45deg);
+}
+
+.password-toggle.show .eye-icon {
+    opacity: 0;
+    transform: scale(0.5) rotate(45deg);
+}
+
+.qc-unit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.15s ease;
+}
+.qc-unit-row:hover {
+    background-color: #f8fafc;
+}
+
+/* ── Responsive / Mobile ── */
+@media (max-width: 768px) {
+    .app-shell { flex-direction: column; }
+    
+    .mobile-header { display: flex; }
+    
+    .sidebar { 
+        position: fixed; 
+        top: 0; 
+        right: 0; 
+        left: auto; 
+        height: 100vh; 
+        width: 260px;
+        transform: translateX(100%); /* Right side initial */ 
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 50; 
+        border-left: 1px solid rgba(255,255,255,0.05);
+        border-right: none;
+        border-bottom: none;
+    }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    body.sidebar-open .sidebar-backdrop { display: block; opacity: 1; pointer-events: auto; }
+    
+    /* Revert internal sidebar layout to normal for mobile menu */
+    .sidebar-nav { flex-direction: column; flex-wrap: nowrap; padding: 0.6rem; }
+    .sidebar-separator { display: block; padding: 1.25rem 0.75rem 0.5rem; text-align: left; }
+    .sidebar-item { width: 100%; flex: none; text-align: left; justify-content: flex-start; }
+    
+    .admin-inner-tabs { width: 100%; justify-content: space-around; gap: 0; }
+    .admin-inner-tabs .tab-btn { flex: 1; justify-content: center; padding: 0.75rem 0.5rem; }
+    .admin-inner-tabs .tab-btn .tab-text { display: none; }
+    .admin-inner-tabs .tab-btn svg { width: 22px; height: 22px; }
+    
+    .main-area { flex: 1; min-width: 0; padding-left: 0; margin-left: 0 !important; overflow-y: auto; width: 100vw; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
+    .panel-topbar { padding: 1.5rem 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; box-sizing: border-box; }
+    .panel-body { padding: 0.75rem; box-sizing: border-box; width: 100%; max-width: 100%; overflow-x: hidden; }
+    .panel-card { padding: 1rem; box-sizing: border-box; width: 100%; max-width: 100%; overflow-x: hidden; }
+    
+    .controls { flex-direction: row; flex-wrap: wrap; align-items: flex-end !important; gap: 0.75rem !important; box-sizing: border-box; width: 100%; margin-bottom: 1.5rem !important; }
+    .control-group { display: flex; flex-direction: column; flex: 1 1 45%; gap: 0.25rem; min-width: 0; box-sizing: border-box; }
+    .controls label { display: block !important; font-size: 0.75rem; color: var(--text-secondary); margin: 0 !important; white-space: nowrap; }
+    .controls input[type="text"], .controls input[type="date"], .controls select, .controls .stat-pill { width: 100% !important; max-width: none !important; margin: 0 !important; box-sizing: border-box; height: 38px; }
+    .controls > .btn, .control-group > .btn { flex: 0 0 auto; white-space: nowrap; box-sizing: border-box; margin: 0 !important; height: 38px; }
+    .stats { width: 100%; margin-left: 0 !important; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .stat-pill { white-space: normal; flex: 1 1 auto; min-width: 130px; justify-content: center; padding: 0.5rem !important; text-align: center; }
+    
+    .action-btns { justify-content: center; width: 100%; }
+    
+    .table-container { border: none; background: transparent; overflow-x: hidden; height: auto !important; }
+    .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; box-sizing: border-box; }
+    .data-table thead { display: none; }
+    .data-table tr { margin-bottom: 1rem; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 0.5rem 1rem; box-shadow: var(--shadow-sm); }
+    .data-table td { text-align: right; padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.05); position: relative; font-size: 0.85rem; white-space: normal; display: flex; justify-content: flex-end; align-items: center; min-height: 2.5rem; }
+    .data-table td:last-child { border-bottom: none; }
+    .data-table td::before { content: attr(data-label); position: absolute; left: 0; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; padding-right: 1rem; width: 45%; }
+    
+    .data-table td.empty-state { justify-content: center; text-align: center; border-bottom: none; padding: 2rem 1rem; }
+    .data-table td.empty-state::before { content: none !important; }
+    
+    /* Mobile Selection Indicator */
+    .data-table tbody tr.selected {
+        border-left: 4px solid var(--accent-primary) !important;
+        box-shadow: 0 0 0 1px var(--accent-primary), var(--shadow-sm);
+    }
+
+                                                                                
+                            
+                        
+                                
+                        
+                        
+                    
+                            
+                
+                
+                
+                        
+    .hide-on-mobile { display: none !important; }
+}
+
+/* ── Spin Animation for Refresh Buttons ── */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+/* Override ALL .form-input focus to be black instead of blue to maintain consistency */
+.form-input:focus, input[type="time"]:focus {
+    border-color: var(--border-focus, #09090B) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* ── Audit Details Formatting ── */
+.audit-detail-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: var(--text-primary, #1e293b);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin: 2px;
+    white-space: nowrap;
+}
+.audit-detail-pill strong {
+    font-weight: 700;
+    color: var(--text-muted, #64748b);
+    text-transform: capitalize;
+}
+
+/* ── Part Reference (BOM) Color-Coded Rows ── */
+.bom-row-crs { background-color: rgba(59, 130, 246, 0.03) !important; border-left: 3px solid #3b82f6 !important; }
+.bom-row-crs:hover, .bom-row-crs.selected { background-color: rgba(59, 130, 246, 0.08) !important; }
+
+.bom-row-gms { background-color: rgba(16, 185, 129, 0.03) !important; border-left: 3px solid #10b981 !important; }
+.bom-row-gms:hover, .bom-row-gms.selected { background-color: rgba(16, 185, 129, 0.08) !important; }
+
+.bom-row-spams { background-color: rgba(245, 158, 11, 0.03) !important; border-left: 3px solid #f59e0b !important; }
+.bom-row-spams:hover, .bom-row-spams.selected { background-color: rgba(245, 158, 11, 0.08) !important; }
+
+.bom-row-cb { background-color: rgba(139, 92, 246, 0.03) !important; border-left: 3px solid #8b5cf6 !important; }
+.bom-row-cb:hover, .bom-row-cb.selected { background-color: rgba(139, 92, 246, 0.08) !important; }
+
+/* ── Password Toggle ── */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    padding-right: 46px;
+    flex: 1;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    outline: none;
+    width: 32px;
+    height: 32px;
+}
+
+.password-toggle svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -10px;
+    margin-left: -10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
+}
+
+.password-toggle .eye-icon {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+}
+
+.password-toggle .eye-off-icon {
+    opacity: 0;
+    transform: scale(0.5) rotate(-45deg);
+}
+
+.password-toggle.show .eye-icon {
+    opacity: 0;
+    transform: scale(0.5) rotate(45deg);
+}
+
+.password-toggle.show .eye-off-icon {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+}
+
+.password-toggle:hover {
+    color: var(--text-primary);
+}
+
+/* Flatpickr Transfer Slip Highlight */
+.flatpickr-day.has-data-highlight {
+    position: relative;
+    font-weight: bold;
+    color: var(--primary-color, #2563eb);
+}
+
+.flatpickr-day.has-data-highlight::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    background-color: var(--primary-color, #2563eb);
+    border-radius: 50%;
+}

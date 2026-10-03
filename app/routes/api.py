@@ -11,12 +11,9 @@ from app.models.att import ATT
 from app.models.gms import GMS
 
 from app.models.spamsi import SPAMSI
-from app.models.packaging import Packaging
 from app.models.spamso import SPAMSO
 from app.models.partref import PartRef
 from app.models.worksched import WorkSched
-from app.services.barcode_parser import decode_safety_part_qr
-from app.services.pit_generator import generate_and_save_pit
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -117,9 +114,14 @@ def get_schedule(lid, date_str):
     except ValueError:
         return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
 
-    schedules = WorkSched.query.filter_by(
-        lineno=f"L{lid}", date=query_date
-    ).order_by(WorkSched.seq).all()
+    from sqlalchemy import or_, and_
+    schedules = WorkSched.query.filter(
+        WorkSched.lineno == f"L{lid}",
+        or_(
+            WorkSched.date == query_date,
+            and_(WorkSched.date < query_date, WorkSched.act < WorkSched.plan)
+        )
+    ).order_by(WorkSched.date.asc(), WorkSched.seq.asc()).all()
 
     return jsonify({
         'line_id': lid,
@@ -143,7 +145,14 @@ def get_scoreboard(line_id):
     """Return today's plan/actual totals for a given line."""
     today = date_type.today()
     lineno = f"L{line_id}"
-    schedules = WorkSched.query.filter_by(lineno=lineno, date=today).all()
+    from sqlalchemy import or_, and_
+    schedules = WorkSched.query.filter(
+        WorkSched.lineno == lineno,
+        or_(
+            WorkSched.date == today,
+            and_(WorkSched.date < today, WorkSched.act < WorkSched.plan)
+        )
+    ).all()
 
     total_plan = sum(s.plan for s in schedules)
     total_act  = sum(s.act  for s in schedules)
@@ -221,12 +230,29 @@ def submit_station(station_code):
         if missing:
             return jsonify({'success': False, 'error': f'Missing fields: {", ".join(missing)}'}), 400
 
+        s1 = (data.get('status1') or '').upper()
+        s2 = (data.get('status2') or '').upper()
+        s3 = (data.get('status3') or '').upper()
+        
+        overall_status = data.get('overallstatus') or data.get('status')
+        if not overall_status:
+            vals = [s1, s2, s3]
+            if all(v in ('GOOD', 'PASS') for v in vals if v):
+                overall_status = 'GOOD'
+            elif any(v in ('NO GOOD', 'NG', 'FAIL', 'FAILED') for v in vals if v):
+                overall_status = 'NO GOOD'
+            else:
+                overall_status = 'PENDING'
+        else:
+            overall_status = overall_status.upper()
+
         record = ATT(
             modelcode = data.get('modelcode', ''),
             serial    = data.get('serial', ''),
-            status1   = (data.get('status1') or '').upper(),
-            status2   = (data.get('status2') or '').upper(),
-            status3   = (data.get('status3') or '').upper(),
+            status1   = s1,
+            status2   = s2,
+            status3   = s3,
+            overallstatus = overall_status,
             time      = now,
             inspector = getattr(current_user, 'username', 'system'),
             lineno    = data.get('lineno', 'L1'),
@@ -319,24 +345,6 @@ def submit_station(station_code):
         db.session.commit()
         return jsonify({'success': True, 'scan_id': record.id, 'station': 'SPAMSO'})
 
-    # ── SPAMS (Legacy / Safety Parts QR Parser) ─────────────────────────────
-    elif station_lower in ('spams', 'safety'):
-        raw_qr = data.get('raw_qr', '')
-        if not raw_qr:
-            return jsonify({'success': False, 'error': 'Missing raw_qr.'}), 400
-            
-        parsed_data = decode_safety_part_qr(raw_qr)
-        if not parsed_data:
-            return jsonify({'success': False, 'error': 'Failed to parse QR code.'}), 400
-            
-        return jsonify({
-            'success': True,
-            'station': 'SPAMS',
-            'parsed_part_number': parsed_data.get('part_number'),
-            'parsed_lot': parsed_data.get('lot_barcode'),
-            'message': 'Parsed successfully. Database save logic not yet implemented.'
-        })
-
     # ── Other stations — not yet implemented ───────────────────────────────
     else:
         return jsonify({
@@ -346,26 +354,6 @@ def submit_station(station_code):
         }), 501
 
 
-
-# ── PIT record ────────────────────────────────────────────────────────────────
-@api_bp.route('/pit/<int:unit_id>', methods=['GET'])
-@login_required
-def get_pit(unit_id):
-    # Retrieve the unit (Requires the new schema to be fully implemented)
-    try:
-        from app.models.unit import Unit # type: ignore[import-untyped]
-        unit = Unit.query.get(unit_id)
-        if not unit:
-            return jsonify({'success': False, 'error': 'Unit not found.'}), 404
-            
-        # Utilize the orphaned pit_generator
-        pit = generate_and_save_pit(unit)
-        if not pit:
-            return jsonify({'success': False, 'error': 'Could not generate PIT. Unit may not be complete.'}), 400
-            
-        return jsonify({'success': True, 'pit_data': pit.pit_json})
-    except ImportError:
-        return jsonify({'error': 'PIT record system requires the new Unit model which is not yet implemented.'}), 501
 
 
 # ── Weight reader ────────────────────────────────────────────────────────────────────

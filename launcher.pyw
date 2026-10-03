@@ -445,7 +445,20 @@ class LauncherApp:
             
             db_proc = subprocess.Popen([sys.executable, "tools/init_database.py"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=CREATE_NO_WINDOW, startupinfo=startupinfo)
             db_out, _ = db_proc.communicate(timeout=15)
-            self.root.after(0, self.log, db_out.strip())
+            db_out_str = db_out.strip()
+            self.root.after(0, self.log, db_out_str)
+            
+            if "Error creating database: (1598" in db_out_str or "ABORT_SERVER" in db_out_str:
+                self.auto_restarts = getattr(self, 'auto_restarts', 0)
+                if self.auto_restarts < 3:
+                    self.auto_restarts += 1
+                    self.root.after(0, self.log, f"MySQL crash detected! Auto-restarting system (Attempt {self.auto_restarts}/3)...")
+                    self.root.after(0, self.restart_system)
+                    return
+                else:
+                    self.root.after(0, self.log, "Auto-restart limit reached. Please check MySQL manually.")
+                    self.root.after(0, self.stop_system)
+                    return
         except subprocess.TimeoutExpired:
             if db_proc:
                 self.kill_process_tree(db_proc)

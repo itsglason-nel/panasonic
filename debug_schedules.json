@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang=en>
+<title>Redirecting...</title>
+<h1>Redirecting...</h1>
+<p>You should be redirected automatically to the target URL: <a href="/auth/login?next=%2Fadmin%2Fapi%2Fschedules%3Fline_id%3Dall%26date%3D10%2F03%2F2026">/auth/login?next=%2Fadmin%2Fapi%2Fschedules%3Fline_id%3Dall%26date%3D10%2F03%2F2026</a>. If not, click the link.

@@ -31,27 +31,28 @@
             gap: 10px;
             background: white;
             padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            padding: 8px 16px;
+            gap: 6px;
+            padding: 10px 20px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: 8px;
             text-decoration: none;
             border: 1px solid #d1d5db;
             background-color: #ffffff;
             color: #374151;
-            transition: all 0.15s;
+            transition: all 0.2s;
         }
 
         .btn:hover {
-            background-color: #f9fafb;
+            background-color: #f3f4f6;
             transform: translateY(-1px);
         }
 
@@ -63,7 +64,7 @@
 
         .btn-primary:hover {
             background-color: #1a202c;
-            border-color: #1a202c;
+            box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
         }
 
         /* ── Page Container ── */
@@ -222,7 +223,10 @@
 <body>
 
     <div class="toolbar">
-        <button onclick="window.print()" class="btn btn-primary">Print Report</button>
+        <button onclick="window.print()" class="btn btn-primary">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Print Report
+        </button>
         <button onclick="window.close()" class="btn">Close</button>
     </div>
 

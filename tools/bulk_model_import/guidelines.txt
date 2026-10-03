@@ -1,0 +1,60 @@
+======================================================
+PMPC MODEL BULK IMPORT TOOL
+======================================================
+
+This tool allows you to safely bulk-insert new AC Models and their BOM (Bill of Materials) parts into the database.
+
+HOW TO USE
+----------
+1. Fill out `model_import_config.csv`
+   - One row per new model.
+   - Defines the model code, tolerances, areas, and SPAMSI/SPAMSO references.
+   - *Note: Leave the first 2 header rows intact. The script will automatically skip them.*
+   
+2. Fill out `model_import_parts.csv`
+   - Many rows per model.
+   - Defines the BOM parts required for each model.
+   - *Note: Leave the first 2 header rows intact. The script will automatically skip them.*
+
+3. Run the Python Converter Tool
+   - Open PowerShell or Command Prompt.
+   - Run: `python tools/bulk_model_import/csv_to_sql.py tools/bulk_model_import/model_import_config.csv tools/bulk_model_import/model_import_parts.csv`
+   - This will preview the SQL. To execute directly against the database, append `--execute`.
+
+WHAT THIS DOES *NOT* TOUCH
+--------------------------
+This tool ONLY inserts data into:
+- `modelref`
+- `partref`
+- `spamsi_unique_refs`
+- `partref` (Outdoor Control Board)
+
+It does NOT touch production scan data (`crs`, `spamsi`, `spamso`), daily schedules (`worksched`), line status (`linestat`), or modify any stored procedures, triggers, or UI code.
+
+RULES / CONDITION STOPPERS
+--------------------------
+If any of these conditions are violated, the tool will throw an error and refuse to generate SQL.
+
+Model Configuration (model_import_config.csv):
+- `modelcode`: Max 14 chars. Must be UNIQUE in the database.
+- `area`: Max 14 chars. If the area does not exist in the `areas` table, it will be automatically added.
+- `serialstart`: Max 6 chars.
+- `program_h` / `program_f`: Must be exactly NN:NN format (e.g. 05:30) or blank.
+- `gmstolpos` / `gmstolneg`: DECIMAL(4,2), max 99.99.
+- `op_current_*` / `in_power_*` / `temp_diff_*`: DECIMAL(4,2), max 99.99.
+- `ritheat1` / `ritheat2` / `pittws`: Must be exactly "ON" or blank.
+- `spamsi_unique_code`: Max 4 chars. Must be UNIQUE globally across all models.
+- `spamso_outmodel`: Max 14 chars.
+
+BOM Parts (model_import_parts.csv):
+- `modelcode`: Must match a modelcode defined in the config CSV.
+- `module`: Max 8 chars. Must match an active module (e.g., CRS, GMS, SPAMSI, SPAMSO, CB).
+- `partno`: Max 14 chars. Required.
+- `partdesc`: Max 60 chars.
+- `usage`: DECIMAL(4,2), max 99.99.
+- `tag`: Max 14 chars. Must match an active tag (e.g., Compressor, Fan Motor, Safety Part, Gas Charge).
+- Part Limit: Maximum 20 parts per model.
+
+COMMON QUESTION: Where are part1serial, fan1serial, etc?
+--------------------------------------------------------
+The `model_import_parts.csv` is for BOM Configuration (defining *what* parts a model needs). It does not store actual serial numbers, because the AC hasn't been built yet! The columns like `part1serial` in the database are filled by operators on the assembly line scanning physical parts.

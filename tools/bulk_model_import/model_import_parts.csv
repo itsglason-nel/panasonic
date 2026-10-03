@@ -1,0 +1,2 @@
+partref|modelcode,partref|module,partref|partno,partref|partdesc,partref|usage,partref|tag
+VARCHAR(14) REQUIRED,VARCHAR(8) REQUIRED,VARCHAR(14) REQUIRED,VARCHAR(60),DECIMAL(4.2),VARCHAR(14)

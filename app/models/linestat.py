@@ -38,7 +38,7 @@ class LineStat(db.Model):
     # SPAMSI (Indoor)
     inmodelcode = db.Column(db.String(14), nullable=True)
     invar = db.Column(db.Integer, nullable=True)
-    inuniqe = db.Column(db.String(4), nullable=True)
+    inunique = db.Column(db.String(4), nullable=True)
     inpart1mod = db.Column(db.String(14), nullable=True)
     inpart1desc = db.Column(db.String(30), nullable=True)
     inpart2mod = db.Column(db.String(14), nullable=True)
@@ -56,38 +56,47 @@ class LineStat(db.Model):
     outmodelcode = db.Column(db.String(14), nullable=True)
     outvar = db.Column(db.Integer, nullable=True)
     outmodel = db.Column(db.String(14), nullable=True)
-    outpart1mod = db.Column(db.String(14), nullable=True)
-    outpart1desc = db.Column(db.String(30), nullable=True)
-    outpart2mod = db.Column(db.String(14), nullable=True)
-    outpart2desc = db.Column(db.String(30), nullable=True)
-    outpart3mod = db.Column(db.String(14), nullable=True)
-    outpart3desc = db.Column(db.String(30), nullable=True)
+    # RESERVED — outpart columns below are retained in the schema but have no active
+    # function. They are not populated by the stored procedure or displayed in the UI.
+    outpart1mod = db.Column(db.String(14), nullable=True)   # RESERVED
+    outpart1desc = db.Column(db.String(30), nullable=True)  # RESERVED
+    outpart2mod = db.Column(db.String(14), nullable=True)   # RESERVED
+    outpart2desc = db.Column(db.String(30), nullable=True)  # RESERVED
+    outpart3mod = db.Column(db.String(14), nullable=True)   # RESERVED
+    outpart3desc = db.Column(db.String(30), nullable=True)  # RESERVED
 
-    # WIRING & CONSTRUCTION
-    wcmodelcode = db.Column(db.String(14), nullable=True)
-    wcvar = db.Column(db.Integer, nullable=True)
+    # WCI
+    wcimodelcode = db.Column(db.String(14), nullable=True)
+    wcivar = db.Column(db.Integer, nullable=True)
 
-    # RUNNING INSPECTION
-    rimodelcode = db.Column(db.String(14), nullable=True)
-    rivar = db.Column(db.Integer, nullable=True)
-    ri_progh = db.Column(db.String(6), nullable=True)
-    ri_progf = db.Column(db.String(6), nullable=True)
-    ri_opcur = db.Column(db.Numeric(8,2), nullable=True)
-    ri_opcur_pos = db.Column(db.Numeric(2,0), nullable=True)
-    ri_opcur_neg = db.Column(db.Numeric(2,0), nullable=True)
-    ri_oppow = db.Column(db.Numeric(8,2), nullable=True)
-    ri_oppow_pos = db.Column(db.Numeric(2,0), nullable=True)
-    ri_oppow_neg = db.Column(db.Numeric(2,0), nullable=True)
-    ri_tempdiff = db.Column(db.Numeric(8,2), nullable=True)
-    ri_tempdiff_pos = db.Column(db.Numeric(2,0), nullable=True)
-    ri_tempdiff_neg = db.Column(db.Numeric(2,0), nullable=True)
+    # RIT
+    ritmodelcode = db.Column(db.String(14), nullable=True)
+    ritvar = db.Column(db.Integer, nullable=True)
+    ritprogh = db.Column(db.String(6), nullable=True)
+    ritprogf = db.Column(db.String(6), nullable=True)
+    ritdata1 = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata1tolpos = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata1tolneg = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata2 = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata2tolpos = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata2tolneg = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata3 = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata3tolpos = db.Column(db.Numeric(4,2), nullable=True)
+    ritdata3tolneg = db.Column(db.Numeric(4,2), nullable=True)
+    ritheat1 = db.Column(db.String(2), nullable=True)
+    ritheat2 = db.Column(db.String(2), nullable=True)
 
-    # FINAL INSPECTION
-    fimodelcode = db.Column(db.String(14), nullable=True)
-    fivar = db.Column(db.Integer, nullable=True)
-    fi_opcur = db.Column(db.Numeric(5,2), nullable=True)
-    fi_oppow = db.Column(db.Numeric(5,2), nullable=True)
+    # FIT
+    fitmodelcode = db.Column(db.String(14), nullable=True)
+    fitvar = db.Column(db.Integer, nullable=True)
+    fitdata1 = db.Column(db.Numeric(4,2), nullable=True)
+    fitdata1tolpos = db.Column(db.Numeric(4,2), nullable=True)
+    fitdata1tolneg = db.Column(db.Numeric(4,2), nullable=True)
+    fitdata2 = db.Column(db.Numeric(4,2), nullable=True)
+    fitdata2tolpos = db.Column(db.Numeric(4,2), nullable=True)
+    fitdata2tolneg = db.Column(db.Numeric(4,2), nullable=True)
 
-    # PACKAGING
-    packmodelcode = db.Column(db.String(14), nullable=True)
-    packvar = db.Column(db.Integer, nullable=True)
+    # PIT
+    pitmodelcode = db.Column(db.String(14), nullable=True)
+    pitvar = db.Column(db.Integer, nullable=True)
+    pittws = db.Column(db.String(2), nullable=True)
