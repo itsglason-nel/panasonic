@@ -97,6 +97,8 @@ def create_app(config_name=None):
     # ── Security headers & cache control ────────────────────────────────────────
     @app.after_request
     def set_security_headers(response):
+        from flask import request
+        
         # Security headers
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
@@ -104,11 +106,19 @@ def create_app(config_name=None):
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
 
-        # Cache-control for HTML pages — prevent browser from caching authenticated pages
-        if response.content_type and 'text/html' in response.content_type:
-            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
+        # Skip Cache-Control/Vary modifications for static files
+        if request.endpoint == 'static':
+            return response
+
+        # Cache-control for HTML and JSON pages — prevent browser from caching authenticated pages
+        if response.content_type and ('text/html' in response.content_type or 'application/json' in response.content_type):
+            response.headers.setdefault('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            response.headers.setdefault('Pragma', 'no-cache')
+            response.headers.setdefault('Expires', '0')
+            
+            vary = response.headers.get('Vary', '')
+            if 'Cookie' not in vary:
+                response.headers['Vary'] = f"{vary}, Cookie" if vary else "Cookie"
 
         return response
 
