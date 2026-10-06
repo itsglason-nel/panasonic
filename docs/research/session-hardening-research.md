@@ -63,3 +63,6 @@ Due to the heavy reliance on server-side rendering of user data, skipping Phase 
 - The `Vary` header is dynamically appended with `Cookie` without overwriting existing `Vary` values.
 - Static assets (`/static`) are explicitly bypassed.
 - This API cache hardening behavior can be disabled in the environment by setting `HARDEN_API_CACHE=False`.
+
+### Risks Noted
+- **Silent Session Fallback**: In `app/__init__.py` (lines 47-61), if Redis connection fails on startup, the application silently catches the exception and falls back to `filesystem` sessions (`app/.flask_sessions/`). This means horizontal scaling or multi-process deployments could suffer from split-brain sessions without any immediate error being thrown.

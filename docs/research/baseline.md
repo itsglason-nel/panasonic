@@ -4,7 +4,7 @@
 - **Methodology**: Python automated script utilizing `urllib` to maintain cookies via `http.cookiejar`.
 - **Test Server**: Local development server (`127.0.0.1:8085`).
 - **Simulated Browser Hosts**: `127.0.0.1:8085` and `localhost:8085`.
-- **Session Backend**: Redis (via Flask-Session defaults).
+- **Session Backend**: Filesystem (via Flask-Session silent fallback due to Redis unavailability).
 
 ## Test Scenario
 1. **User A** (`test_user_a`) logs into `http://127.0.0.1:8085`.

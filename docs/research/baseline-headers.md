@@ -1,5 +1,7 @@
 # Baseline Headers Snapshot
 
+*Note: Session Backend was Filesystem (via silent fallback), not Redis.*
+
 ## Login Page (GET)
 - **Status**: 200
 - **Cache-Control**: no-store, no-cache, must-revalidate, max-age=0
