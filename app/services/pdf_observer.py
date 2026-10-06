@@ -12,7 +12,6 @@ def _pdf_observer_loop(app):
         
         while True:
             try:
-                # Query all PIT serials AND their latest update time across all tables
                 query = text("""
                     SELECT a.serial, a.last_update 
                     FROM (
@@ -39,15 +38,14 @@ def _pdf_observer_loop(app):
                     last_update_dt = row[1]
                     
                     pdf_filepath = get_pdf_filepath(serial)
+                    file_exists = os.path.exists(pdf_filepath)
                     needs_generation = False
                     
-                    if not os.path.exists(pdf_filepath):
+                    if not file_exists:
                         needs_generation = True
                         app.logger.info(f"[PDF Observer] PDF missing for PIT serial {serial}. Generating...")
                     else:
-                        # Compare timestamps
                         file_mtime = os.path.getmtime(pdf_filepath)
-                        # If the database record is newer than the file, we must regenerate it
                         if last_update_dt and last_update_dt.timestamp() > file_mtime:
                             needs_generation = True
                             app.logger.info(f"[PDF Observer] Data updated for serial {serial}. Regenerating PDF...")

@@ -293,6 +293,18 @@ def create_app(config_name=None):
         start_pdf_observer(app)
     except Exception as e:
         logger.warning('Failed to start PDF observer thread: %s', e)
+        
+    try:
+        from app.services.transfer_slip_observer import start_transfer_slip_observer
+        start_transfer_slip_observer(app)
+    except Exception as e:
+        logger.warning('Failed to start Transfer Slip observer thread: %s', e)
+
+    try:
+        from app.services.model_import_observer import start_model_import_observer
+        start_model_import_observer(app)
+    except Exception as e:
+        logger.warning('Failed to start Model Import observer thread: %s', e)
 
     logger.info('PMPC Data Logger started in "%s" mode.', config_name)
     return app

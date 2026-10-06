@@ -164,55 +164,18 @@
         }
 
         .data-grid {
-            display: block;
+            display: grid;
+            grid-template-columns: 1.6fr 2.4fr 1.2fr 2.4fr 1.2fr 1.2fr;
             margin-bottom: 40px;
             page-break-inside: auto;
-        }
-
-        .data-grid::after {
-            content: "";
-            display: table;
-            clear: both;
+            column-gap: 15px;
         }
 
         .data-grid>div {
-            float: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             padding-bottom: 4px;
             box-sizing: border-box;
             page-break-inside: avoid;
-        }
-
-        /* Equivalent to 2fr 3fr 1.5fr 3fr 1.5fr 1.5fr */
-        .data-grid>div:nth-child(6n+1) {
-            width: 16%;
-            padding-right: 15px;
-        }
-
-        .data-grid>div:nth-child(6n+2) {
-            width: 24%;
-            padding-right: 15px;
-        }
-
-        .data-grid>div:nth-child(6n+3) {
-            width: 12%;
-            padding-right: 15px;
-        }
-
-        .data-grid>div:nth-child(6n+4) {
-            width: 24%;
-            padding-right: 15px;
-        }
-
-        .data-grid>div:nth-child(6n+5) {
-            width: 12%;
-            padding-right: 15px;
-        }
-
-        .data-grid>div:nth-child(6n+6) {
-            width: 12%;
+            word-wrap: break-word;
         }
 
         .divider {
@@ -266,9 +229,14 @@
         <div class="print-page">
 
             <div class="header">
-                <div class="header-title">Panasonic Manufacturing Philippines Corporation</div>
-                <div class="header-sub">Aircon Division</div>
-                <div class="header-doc">Parts Confirmation Report - Complete</div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div class="header-title">Panasonic Manufacturing Philippines Corporation</div>
+                        <div class="header-sub">Aircon Division</div>
+                        <div class="header-doc">PARTS CONFIRMATION REPORT - COMPLETE</div>
+                    </div>
+                    <div style="font-weight: bold; font-size: 13px;">Page 1/2</div>
+                </div>
             </div>
 
             <div class="meta-block">
@@ -350,16 +318,16 @@
                     style="font-weight: bold; border-bottom: 3px double #000; padding-bottom: 4px; margin-bottom: 4px;">
                     Arrival Date</div>
 
-                {% macro render_serial_dates(serial) %}
-                {% if serial and serial|length > 16 and serial[2] == '/' and serial[5] == '/' and serial[10] == '/' and
+                {% macro render_serial_dates(serial, fallback_arr='') %}
+                {% if serial and serial|length >= 16 and serial[2] == '/' and serial[5] == '/' and serial[10] == '/' and
                 serial[13] == '/' %}
-                <div>{{ serial[16:] }}</div>
+                <div>{{ serial }}</div>
                 <div>{{ serial[0:8] }}</div>
                 <div>{{ serial[8:16] }}</div>
                 {% else %}
                 <div>{{ serial if serial else '—' }}</div>
                 <div>—</div>
-                <div>—</div>
+                <div>{{ fallback_arr if fallback_arr else '—' }}</div>
                 {% endif %}
                 {% endmacro %}
 
@@ -404,9 +372,7 @@
                 <div>{{ u.spamsi_record.modelcode }}</div>
                 <div>INDOOR UNIT</div>
                 <div>SPAMSI</div>
-                <div>{{ u.spamsi_record.inserial }}</div>
-                <div>—</div>
-                <div>{{ u.spamsi_record.time.strftime('%m/%d/%y') if u.spamsi_record.time else '—' }}</div>
+                {{ render_serial_dates(u.spamsi_record.inserial) }}
                 {% for i in range(1, 7) %}
                 {% set pmod = u.spamsi_record['part' ~ i ~ 'mod'] %}
                 {% set pdesc = u.spamsi_record['part' ~ i ~ 'desc'] %}
@@ -424,9 +390,7 @@
                 <div>{{ u.spamso_record.outmodel }}</div>
                 <div>OUTDOOR UNIT</div>
                 <div>SPAMSO</div>
-                <div>{{ u.spamso_record.outserial }}</div>
-                <div>—</div>
-                <div>{{ u.spamso_record.time.strftime('%m/%d/%y') if u.spamso_record.time else '—' }}</div>
+                {{ render_serial_dates(u.spamso_record.outserial) }}
                 {% for i in range(1, 4) %}
                 {% set pmod = u.spamso_record['part' ~ i ~ 'mod'] %}
                 {% set pdesc = u.spamso_record['part' ~ i ~ 'desc'] %}
@@ -439,6 +403,19 @@
                 {% endif %}
                 {% endfor %}
                 {% endif %}
+            </div>
+
+            <!-- Page 2 Header -->
+            <div style="page-break-before: always; padding-top: 20px;"></div>
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div class="header-title">Panasonic Manufacturing Philippines Corporation</div>
+                        <div class="header-sub">Aircon Division</div>
+                        <div class="header-doc">PARTS CONFIRMATION REPORT - COMPLETE</div>
+                    </div>
+                    <div style="font-weight: bold; font-size: 13px;">Page 2/2</div>
+                </div>
             </div>
 
             <div class="divider">STATION JUDGEMENTS & OPERATORS</div>
@@ -495,13 +472,13 @@
                 {% endif %}
 
                 <!-- WCI -->
-                <div>WCI:</div>
+                <div>WCI Station:</div>
                 {% if u.wci_record %}
                 {% if u.wci_record.overallstatus in ('PASS', 'OK', 'GOOD') %}
                 <div class="judgement-pass">GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.wci_record.inspector }}</div>
                 {% else %}
-                <div class="judgement-fail">NOT GOOD ({{ u.wci_record.overallstatus }})</div>
+                <div class="judgement-fail">NO GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.wci_record.inspector }}</div>
                 {% endif %}
                 {% else %}
@@ -510,13 +487,13 @@
                 {% endif %}
 
                 <!-- RIT -->
-                <div>RIT:</div>
+                <div>RIT Station:</div>
                 {% if u.rit_record %}
                 {% if u.rit_record.overallstatus in ('PASS', 'OK', 'GOOD') %}
                 <div class="judgement-pass">GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.rit_record.inspector }}</div>
                 {% else %}
-                <div class="judgement-fail">NOT GOOD ({{ u.rit_record.overallstatus }})</div>
+                <div class="judgement-fail">NO GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.rit_record.inspector }}</div>
                 {% endif %}
                 {% else %}
@@ -525,13 +502,13 @@
                 {% endif %}
 
                 <!-- FIT -->
-                <div>FIT:</div>
+                <div>FIT Station:</div>
                 {% if u.fit_record %}
                 {% if u.fit_record.overallstatus in ('PASS', 'OK', 'GOOD') %}
                 <div class="judgement-pass">GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.fit_record.inspector }}</div>
                 {% else %}
-                <div class="judgement-fail">NOT GOOD ({{ u.fit_record.overallstatus }})</div>
+                <div class="judgement-fail">NO GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.fit_record.inspector }}</div>
                 {% endif %}
                 {% else %}
@@ -540,13 +517,13 @@
                 {% endif %}
 
                 <!-- PIT -->
-                <div>PIT:</div>
+                <div>PIT Station:</div>
                 {% if u.pit_record %}
                 {% if u.pit_record.overallstatus in ('PASS', 'OK', 'GOOD') %}
                 <div class="judgement-pass">GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.pit_record.inspector }}</div>
                 {% else %}
-                <div class="judgement-fail">NOT GOOD ({{ u.pit_record.overallstatus }})</div>
+                <div class="judgement-fail">NO GOOD</div>
                 <div><span class="meta-label">Operator:</span> {{ u.pit_record.inspector }}</div>
                 {% endif %}
                 {% else %}

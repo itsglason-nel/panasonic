@@ -54,7 +54,7 @@
         document.querySelectorAll(`.sort-indicator[id^="${tableId}-sort-"]`).forEach(el => el.innerHTML = '');
         const activeIndicator = document.getElementById(`${tableId}-sort-${column}`);
         if (activeIndicator) {
-            activeIndicator.innerHTML = currentSort.dir === 'asc' ? '↑' : '↓';
+            activeIndicator.innerHTML = currentSort.dir === 'asc' ? 'â†‘' : 'â†“';
         }
 
         const loadFunc = window[`load${tableId.toUpperCase()}Data`];
@@ -163,7 +163,7 @@
 
     let selectedScheduleId = null;
 
-    // ─── MODULE SORT ORDER ────────────────────────────────────────────────────────
+    // â”€â”€â”€ MODULE SORT ORDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const MODULE_ORDER = ['CRS', 'GMS', 'SPAMSI', 'SPAMSO', 'CB', 'FPCP', 'RUNNING'];
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -171,7 +171,7 @@
         const initialStyles = document.getElementById('initial-layout-styles');
         if (initialStyles) initialStyles.remove();
 
-        // ─── SIDEBAR NAVIGATION ──────────────────────────────────────────────────
+        // â”€â”€â”€ SIDEBAR NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const sidebarItems = document.querySelectorAll('.sidebar-item[data-panel]');
         const mainPanels = document.querySelectorAll('.main-panel');
 
@@ -198,7 +198,10 @@
                 else if (targetPanel === 'linestat') { if (typeof fetchLineStatus === 'function') fetchLineStatus(); }
                 else if (targetPanel === 'prodtag') { if (typeof loadProdTagTracker === 'function') loadProdTagTracker(1); }
                 else if (targetPanel === 'scoreboard') { if (typeof loadScoreboardData === 'function') loadScoreboardData(); }
-                else if (targetPanel === 'partref') { if (typeof loadModels === 'function') loadModels(); }
+                else if (targetPanel === 'partref') { 
+                    if (typeof loadModels === 'function') loadModels(); 
+                    if (typeof loadAllModelConfigs === 'function') loadAllModelConfigs(); 
+                }
                 else if (targetPanel === 'fgcp') { if (typeof loadTransferSlips === 'function') loadTransferSlips(1); }
                 else if (targetPanel === 'qcreports') { if (typeof loadQCUnitsForPrint === 'function') loadQCUnitsForPrint(); }
                 else if (targetPanel === 'insp3run') { if (typeof loadRITData === 'function') loadRITData(1); }
@@ -207,6 +210,13 @@
                 else if (targetPanel === 'repair') { if (typeof loadRepairData === 'function') loadRepairData(1); }
                 else if (targetPanel === 'cbpcb') { if (typeof loadCBPCBData === 'function') loadCBPCBData(1); }
                 else if (targetPanel === 'insp3vib') { if (typeof loadINSP3VibData === 'function') loadINSP3VibData(1); }
+                else if (targetPanel === 'worksched') { 
+                    const dateDisplay = document.getElementById('sched-date-display');
+                    if (dateDisplay) {
+                        fetchSchedules(dateDisplay.innerText);
+                        manageWorkSchedTimer();
+                    }
+                }
             });
         });
 
@@ -230,7 +240,14 @@
                     fetch(`/admin/api/next-sequence?line_id=${e.target.value}&date=${encodeURIComponent(currentDate)}`)
                         .then(res => res.json())
                         .then(data => {
-                            document.getElementById('sched-seq-preview').value = data.next_sequence;
+                            if (data.error || data.next_sequence === undefined) {
+                                document.getElementById('sched-seq-preview').value = 'Error';
+                            } else {
+                                document.getElementById('sched-seq-preview').value = data.next_sequence;
+                            }
+                        })
+                        .catch(() => {
+                            document.getElementById('sched-seq-preview').value = 'Error';
                         });
                 }
             });
@@ -257,7 +274,10 @@
         if (schedLineFilter) {
             schedLineFilter.addEventListener('change', () => {
                 const dateDisplay = document.getElementById('sched-date-display');
-                if (dateDisplay) fetchSchedules(dateDisplay.innerText);
+                if (dateDisplay) {
+                    fetchSchedules(dateDisplay.innerText);
+                    manageWorkSchedTimer();
+                }
             });
         }
     });
@@ -326,22 +346,50 @@
     }
 
 
-    function fetchSchedules(date) {
+    let workSchedRefreshTimer = null;
+    
+    function manageWorkSchedTimer() {
+        if (workSchedRefreshTimer) {
+            clearInterval(workSchedRefreshTimer);
+            workSchedRefreshTimer = null;
+        }
+        const dateDisplay = document.getElementById('sched-date-display');
+        if (!dateDisplay) return;
+        const today = new Date();
+        const formattedDate = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+        
+        if (dateDisplay.innerText === formattedDate && document.getElementById('panel-worksched').classList.contains('active')) {
+            workSchedRefreshTimer = setInterval(() => {
+                fetchSchedules(dateDisplay.innerText, true);
+            }, 10000);
+        }
+    }
+
+    function fetchSchedules(date, isAutoRefresh = false) {
+        manageWorkSchedTimer();
+        
         const lineFilter = document.getElementById('sched-line-filter');
         const lineId = lineFilter ? lineFilter.value : 'all';
         const tbody = document.getElementById('sched-tbody');
 
-        const loadingState = setupTableLoading(tbody, 7, 'fetchSchedules');
+        let loadingState = null;
+        if (!isAutoRefresh) {
+            loadingState = setupTableLoading(tbody, 7, 'fetchSchedules');
+        }
 
         fetch(`/admin/api/schedules?date=${encodeURIComponent(date)}&line_id=${lineId}`)
             .then(res => res.json())
             .then(data => {
-                finishTableLoading(loadingState);
+                if (!isAutoRefresh) finishTableLoading(loadingState);
                 tbody.innerHTML = '';
 
                 try {
                     if (data.wip_status) {
-                        showWipModal(data.wip_status, lineId);
+                        if (!isAutoRefresh) {
+                            showWipModal(data.wip_status, lineId);
+                        } else if (!wipModalDismissed && !document.getElementById('modal-wip').classList.contains('active')) {
+                            showWipModal(data.wip_status, lineId);
+                        }
                     }
 
                     document.getElementById('sched-total-qty').innerText = data.total_qty || 0;
@@ -394,6 +442,11 @@
                             tr.style.cursor = 'pointer';
                             tr.onclick = () => selectScheduleRow(tr, sched.id, sched);
 
+                            if (sched.id === selectedScheduleId) {
+                                tr.classList.add('selected');
+                                currentScheduleData = sched;
+                            }
+
                             // Bug Fix 1: orphaned model warning badge
                             const noBomBadge = sched.has_bom === false
                                 ? `<span class="badge-no-bom" title="This model was deleted from Model Reference"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>No BOM</span>`
@@ -435,7 +488,10 @@
                     console.error("fetchSchedules rendering error:", err);
                 }
 
-                selectedScheduleId = null;
+                if (!isAutoRefresh && !data.schedules?.some(s => s.id === selectedScheduleId)) {
+                    selectedScheduleId = null;
+                    currentScheduleData = null;
+                }
             })
             .catch(err => {
                 tbody.innerHTML = `<tr><td colspan="7" style="color:red; font-weight:bold; padding: 20px; text-align:center;">API/NETWORK ERROR: ${err.message}</td></tr>`;
@@ -462,7 +518,7 @@
         }
     }
 
-    // ─── Populate sched-model dropdown from DB ────────────────────────────────────
+    // â”€â”€â”€ Populate sched-model dropdown from DB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function loadScheduleModelDropdown(selectedValue, takenModels = new Set()) {
         return fetch('/admin/api/models')
             .then(res => res.json())
@@ -584,6 +640,15 @@
             document.getElementById('sched-seq-preview').value = currentScheduleData.sort_order;
             document.getElementById('sched-qty').value = currentScheduleData.planned_qty;
             document.getElementById('sched-takt').value = currentScheduleData.takt_time;
+            
+            // Show Set to CRS button if applicable
+            const btnCrs = document.getElementById('sched-btn-crs');
+            if (currentScheduleData.crs_qty > 0 && currentScheduleData.crs_qty < currentScheduleData.planned_qty) {
+                btnCrs.style.display = 'block';
+            } else {
+                btnCrs.style.display = 'none';
+            }
+            if (window.checkSchedQtyWarning) window.checkSchedQtyWarning();
 
             // Populate dropdown then set the selected value
             loadScheduleModelDropdown(currentScheduleData.model_number).then(() => {
@@ -613,11 +678,20 @@
             fetch(`/admin/api/next-sequence?line_id=${targetLine}&date=${encodeURIComponent(currentDate)}`)
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('sched-seq-preview').value = data.next_sequence;
+                    if (data.error || data.next_sequence === undefined) {
+                        document.getElementById('sched-seq-preview').value = 'Error';
+                    } else {
+                        document.getElementById('sched-seq-preview').value = data.next_sequence;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('sched-seq-preview').value = 'Error';
                 });
 
             document.getElementById('sched-qty').value = '';
             document.getElementById('sched-takt').value = '';
+            document.getElementById('sched-btn-crs').style.display = 'none';
+            if (window.checkSchedQtyWarning) window.checkSchedQtyWarning();
         }
 
         modal.classList.add('active');
@@ -625,6 +699,28 @@
 
     window.closeScheduleModal = function () {
         document.getElementById('modal-schedule').classList.remove('active');
+    };
+
+    window.setPlanToCRS = function() {
+        if (!currentScheduleData || currentScheduleData.crs_qty === undefined) return;
+        document.getElementById('sched-qty').value = currentScheduleData.crs_qty;
+        checkSchedQtyWarning();
+    };
+
+    window.checkSchedQtyWarning = function() {
+        const warningDiv = document.getElementById('sched-qty-warning');
+        const qtyInput = document.getElementById('sched-qty');
+        const mode = document.getElementById('sched-id').value ? 'edit' : 'add';
+        
+        if (mode === 'edit' && currentScheduleData) {
+            const val = parseInt(qtyInput.value);
+            if (!isNaN(val) && val === currentScheduleData.crs_qty && val < currentScheduleData.planned_qty) {
+                warningDiv.innerHTML = `<strong>Warning:</strong> Setting plan to match CRS actual (${currentScheduleData.crs_qty}) will mark this schedule as done.<br><span style="color:#b45309;">Original Plan: ${currentScheduleData.planned_qty}</span>`;
+                warningDiv.style.display = 'block';
+                return;
+            }
+        }
+        warningDiv.style.display = 'none';
     };
 
     window.closeModal = function (id) {
@@ -1488,7 +1584,7 @@
             });
     };
 
-    // ─── Toggle model preview vs editable input ───────────────────────────────────
+    // â”€â”€â”€ Toggle model preview vs editable input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function _showBomModelPreview(modelcode) {
         document.getElementById('bom-model-preview-text').textContent = modelcode;
         document.getElementById('bom-model-preview-group').style.display = '';
@@ -2153,7 +2249,7 @@
         });
     };
 
-    // ─── TOAST NOTIFICATION ───────────────────────────────────────────────────────
+    // â”€â”€â”€ TOAST NOTIFICATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function showToast(message, type = 'success', duration = 3500) {
         const toast = document.getElementById('toast');
         if (!toast) return;
@@ -2167,9 +2263,9 @@
         }, duration);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  GLOBAL TABLE STATE (Sorting & Selection)
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     const tableSorts = {
         crs: { by: 'time', dir: 'desc' },
         gms: { by: 'time', dir: 'desc' },
@@ -2233,6 +2329,7 @@
         const delBtn = document.getElementById(`${tableId}-btn-delete`);
         const detailsBtn = document.getElementById(`${tableId}-btn-details`);
         const printBtn = document.getElementById(`${tableId}-btn-print`);
+        const exportCsvBtn = document.getElementById(`${tableId}-btn-export-csv`);
 
         if (wasSelected) {
             tableSelection[tableId] = null;
@@ -2240,6 +2337,7 @@
             if (delBtn) delBtn.disabled = true;
             if (detailsBtn) detailsBtn.disabled = true;
             if (printBtn) printBtn.disabled = true;
+            if (exportCsvBtn) exportCsvBtn.disabled = true;
         } else {
             trElement.classList.add('selected');
             tableSelection[tableId] = recordData;
@@ -2247,12 +2345,13 @@
             if (delBtn) delBtn.disabled = false;
             if (detailsBtn) detailsBtn.disabled = false;
             if (printBtn) printBtn.disabled = false;
+            if (exportCsvBtn) exportCsvBtn.disabled = false;
         }
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  CRS DATA VIEWER
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     window.loadCRSData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('crs-pagination') : 50;
@@ -2262,7 +2361,6 @@
         const totalEl = document.getElementById('crs-total');
 
         // Reset selection when loading new data
-        crsSelectedRow = null;
         if (tableSelection.crs) selectRow('crs', document.createElement('tr'), null); // Reset UI buttons
 
         const loadingState = setupTableLoading(tbody, 6, 'loadCRSData');
@@ -2317,9 +2415,9 @@
         document.getElementById('crs-pagination').innerHTML = '';
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  GMS DATA VIEWER
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.loadGMSData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('gms-pagination') : 50;
         const date = document.getElementById('gms-date-filter').value;
@@ -2382,9 +2480,9 @@
         document.getElementById('gms-pagination').innerHTML = '';
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  ATT / SAFETY PARTS DATA VIEWER
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.loadATTData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('att-pagination') : 50;
         const date = document.getElementById('att-date-filter').value;
@@ -2455,9 +2553,9 @@
         document.getElementById('att-pagination').innerHTML = '';
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  NEW QUALITY STATION DATA LOADERS
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     function buildEmptyState(colSpan, title, message) {
         return `<tr>
             <td colspan="${colSpan}" class="empty-state">
@@ -2493,7 +2591,7 @@
 
     // Since generic wrapper is tricky with window scope, let's explicitly define them:
 
-    // ── SPAMSI ──
+    // â”€â”€ SPAMSI â”€â”€
     window.loadSPAMSIData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('spamsi-pagination') : 50;
         const date = document.getElementById('spamsi-date-filter').value;
@@ -2530,7 +2628,7 @@
     };
     window.clearSPAMSIFilter = function () { document.getElementById('spamsi-date-filter').value = ''; document.getElementById('spamsi-serial-filter').value = ''; loadSPAMSIData(1); };
 
-    // ── SPAMSO ──
+    // â”€â”€ SPAMSO â”€â”€
     window.loadSPAMSOData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('spamso-pagination') : 50;
         const date = document.getElementById('spamso-date-filter').value;
@@ -2577,7 +2675,7 @@
         if (tab === 'spamso') loadSPAMSOData(1);
     };
 
-    // ── CBPCB ──
+    // â”€â”€ CBPCB â”€â”€
     window.loadCBPCBData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('cbpcb-pagination') : 50;
         const date = document.getElementById('cbpcb-date-filter').value;
@@ -2615,7 +2713,7 @@
     };
     window.clearCBPCBFilter = function () { document.getElementById('cbpcb-date-filter').value = ''; document.getElementById('cbpcb-serial-filter').value = ''; loadCBPCBData(1); };
 
-    // ── WCI ──
+    // â”€â”€ WCI â”€â”€
     window.loadWCIData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('wci-pagination') : 50;
         const date = document.getElementById('wci-date-filter').value;
@@ -2653,7 +2751,7 @@
     };
     window.clearWCIFilter = function () { document.getElementById('wci-date-filter').value = ''; document.getElementById('wci-serial-filter').value = ''; loadWCIData(1); };
 
-    // ── RIT ──
+    // â”€â”€ RIT â”€â”€
     window.loadRITData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('insp3run-pagination') : 50;
         const date = document.getElementById('insp3run-date-filter').value;
@@ -2694,7 +2792,7 @@
     };
     window.clearRITFilter = function () { document.getElementById('insp3run-date-filter').value = ''; document.getElementById('insp3run-serial-filter').value = ''; loadRITData(1); };
 
-    // ── INSP3Vib ──
+    // â”€â”€ INSP3Vib â”€â”€
     window.loadINSP3VibData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('insp3vib-pagination') : 50;
         const date = document.getElementById('insp3vib-date-filter').value;
@@ -2733,7 +2831,7 @@
     window.clearINSP3VibFilter = function () { document.getElementById('insp3vib-date-filter').value = ''; document.getElementById('insp3vib-serial-filter').value = ''; loadINSP3VibData(1); };
 
 
-    // ── PACKAGING ──
+    // â”€â”€ PACKAGING â”€â”€
     window.loadPITData = function (page = 1) {
         const formatStatus = (val) => {
             if (!val) return '<span class="status-badge" style="opacity:0.4">-</span>';
@@ -2746,7 +2844,7 @@
         const serial = document.getElementById('pit-serial-filter').value.trim();
         const tbody = document.getElementById('pit-tbody');
         if (tableSelection.pit) selectRow('pit', document.createElement('tr'), null);
-        const loadingState = setupTableLoading(tbody, 9, 'loadPITData');
+        const loadingState = setupTableLoading(tbody, 6, 'loadPITData');
 
         const sortState = tableSorts.pit || { by: 'time', dir: 'desc' };
         fetch(`/admin/api/pit-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)
@@ -2754,17 +2852,13 @@
             .then(data => {
                 finishTableLoading(loadingState);
                 document.getElementById('pit-total').textContent = data.total.toLocaleString();
-                if (!data.records.length) { tbody.innerHTML = buildEmptyState(10, 'No PIT Records', 'No PIT records match your filter.'); document.getElementById('pit-pagination').innerHTML = ''; return; }
+                if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'No PIT Records', 'No PIT records match your filter.'); document.getElementById('pit-pagination').innerHTML = ''; return; }
                 tbody.innerHTML = '';
                 data.records.forEach((r, i) => {
                     const rowNum = (data.page - 1) * data.per_page + i + 1;
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${rowNum}</td><td>${r.time}</td><td>${r.modelcode || '—'}</td><td>${r.serial || '—'}</td>
-                        <td>${formatStatus(r.status1)}</td>
-                        <td>${formatStatus(r.status2)}</td>
-                        <td>${formatStatus(r.status3)}</td>
-                        <td>${formatStatus(r.status4)}</td>
                         <td>${formatStatus(r.overallstatus)}</td>
                         <td>${r.inspector || '—'}</td>
                     `;
@@ -2777,7 +2871,7 @@
     };
     window.clearPITFilter = function () { document.getElementById('pit-date-filter').value = ''; document.getElementById('pit-serial-filter').value = ''; loadPITData(1); };
 
-    // ── FIT ──
+    // â”€â”€ FIT â”€â”€
     window.loadFITData = function (page = 1) {
         const perPage = window.getPerPage ? getPerPage('fit-pagination') : 50;
         const date = document.getElementById('fit-date-filter').value;
@@ -2815,7 +2909,7 @@
     };
     window.clearFITFilter = function () { document.getElementById('fit-date-filter').value = ''; document.getElementById('fit-serial-filter').value = ''; loadFITData(1); };
 
-    // ── Repair ──
+    // â”€â”€ Repair â”€â”€
     window.loadRepairData = function (page = 1) {
         const date = document.getElementById('repair-date-filter').value;
         const serial = document.getElementById('repair-serial-filter').value.trim();
@@ -2849,7 +2943,7 @@
     };
     window.clearRepairFilter = function () { document.getElementById('repair-date-filter').value = ''; document.getElementById('repair-serial-filter').value = ''; loadRepairData(1); };
 
-    // ── Prod Tag Tracker ──
+    // â”€â”€ Prod Tag Tracker â”€â”€
     window.loadProdTagTracker = function (page = 1) {
         if (tableSelection.prodtag) selectRow('prodtag', document.createElement('tr'), null);
         const printBtn = document.getElementById('prodtag-btn-print');
@@ -2893,7 +2987,7 @@
 
 
     //  SHARED PAGINATION RENDERER
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     window.getPerPage = function (containerId) {
         let sel = document.getElementById(containerId + '-perpage');
@@ -2998,7 +3092,7 @@
         btnHtml += '</div>';
 
         // Right side: info
-        const infoHtml = `<div class="pg-info" style="font-size:12px; color:#64748b;">Showing ${total === 0 ? 0 : ((currentPage - 1) * perPage) + 1}–${Math.min(currentPage * perPage, total)} of ${total.toLocaleString()}</div>`;
+        const infoHtml = `<div class="pg-info" style="font-size:12px; color:#64748b;">Showing ${total === 0 ? 0 : ((currentPage - 1) * perPage) + 1}&ndash;${Math.min(currentPage * perPage, total)} of ${total.toLocaleString()}</div>`;
 
         html += btnHtml + infoHtml + '</div>';
         container.innerHTML = html;
@@ -3015,9 +3109,9 @@
     }
 
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  PRINT PRODUCT INFORMATION TAG
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.printTagBySerial = function (prefilledSerial = null) {
         let serial = prefilledSerial;
         if (typeof prefilledSerial !== 'string' || !prefilledSerial) {
@@ -3028,9 +3122,9 @@
         }
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  CRUD OPERATIONS & AUDIT LOGS
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     window.openEditModal = function (type, record) {
         document.getElementById('edit-record-type').value = type;
@@ -3185,9 +3279,9 @@
         loadAuditLogs(1);
     });
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // SYSTEM CONFIGURATION (Migrated from superadmin)
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     document.addEventListener('DOMContentLoaded', () => {
         loadLines();
@@ -3199,9 +3293,9 @@
         if (typeof loadAllModelConfigs === 'function') loadAllModelConfigs();
     });
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // LINES
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let selectedLineId = null;
     let currentLineData = null;
 
@@ -3337,9 +3431,9 @@
         });
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // USERS
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let selectedUserId = null;
     let currentUserData = null;
 
@@ -3507,9 +3601,9 @@
         }
     });
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // MODULES
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let selectedModuleId = null;
     let currentModuleData = null;
 
@@ -3644,9 +3738,9 @@
         });
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TAGS
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let selectedTagId = null;
     let currentTagData = null;
 
@@ -3781,9 +3875,9 @@
         });
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // AREAS
-    // ═══════════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let selectedAreaId = null;
     let currentAreaData = null;
 
@@ -3908,9 +4002,9 @@
         });
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  PROFILE & SETTINGS
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.openProfileModal = function () {
         document.getElementById('profile-new-pwd').value = '';
         document.getElementById('profile-conf-pwd').value = '';
@@ -3954,9 +4048,9 @@
             });
     };
 
-    // ─────────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // SERIAL START REFERENCE
-    // ─────────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     let _ssEditId = null;
     let _ssSelectedId = null;
@@ -4117,9 +4211,9 @@
         );
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Gas Charge Tolerance Reference
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     let _gtSelectedId = null;
     let _gtSelectedData = null;
     let _gtEditId = null;
@@ -4288,9 +4382,9 @@
 
 
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  CRS Details Modal
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.viewCRSDetails = function (data) {
         document.getElementById('crs-det-date').textContent = data.time || '—';
         document.getElementById('crs-det-lineno').textContent = data.lineno || '—';
@@ -4362,7 +4456,9 @@
 
         const overallSt = data.status ? data.status.toUpperCase() : '';
         const overallCls = (overallSt === 'GOOD' || overallSt === 'PASS') ? 'status-ok' : ((overallSt === 'NO GOOD' || overallSt === 'NG' || overallSt === 'FAIL' || overallSt === 'FAILED') ? 'status-fail' : ((overallSt === 'REWORK' || overallSt === 'PENDING') ? 'status-warning' : ''));
-        document.getElementById('att-det-overall').innerHTML = `<span class="status-badge ${overallCls}">${data.status || ''}</span>`;
+        const overallHTML = `<span class="status-badge ${overallCls}" style="font-size: 13px; padding: 4px 10px;">${data.status || ''}</span>`;
+        document.getElementById('att-det-overall').innerHTML = overallHTML;
+        document.getElementById('att-det-top-status').innerHTML = overallHTML;
 
         document.getElementById('att-det-brazzer1').textContent = data.brazzer1 || '—';
         document.getElementById('att-det-brazzer2').textContent = data.brazzer2 || '—';
@@ -4389,9 +4485,10 @@
         const GMS_STATUS = { 'OK': 'status-ok', 'GOOD': 'status-pass', 'PASS': 'status-pass', 'FAIL': 'status-fail', 'NG': 'status-fail', 'NO GOOD': 'status-fail' };
         const badgeCls = data.status ? (GMS_STATUS[data.status.toUpperCase()] || 'status-fail') : '';
         document.getElementById('gms-det-status').innerHTML = `<span class="status-badge ${badgeCls}">${data.status || '—'}</span>`;
+        document.getElementById('gms-det-top-status').innerHTML = `<span class="status-badge ${badgeCls}" style="font-size: 13px; padding: 4px 10px;">${data.status || '—'}</span>`;
 
         document.getElementById('gms-det-inspector').textContent = data.inspector || '—';
-        document.getElementById('gms-det-remarks').textContent = data.remarks || '—';
+        // document.getElementById('gms-det-remarks').textContent = data.remarks || '—';
 
         document.getElementById('modal-gms-details').classList.add('active');
     };
@@ -4400,9 +4497,9 @@
         document.getElementById('modal-gms-details').classList.remove('active');
     };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  PRINT SPECIFIC QC REPORT
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.openQCReportModal = function () {
         document.getElementById('qc-specific-serial').value = '';
         document.getElementById('qc-specific-error').style.display = 'none';
@@ -4479,11 +4576,13 @@
         closeQCReportModal();
     };
 
-    // ─── WIP RESOLUTION MODAL LOGIC ──────────────────────────────────────────────────
+    // â”€â”€â”€ WIP RESOLUTION MODAL LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let currentWipData = null;
     let currentWipLine = null;
+    let wipModalDismissed = false;
 
     window.showWipModal = function (wipData, lineId, hideBackBtn = false) {
+        wipModalDismissed = false;
         currentWipData = wipData;
         currentWipLine = lineId;
         const warningEl = document.querySelector('#wip-warning-banner p');
@@ -4518,6 +4617,7 @@
             document.getElementById('wip-crs-plan-edit').style.display = 'none';
             document.getElementById('wip-card-continue').parentElement.style.display = 'none';
             document.getElementById('wip-save-btn').style.display = 'none';
+            document.getElementById('wip-clear-warning').style.display = 'none';
 
             const backBtn = document.getElementById('wip-back-btn');
             if (backBtn) backBtn.style.display = 'none';
@@ -4563,26 +4663,26 @@
                 <div style="margin-bottom: 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; overflow: hidden;">
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="const d = document.getElementById('wip-details-${idx}'); d.style.display = d.style.display === 'none' ? 'block' : 'none';">
                         <div style="display: flex; flex-direction: column;">
-                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">${g.model}</span>
+                            <span style="font-weight: 600; font-size: 14px; color: var(--text-primary);">${g.model} <span style="font-size: 11px; color: var(--text-secondary); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 500; border: 1px solid #e2e8f0;">Line ${lineId}</span></span>
                             <span style="font-size: 12px; color: var(--text-secondary);">Total Remaining: <strong style="color: #b91c1c;">${g.maxQty}</strong></span>
                         </div>
                         <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="event.stopPropagation(); const d = document.getElementById('wip-details-${idx}'); d.style.display = d.style.display === 'none' ? 'block' : 'none';">View Details</button>
                     </div>
                     <div id="wip-details-${idx}" style="display: none; padding: 10px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 13px;">
-                        ${['CRS', 'ATT', 'GMS'].reduce((acc, st) => {
+                        ${['CRS', 'ATT', 'GMS', 'SPAMSI', 'SPAMSO', 'WCI', 'RIT', 'FIT', 'PIT'].reduce((acc, st) => {
                 const stData = g.stations.find(s => s.station === st);
                 if (stData) {
                     acc.hasStarted = true;
                     acc.html += `
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                        <span style="color: var(--text-secondary); width: 40px; font-weight: bold;">${st}</span>
+                                        <span style="color: var(--text-secondary); width: 60px; font-weight: bold;">${st}</span>
                                         <span><strong style="color: #334155;">${stData.var} units</strong> <span style="color: #059669; font-size: 11px; margin-left: 4px;">(Current)</span></span>
                                     </div>
                                 `;
                 } else if (acc.hasStarted) {
                     acc.html += `
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                        <span style="color: var(--text-secondary); width: 40px; font-weight: bold;">${st}</span>
+                                        <span style="color: var(--text-secondary); width: 60px; font-weight: bold;">${st}</span>
                                         <span><strong style="color: #94a3b8;">${g.maxQty} units</strong> <span style="color: #8b5cf6; font-size: 11px; margin-left: 4px;">(Upcoming)</span></span>
                                     </div>
                                 `;
@@ -4670,6 +4770,7 @@
     };
 
     window.closeWipModal = function () {
+        wipModalDismissed = true;
         document.getElementById('modal-wip').classList.remove('active');
     };
 
@@ -4724,12 +4825,10 @@
         }
 
         const unstartedPlans = {};
-        if (action === 'continue') {
-            document.querySelectorAll('.wip-unstarted-checkbox:checked').forEach(cb => {
-                const planInput = document.querySelector(`.wip-unstarted-plan[data-id="${cb.value}"]`);
-                unstartedPlans[cb.value] = planInput ? planInput.value : null;
-            });
-        }
+        document.querySelectorAll('.wip-unstarted-checkbox:checked').forEach(cb => {
+            const planInput = document.querySelector(`.wip-unstarted-plan[data-id="${cb.value}"]`);
+            unstartedPlans[cb.value] = planInput ? planInput.value : null;
+        });
 
         const payload = {
             line_id: currentWipLine,
@@ -4772,7 +4871,7 @@
         }
     };
 
-    // ── Shift Management ────────────────────────────────────────────────────────
+    // â”€â”€ Shift Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let currentShiftId = null;
 
     function fetchShifts() {
@@ -4994,6 +5093,7 @@
                         <td class="col-fit">${row.fitdata2tolneg !== null ? row.fitdata2tolneg : '—'}</td>
                         <td class="col-pit">${row.pitmodelcode || '—'}</td>
                         <td class="col-pit" style="font-weight: 600; color: var(--primary-color);">${row.pitvar ?? '—'}</td>
+                        <td class="col-pit">${row.pittws || '—'}</td>
                         <td class="col-common" style="color: var(--text-muted); font-size: 12px;">${row.updtime || '—'}</td>
                     </tr>
                 `).join('');
@@ -5062,7 +5162,7 @@
         document.getElementById('insp3run-det-progf').innerText = data.progf || '—';
 
         document.getElementById('insp3run-det-inspector').innerText = data.inspector || '—';
-        document.getElementById('insp3run-det-remarks').innerText = data.remarks || '—';
+        document.getElementById('insp3run-det-lineno').innerText = data.lineno || '—';
 
         document.getElementById('modal-insp3run-details').classList.add('active');
     };
@@ -5083,11 +5183,17 @@
         document.getElementById('spamsi-det-serial').textContent = r.serial || '—';
         document.getElementById('spamsi-det-inserial').textContent = r.inserial || '—';
         document.getElementById('spamsi-det-inspector').textContent = r.inspector || '—';
+        // document.getElementById('spamsi-det-mfgdate').textContent = (r.inserial_det && r.inserial_det[0]) ? r.inserial_det[0] : '—';
+        // document.getElementById('spamsi-det-arvdate').textContent = (r.inserial_det && r.inserial_det[1]) ? r.inserial_det[1] : '—';
 
         for (let i = 1; i <= 6; i++) {
             document.getElementById(`spamsi-det-p${i}mod`).textContent = r[`part${i}mod`] || '—';
             document.getElementById(`spamsi-det-p${i}desc`).textContent = r[`part${i}desc`] || '—';
             document.getElementById(`spamsi-det-p${i}serial`).textContent = r[`part${i}serial`] || '—';
+            
+            const det = r[`part${i}_det`];
+            document.getElementById(`spamsi-det-p${i}mfg`).textContent = (det && det[0]) ? det[0] : '—';
+            document.getElementById(`spamsi-det-p${i}arv`).textContent = (det && det[1]) ? det[1] : '—';
         }
 
         document.getElementById('modal-spamsi-details').classList.add('active');
@@ -5105,20 +5211,26 @@
         document.getElementById('spamso-det-outmodel').textContent = r.outmodel || '—';
         document.getElementById('spamso-det-outserial').textContent = r.outserial || '—';
         document.getElementById('spamso-det-inspector').textContent = r.inspector || '—';
+        // document.getElementById('spamso-det-mfgdate').textContent = (r.outserial_det && r.outserial_det[0]) ? r.outserial_det[0] : '—';
+        // document.getElementById('spamso-det-arvdate').textContent = (r.outserial_det && r.outserial_det[1]) ? r.outserial_det[1] : '—';
 
         for (let i = 1; i <= 3; i++) {
             document.getElementById(`spamso-det-p${i}mod`).textContent = r[`part${i}mod`] || '—';
             document.getElementById(`spamso-det-p${i}desc`).textContent = r[`part${i}desc`] || '—';
             document.getElementById(`spamso-det-p${i}serial`).textContent = r[`part${i}serial`] || '—';
+            
+            const det = r[`part${i}_det`];
+            document.getElementById(`spamso-det-p${i}mfg`).textContent = (det && det[0]) ? det[0] : '—';
+            document.getElementById(`spamso-det-p${i}arv`).textContent = (det && det[1]) ? det[1] : '—';
         }
 
         document.getElementById('modal-spamso-details').classList.add('active');
     };
 
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  FGCP: Transfer Slips
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     window.loadTransferSlips = function (page = 1) {
         const date = document.getElementById('ts-filter-date').value;
@@ -5128,7 +5240,9 @@
         
         if (tableSelection.ts) selectRow('ts', document.createElement('tr'), null);
         const printBtn = document.getElementById('ts-btn-print');
+        const exportCsvBtn = document.getElementById('ts-btn-export-csv');
         if (printBtn) printBtn.disabled = true;
+        if (exportCsvBtn) exportCsvBtn.disabled = true;
 
         let url = `/admin/api/transfer-slips?page=${page}`;
         if (date) url += `&date=${encodeURIComponent(date)}`;
@@ -5301,10 +5415,33 @@
         });
     };
 
+    window.triggerTransferCSV = function(slip_id) {
+        const btn = document.getElementById('ts-btn-export-csv');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = 'Generating...';
+        btn.disabled = true;
+        
+        fetch(`/admin/api/trigger-transfer-csv/${slip_id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+                if (data.success) {
+                    showToast(data.message || 'CSV generated successfully!', 'success');
+                } else {
+                    showToast(data.error || 'Failed to generate CSV.', 'error');
+                }
+            }).catch(err => {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+                showToast('Network error', 'error');
+            });
+    };
 
-    // ═══════════════════════════════════════════════════════════════════════════
+
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  FGCP: QC Print Reports
-    // ═══════════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     window.loadQCUnitsForPrint = function () {
         const date = document.getElementById('print-qc-date').value;
@@ -5423,7 +5560,7 @@
         const serialsStr = selected.join(',');
         window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serialsStr)}`, '_blank');
     };
-    // ─── SCOREBOARD NATIVE UI LOGIC ──────────────────────────────────────────────────
+    // â”€â”€â”€ SCOREBOARD NATIVE UI LOGIC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let scoreboardRefreshTimer = null;
     let isScoreboardRefreshing = false;
 
@@ -5517,10 +5654,10 @@
                         data.logs.forEach((log, index) => {
                             const tr = document.createElement('tr');
                             let statusBadge = '';
-                            if (log.status === 'GOOD') {
+                            if (log.status === 'GOOD' || log.status === 'PASS' || log.status === 'OK') {
                                 statusBadge = '<span class="badge" style="background:#22c55e; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:700;">GOOD</span>';
                             } else {
-                                statusBadge = '<span class="badge" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:700;">NG</span>';
+                                statusBadge = '<span class="badge" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:700;">NO GOOD</span>';
                             }
                             tr.innerHTML = `
                                 <td style="font-weight:600; color:var(--text-muted);">${index + 1}</td>
@@ -5550,7 +5687,7 @@
                     ogContainer.style.display = 'flex';
 
                     if (lineStr === 'all') {
-                        document.getElementById('sb-og-model').innerText = '—';
+                        document.getElementById('sb-og-model').innerHTML = '—';
                         document.getElementById('sb-og-rsched').innerText = '0';
                         document.getElementById('sb-og-ract').innerText = '0';
                         document.getElementById('sb-og-var').innerText = '0';
@@ -5560,7 +5697,7 @@
                         circle.style.borderColor = 'var(--border)';
                         circle.style.color = 'var(--text-main)';
                         document.getElementById('sb-og-status').innerText = 'N/A';
-                        document.getElementById('sb-og-icon').innerText = '—';
+                        document.getElementById('sb-og-icon').innerHTML = '—';
                     } else {
                         const shiftStart = new Date(`${data.date}T${data.shift_start}`);
                         const now = new Date();
@@ -5611,7 +5748,7 @@
                                 circle.style.borderColor = 'var(--border)';
                                 circle.style.color = 'var(--text-main)';
                                 stext.innerText = 'Standby';
-                                sicon.innerText = '—';
+                                sicon.innerHTML = '—';
                             } else if (activeVar < -20) {
                                 circle.style.backgroundColor = '#ef4444'; // Red
                                 circle.style.borderColor = '#ef4444';
@@ -5629,16 +5766,16 @@
                                 circle.style.borderColor = '#84cc16';
                                 circle.style.color = 'white';
                                 stext.innerText = 'On-Time';
-                                sicon.innerText = '✓';
+                                sicon.innerText = 'âœ“';
                             } else {
                                 circle.style.backgroundColor = '#22c55e'; // Green
                                 circle.style.borderColor = '#22c55e';
                                 circle.style.color = 'white';
                                 stext.innerText = 'Ahead';
-                                sicon.innerText = '✓';
+                                sicon.innerText = 'âœ“';
                             }
                         } else {
-                            document.getElementById('sb-og-model').innerText = '—';
+                            document.getElementById('sb-og-model').innerHTML = '—';
                             document.getElementById('sb-og-rsched').innerText = '0';
                             document.getElementById('sb-og-ract').innerText = '0';
                             document.getElementById('sb-og-var').innerText = '0';
@@ -5648,7 +5785,7 @@
                             circle.style.borderColor = 'var(--border)';
                             circle.style.color = 'var(--text-main)';
                             document.getElementById('sb-og-status').innerText = 'N/A';
-                            document.getElementById('sb-og-icon').innerText = '—';
+                            document.getElementById('sb-og-icon').innerHTML = '—';
                         }
                     }
 
@@ -5740,13 +5877,17 @@
         }
     });
 
-    // ── Station Specific Detail Modals ──
+    // â”€â”€ Station Specific Detail Modals â”€â”€
     window.viewWCIDetails = function (record) {
         document.getElementById('wci-det-date').textContent = record.time || '—';
+        document.getElementById('wci-det-lineno').textContent = record.lineno || '—';
         document.getElementById('wci-det-model').textContent = record.modelcode || '—';
         document.getElementById('wci-det-serial').textContent = record.serial || '—';
         document.getElementById('wci-det-inspector').textContent = record.inspector || '—';
-        document.getElementById('wci-det-status').textContent = record.overallstatus || '—';
+        const st = record.overallstatus || '—';
+        const badge = document.getElementById('wci-det-status');
+        badge.textContent = st;
+        badge.className = 'status-badge ' + (st === 'PASS' || st === 'OK' || st === 'GOOD' ? 'status-ok' : 'status-fail');
 
         document.getElementById('wci-det-wiring').textContent = record.status1 || '—';
         document.getElementById('wci-det-touching').textContent = record.status2 || '—';
@@ -5756,16 +5897,40 @@
         document.getElementById('wci-det-status6').textContent = record.status6 || '—';
         document.getElementById('wci-det-status7').textContent = record.status7 || '—';
 
-        document.getElementById('wci-det-remarks').textContent = record.remarks || 'No remarks';
-
         document.getElementById('modal-wci-details').classList.add('active');
+    };
+
+    window.viewPITDetails = function (record) {
+        document.getElementById('pit-det-date').textContent = record.time || '—';
+        document.getElementById('pit-det-model').textContent = record.modelcode || '—';
+        document.getElementById('pit-det-serial').textContent = record.serial || '—';
+        document.getElementById('pit-det-lineno').textContent = record.lineno || '—';
+        document.getElementById('pit-det-inspector').textContent = record.inspector || '—';
+
+        const st = record.overallstatus || '—';
+        const badge = document.getElementById('pit-det-status');
+        badge.textContent = st;
+        badge.className = 'status-badge ' + (st === 'PASS' || st === 'OK' || st === 'GOOD' ? 'status-ok' : 'status-fail');
+
+        document.getElementById('pit-det-status1').textContent = record.status1 || '—';
+        document.getElementById('pit-det-status2').textContent = record.status2 || '—';
+        document.getElementById('pit-det-status3').textContent = record.status3 || '—';
+        document.getElementById('pit-det-status4').textContent = record.status4 || '—';
+
+        document.getElementById('modal-pit-details').classList.add('active');
     };
 
     window.viewFITDetails = function (record) {
         document.getElementById('fit-det-date').textContent = record.time || '—';
         document.getElementById('fit-det-model').textContent = record.modelcode || '—';
         document.getElementById('fit-det-serial').textContent = record.serial || '—';
+        document.getElementById('fit-det-lineno').textContent = record.lineno || '—';
         document.getElementById('fit-det-inspector').textContent = record.inspector || '—';
+
+        const st = record.overallstatus || '—';
+        const badge = document.getElementById('fit-det-status');
+        badge.textContent = st;
+        badge.className = 'status-badge ' + (st === 'PASS' || st === 'OK' || st === 'GOOD' ? 'status-ok' : 'status-fail');
 
         document.getElementById('fit-det-status1').textContent = record.status1 || '—';
         document.getElementById('fit-det-status2').textContent = record.status2 || '—';
@@ -5783,7 +5948,6 @@
 
         document.getElementById('fit-det-status10').textContent = record.status10 || '—';
 
-        document.getElementById('fit-det-remarks').textContent = record.remarks || 'No remarks';
 
         document.getElementById('modal-fit-details').classList.add('active');
     };

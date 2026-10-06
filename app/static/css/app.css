@@ -1249,7 +1249,8 @@ select {
 .table-container {
     overflow-x: auto;
     overflow-y: auto;
-    height: 350px;
+    flex: 1;
+    min-height: 350px;
     margin-bottom: 2rem;
     border: 1px solid var(--border-light);
     border-radius: 8px;

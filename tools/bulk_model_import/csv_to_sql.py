@@ -45,6 +45,8 @@ def _validate_decimal(value, field_name, row_num, file_type, max_val=99.99):
 def _validate_program(value, field_name, row_num, file_type):
     if value in ('', None):
         return None
+    if re.match(r'^\d{1}:\d{2}$', value):
+        value = '0' + value
     if not re.match(r'^\d{2}:\d{2}$', value):
         raise ValueError(
             f"{file_type} Row {row_num}: '{field_name}' value '{value}' must be NN:NN format (e.g. 05:30)"
@@ -81,11 +83,13 @@ def convert_csv_to_sql(config_path, parts_path):
     seen_modelcodes = set()
     seen_spamsi_codes = set()
     seen_areas = set()
+    seen_modules = set()
+    seen_tags = set()
     part_counts = {}
 
     statements.append("-- ================================================================")
     statements.append(f"-- Auto-generated from: {os.path.basename(config_path)} and {os.path.basename(parts_path)}")
-    statements.append("-- TABLES AFFECTED: areas, modelref, partref")
+    statements.append("-- TABLES AFFECTED: areas, modules, tags, modelref, partref")
     statements.append("-- ================================================================")
     statements.append("")
     statements.append("START TRANSACTION;")
@@ -101,65 +105,75 @@ def convert_csv_to_sql(config_path, parts_path):
             for i, row in enumerate(reader, start=3):
                 if not row or all(not cell.strip() for cell in row):
                     continue
-                
-                if len(row) < 21:
-                    errors.append(f"Config Row {i}: Missing columns (found {len(row)}, expected 21)")
-                    continue
+                try:
+                    if len(row) < 21:
+                        errors.append(f"Config Row {i}: Missing columns (found {len(row)}, expected 21)")
+                        continue
 
-                modelcode = row[0].strip()
-                if not modelcode:
-                    errors.append(f"Config Row {i}: modelcode is required")
-                    continue
-                
-                _validate_length(modelcode, 14, 'modelcode', i, 'Config')
-                if modelcode in seen_modelcodes:
-                    errors.append(f"Config Row {i}: duplicate modelcode '{modelcode}'")
-                    continue
-                seen_modelcodes.add(modelcode)
+                    modelcode = row[0].strip()
+                    if not modelcode:
+                        errors.append(f"Config Row {i}: modelcode is required")
+                        continue
+                    
+                    _validate_length(modelcode, 14, 'modelcode', i, 'Config')
+                    if modelcode in seen_modelcodes:
+                        errors.append(f"Config Row {i}: duplicate modelcode '{modelcode}'")
+                        continue
+                    seen_modelcodes.add(modelcode)
 
-                area = row[1].strip() or None
-                serialstart = row[2].strip() or None
-                program_h = _validate_program(row[3].strip(), 'program_h', i, 'Config')
-                program_f = _validate_program(row[4].strip(), 'program_f', i, 'Config')
+                    area = row[1].strip() or None
+                    serialstart = row[2].strip() or None
+                    program_h = _validate_program(row[3].strip(), 'program_h', i, 'Config')
+                    program_f = _validate_program(row[4].strip(), 'program_f', i, 'Config')
 
-                _validate_length(area, 14, 'area', i, 'Config')
-                if area:
-                    seen_areas.add(area)
-                _validate_length(serialstart, 6, 'serialstart', i, 'Config')
+                    _validate_length(area, 14, 'area', i, 'Config')
+                    if area:
+                        seen_areas.add(area)
+                    _validate_length(serialstart, 6, 'serialstart', i, 'Config')
 
-                gmstolpos = _validate_decimal(row[5].strip(), 'gmstolpos', i, 'Config')
-                gmstolneg = _validate_decimal(row[6].strip(), 'gmstolneg', i, 'Config')
-                op_current_base = _validate_decimal(row[7].strip(), 'op_current_base', i, 'Config')
-                op_current_tolpos = _validate_decimal(row[8].strip(), 'op_current_tolpos', i, 'Config')
-                op_current_tolneg = _validate_decimal(row[9].strip(), 'op_current_tolneg', i, 'Config')
-                in_power_base = _validate_decimal(row[10].strip(), 'in_power_base', i, 'Config')
-                in_power_tolpos = _validate_decimal(row[11].strip(), 'in_power_tolpos', i, 'Config')
-                in_power_tolneg = _validate_decimal(row[12].strip(), 'in_power_tolneg', i, 'Config')
-                temp_diff_base = _validate_decimal(row[13].strip(), 'temp_diff_base', i, 'Config')
-                temp_diff_tolpos = _validate_decimal(row[14].strip(), 'temp_diff_tolpos', i, 'Config')
-                temp_diff_tolneg = _validate_decimal(row[15].strip(), 'temp_diff_tolneg', i, 'Config')
+                    gmstolpos = _validate_decimal(row[5].strip(), 'gmstolpos', i, 'Config')
+                    gmstolneg = _validate_decimal(row[6].strip(), 'gmstolneg', i, 'Config')
+                    op_current_base = _validate_decimal(row[7].strip(), 'op_current_base', i, 'Config')
+                    op_current_tolpos = _validate_decimal(row[8].strip(), 'op_current_tolpos', i, 'Config')
+                    op_current_tolneg = _validate_decimal(row[9].strip(), 'op_current_tolneg', i, 'Config')
+                    in_power_base = _validate_decimal(row[10].strip(), 'in_power_base', i, 'Config')
+                    in_power_tolpos = _validate_decimal(row[11].strip(), 'in_power_tolpos', i, 'Config')
+                    in_power_tolneg = _validate_decimal(row[12].strip(), 'in_power_tolneg', i, 'Config')
+                    temp_diff_base = _validate_decimal(row[13].strip(), 'temp_diff_base', i, 'Config')
+                    temp_diff_tolpos = _validate_decimal(row[14].strip(), 'temp_diff_tolpos', i, 'Config')
+                    temp_diff_tolneg = _validate_decimal(row[15].strip(), 'temp_diff_tolneg', i, 'Config')
 
-                ritheat1 = _validate_on_null(row[16].strip(), 'ritheat1', i, 'Config')
-                ritheat2 = _validate_on_null(row[17].strip(), 'ritheat2', i, 'Config')
-                pittws = _validate_on_null(row[18].strip(), 'pittws', i, 'Config')
+                    ritheat1 = _validate_on_null(row[16].strip(), 'ritheat1', i, 'Config')
+                    ritheat2 = _validate_on_null(row[17].strip(), 'ritheat2', i, 'Config')
+                    pittws = _validate_on_null(row[18].strip(), 'pittws', i, 'Config')
 
-                spamsi_code = row[19].strip() or None
-                spamso_out = row[20].strip() or None
+                    spamsi_code = row[19].strip() or None
+                    spamso_out = row[20].strip() or None
 
-                if spamsi_code:
-                    _validate_length(spamsi_code, 4, 'spamsi_unique_code', i, 'Config')
-                    if spamsi_code in seen_spamsi_codes:
-                        errors.append(f"Config Row {i}: duplicate spamsi_unique_code '{spamsi_code}'")
-                    seen_spamsi_codes.add(spamsi_code)
+                    if spamsi_code:
+                        _validate_length(spamsi_code, 4, 'spamsi_unique_code', i, 'Config')
+                        if spamsi_code in seen_spamsi_codes:
+                            errors.append(f"Config Row {i}: duplicate spamsi_unique_code '{spamsi_code}'")
+                        seen_spamsi_codes.add(spamsi_code)
 
-                if spamso_out:
-                    _validate_length(spamso_out, 14, 'spamso_outmodel', i, 'Config')
+                    if spamso_out:
+                        _validate_length(spamso_out, 14, 'spamso_outmodel', i, 'Config')
+                        seen_modules.add('SPAMSO')
+                        seen_tags.add('Outdoor Control Board')
+                except ValueError as e:
+                    errors.append(str(e))
 
         # ── Write Areas ─────────────────────────────────────────────────────────────
         if seen_areas:
             statements.append("-- Ensure all areas exist")
-            area_values = ", ".join([f"({_sql_str(a)})" for a in sorted(seen_areas)])
-            statements.append(f"INSERT IGNORE INTO `areas` (`name`) VALUES {area_values};")
+            area_values = ", ".join([f"({_sql_str(a)}, 1)" for a in sorted(seen_areas)])
+            statements.append(f"INSERT INTO `areas` (`name`, `is_active`) VALUES {area_values} ON DUPLICATE KEY UPDATE `is_active` = 1;")
+            statements.append("")
+
+        if seen_modelcodes:
+            statements.append("-- Clear existing parts for updated models to prevent duplication")
+            model_values = ", ".join([_sql_str(m) for m in sorted(seen_modelcodes)])
+            statements.append(f"DELETE FROM `partref` WHERE modelcode IN ({model_values});")
             statements.append("")
 
         # ── Process Config Data Again for Model Inserts ─────────────────────────────
@@ -171,55 +185,65 @@ def convert_csv_to_sql(config_path, parts_path):
             for i, row in enumerate(reader, start=3):
                 if not row or all(not cell.strip() for cell in row):
                     continue
-                
-                modelcode = row[0].strip()
-                area = row[1].strip() or None
-                serialstart = row[2].strip() or None
-                program_h = _validate_program(row[3].strip(), 'program_h', i, 'Config')
-                program_f = _validate_program(row[4].strip(), 'program_f', i, 'Config')
-                gmstolpos = _validate_decimal(row[5].strip(), 'gmstolpos', i, 'Config')
-                gmstolneg = _validate_decimal(row[6].strip(), 'gmstolneg', i, 'Config')
-                op_current_base = _validate_decimal(row[7].strip(), 'op_current_base', i, 'Config')
-                op_current_tolpos = _validate_decimal(row[8].strip(), 'op_current_tolpos', i, 'Config')
-                op_current_tolneg = _validate_decimal(row[9].strip(), 'op_current_tolneg', i, 'Config')
-                in_power_base = _validate_decimal(row[10].strip(), 'in_power_base', i, 'Config')
-                in_power_tolpos = _validate_decimal(row[11].strip(), 'in_power_tolpos', i, 'Config')
-                in_power_tolneg = _validate_decimal(row[12].strip(), 'in_power_tolneg', i, 'Config')
-                temp_diff_base = _validate_decimal(row[13].strip(), 'temp_diff_base', i, 'Config')
-                temp_diff_tolpos = _validate_decimal(row[14].strip(), 'temp_diff_tolpos', i, 'Config')
-                temp_diff_tolneg = _validate_decimal(row[15].strip(), 'temp_diff_tolneg', i, 'Config')
-                ritheat1 = _validate_on_null(row[16].strip(), 'ritheat1', i, 'Config')
-                ritheat2 = _validate_on_null(row[17].strip(), 'ritheat2', i, 'Config')
-                pittws = _validate_on_null(row[18].strip(), 'pittws', i, 'Config')
-                spamsi_code = row[19].strip() or None
-                spamso_out = row[20].strip() or None
+                try:
+                    modelcode = row[0].strip()
+                    area = row[1].strip() or None
+                    serialstart = row[2].strip() or None
+                    program_h = _validate_program(row[3].strip(), 'program_h', i, 'Config')
+                    program_f = _validate_program(row[4].strip(), 'program_f', i, 'Config')
+                    gmstolpos = _validate_decimal(row[5].strip(), 'gmstolpos', i, 'Config')
+                    gmstolneg = _validate_decimal(row[6].strip(), 'gmstolneg', i, 'Config')
+                    op_current_base = _validate_decimal(row[7].strip(), 'op_current_base', i, 'Config')
+                    op_current_tolpos = _validate_decimal(row[8].strip(), 'op_current_tolpos', i, 'Config')
+                    op_current_tolneg = _validate_decimal(row[9].strip(), 'op_current_tolneg', i, 'Config')
+                    in_power_base = _validate_decimal(row[10].strip(), 'in_power_base', i, 'Config')
+                    in_power_tolpos = _validate_decimal(row[11].strip(), 'in_power_tolpos', i, 'Config')
+                    in_power_tolneg = _validate_decimal(row[12].strip(), 'in_power_tolneg', i, 'Config')
+                    temp_diff_base = _validate_decimal(row[13].strip(), 'temp_diff_base', i, 'Config')
+                    temp_diff_tolpos = _validate_decimal(row[14].strip(), 'temp_diff_tolpos', i, 'Config')
+                    temp_diff_tolneg = _validate_decimal(row[15].strip(), 'temp_diff_tolneg', i, 'Config')
+                    ritheat1 = _validate_on_null(row[16].strip(), 'ritheat1', i, 'Config')
+                    ritheat2 = _validate_on_null(row[17].strip(), 'ritheat2', i, 'Config')
+                    pittws = _validate_on_null(row[18].strip(), 'pittws', i, 'Config')
+                    spamsi_code = row[19].strip() or None
+                    spamso_out = row[20].strip() or None
 
-                statements.append("-- Model: " + modelcode)
-                statements.append(
-                    f"INSERT IGNORE INTO `modelref` "
-                    f"(`modelcode`, `area`, `serialstart`, `program_h`, `program_f`, "
-                    f"`gmstolpos`, `gmstolneg`, "
-                    f"`op_current_base`, `op_current_tolpos`, `op_current_tolneg`, "
-                    f"`in_power_base`, `in_power_tolpos`, `in_power_tolneg`, "
-                    f"`temp_diff_base`, `temp_diff_tolpos`, `temp_diff_tolneg`, "
-                    f"`ritheat1`, `ritheat2`, `pittws`, `spamsi_unique`) VALUES ("
-                    f"{_sql_str(modelcode)}, {_sql_str(area)}, {_sql_str(serialstart)}, "
-                    f"{_sql_str(program_h)}, {_sql_str(program_f)}, "
-                    f"{_sql_num(gmstolpos)}, {_sql_num(gmstolneg)}, "
-                    f"{_sql_num(op_current_base)}, {_sql_num(op_current_tolpos)}, {_sql_num(op_current_tolneg)}, "
-                    f"{_sql_num(in_power_base)}, {_sql_num(in_power_tolpos)}, {_sql_num(in_power_tolneg)}, "
-                    f"{_sql_num(temp_diff_base)}, {_sql_num(temp_diff_tolpos)}, {_sql_num(temp_diff_tolneg)}, "
-                    f"{_sql_str(ritheat1)}, {_sql_str(ritheat2)}, {_sql_str(pittws)}, {_sql_str(spamsi_code)});"
-                )
-
-
-                if spamso_out:
+                    statements.append("-- Model: " + modelcode)
                     statements.append(
-                        f"INSERT IGNORE INTO `partref` "
-                        f"(`modelcode`, `module`, `partno`, `partdesc`, `usage`, `tag`) VALUES ("
-                        f"{_sql_str(modelcode)}, 'SPAMSO', {_sql_str(spamso_out)}, 'Outdoor Control Board', 1, 'Outdoor Control Board');"
+                        f"INSERT INTO `modelref` "
+                        f"(`modelcode`, `area`, `serialstart`, `program_h`, `program_f`, "
+                        f"`gmstolpos`, `gmstolneg`, "
+                        f"`op_current_base`, `op_current_tolpos`, `op_current_tolneg`, "
+                        f"`in_power_base`, `in_power_tolpos`, `in_power_tolneg`, "
+                        f"`temp_diff_base`, `temp_diff_tolpos`, `temp_diff_tolneg`, "
+                        f"`ritheat1`, `ritheat2`, `pittws`, `spamsi_unique`) VALUES ("
+                        f"{_sql_str(modelcode)}, {_sql_str(area)}, {_sql_str(serialstart)}, "
+                        f"{_sql_str(program_h)}, {_sql_str(program_f)}, "
+                        f"{_sql_num(gmstolpos)}, {_sql_num(gmstolneg)}, "
+                        f"{_sql_num(op_current_base)}, {_sql_num(op_current_tolpos)}, {_sql_num(op_current_tolneg)}, "
+                        f"{_sql_num(in_power_base)}, {_sql_num(in_power_tolpos)}, {_sql_num(in_power_tolneg)}, "
+                        f"{_sql_num(temp_diff_base)}, {_sql_num(temp_diff_tolpos)}, {_sql_num(temp_diff_tolneg)}, "
+                        f"{_sql_str(ritheat1)}, {_sql_str(ritheat2)}, {_sql_str(pittws)}, {_sql_str(spamsi_code)}) "
+                        f"ON DUPLICATE KEY UPDATE "
+                        f"`area`=VALUES(`area`), `serialstart`=VALUES(`serialstart`), "
+                        f"`program_h`=VALUES(`program_h`), `program_f`=VALUES(`program_f`), "
+                        f"`gmstolpos`=VALUES(`gmstolpos`), `gmstolneg`=VALUES(`gmstolneg`), "
+                        f"`op_current_base`=VALUES(`op_current_base`), `op_current_tolpos`=VALUES(`op_current_tolpos`), `op_current_tolneg`=VALUES(`op_current_tolneg`), "
+                        f"`in_power_base`=VALUES(`in_power_base`), `in_power_tolpos`=VALUES(`in_power_tolpos`), `in_power_tolneg`=VALUES(`in_power_tolneg`), "
+                        f"`temp_diff_base`=VALUES(`temp_diff_base`), `temp_diff_tolpos`=VALUES(`temp_diff_tolpos`), `temp_diff_tolneg`=VALUES(`temp_diff_tolneg`), "
+                        f"`ritheat1`=VALUES(`ritheat1`), `ritheat2`=VALUES(`ritheat2`), `pittws`=VALUES(`pittws`), `spamsi_unique`=VALUES(`spamsi_unique`);"
                     )
-                statements.append("")
+
+
+                    if spamso_out:
+                        statements.append(
+                            f"INSERT IGNORE INTO `partref` "
+                            f"(`modelcode`, `module`, `partno`, `partdesc`, `usage`, `tag`) VALUES ("
+                            f"{_sql_str(modelcode)}, 'SPAMSO', {_sql_str(spamso_out)}, 'Outdoor Control Board', 1, 'Outdoor Control Board');"
+                        )
+                    statements.append("")
+                except ValueError:
+                    pass
 
     except Exception as e:
         errors.append(f"Failed parsing Config CSV: {e}")
@@ -235,53 +259,80 @@ def convert_csv_to_sql(config_path, parts_path):
             for i, row in enumerate(reader, start=3):
                 if not row or all(not cell.strip() for cell in row):
                     continue
-                
-                if len(row) < 6:
-                    errors.append(f"Parts Row {i}: Missing columns (found {len(row)}, expected 6)")
-                    continue
+                try:
+                    if len(row) < 6:
+                        errors.append(f"Parts Row {i}: Missing columns (found {len(row)}, expected 6)")
+                        continue
 
-                modelcode = row[0].strip()
-                module = row[1].strip()
-                partno = row[2].strip()
-                partdesc = row[3].strip()
-                usage_val = _validate_decimal(row[4].strip() or '1', 'usage', i, 'Parts')
-                tag = row[5].strip()
+                    modelcode = row[0].strip()
+                    module = row[1].strip()
+                    partno = row[2].strip()
+                    partdesc = row[3].strip()
+                    usage_val = _validate_decimal(row[4].strip() or '1', 'usage', i, 'Parts')
+                    tag = row[5].strip()
 
-                if not modelcode:
-                    errors.append(f"Parts Row {i}: modelcode missing")
-                    continue
-                if modelcode not in seen_modelcodes:
-                    errors.append(f"Parts Row {i}: modelcode '{modelcode}' not found in config CSV")
-                    continue
-                
-                if not module:
-                    errors.append(f"Parts Row {i}: module missing")
-                    continue
-                if not partno:
-                    errors.append(f"Parts Row {i}: partno missing")
-                    continue
+                    if not modelcode:
+                        errors.append(f"Parts Row {i}: modelcode missing")
+                        continue
+                    if modelcode not in seen_modelcodes:
+                        errors.append(f"Parts Row {i}: modelcode '{modelcode}' not found in config CSV")
+                        continue
+                    
+                    if not module:
+                        errors.append(f"Parts Row {i}: module missing")
+                        continue
+                    if not partno:
+                        errors.append(f"Parts Row {i}: partno missing")
+                        continue
 
-                _validate_length(modelcode, 14, 'modelcode', i, 'Parts')
-                _validate_length(module, 8, 'module', i, 'Parts')
-                _validate_length(partno, 14, 'partno', i, 'Parts')
-                _validate_length(partdesc, 60, 'partdesc', i, 'Parts')
-                _validate_length(tag, 14, 'tag', i, 'Parts')
+                    _validate_length(modelcode, 14, 'modelcode', i, 'Parts')
+                    _validate_length(module, 8, 'module', i, 'Parts')
+                    _validate_length(partno, 14, 'partno', i, 'Parts')
+                    _validate_length(partdesc, 60, 'partdesc', i, 'Parts')
+                    _validate_length(tag, 14, 'tag', i, 'Parts')
 
-                part_counts[modelcode] = part_counts.get(modelcode, 0) + 1
-                if part_counts[modelcode] > 20:
-                    errors.append(f"Parts Row {i}: model '{modelcode}' exceeds 20-part limit")
-                    continue
+                    seen_modules.add(module)
+                    if tag:
+                        seen_tags.add(tag)
 
-                statements.append(
-                    f"INSERT INTO `partref` "
-                    f"(`modelcode`, `module`, `partno`, `partdesc`, `usage`, `tag`) VALUES ("
-                    f"{_sql_str(modelcode)}, {_sql_str(module)}, {_sql_str(partno)}, "
-                    f"{_sql_str(partdesc)}, {_sql_num(usage_val)}, {_sql_str(tag)});"
-                )
+                    part_counts[modelcode] = part_counts.get(modelcode, 0) + 1
+                    if part_counts[modelcode] > 20:
+                        errors.append(f"Parts Row {i}: model '{modelcode}' exceeds 20-part limit")
+                        continue
+
+                    statements.append(
+                        f"INSERT IGNORE INTO `partref` "
+                        f"(`modelcode`, `module`, `partno`, `partdesc`, `usage`, `tag`) VALUES ("
+                        f"{_sql_str(modelcode)}, {_sql_str(module)}, {_sql_str(partno)}, "
+                        f"{_sql_str(partdesc)}, {_sql_num(usage_val)}, {_sql_str(tag)});"
+                    )
+                except ValueError as e:
+                    errors.append(str(e))
     except Exception as e:
         errors.append(f"Failed parsing Parts CSV: {e}")
 
     statements.append("")
+
+    # ── Write Modules and Tags ────────────────────────────────────────────────
+    if seen_modules:
+        statements.append("-- Ensure all modules exist")
+        module_values = ", ".join([f"({_sql_str(m)}, 1)" for m in sorted(seen_modules)])
+        statements.append(f"INSERT INTO `modules` (`name`, `is_active`) VALUES {module_values} ON DUPLICATE KEY UPDATE `is_active` = 1;")
+        statements.append("")
+
+    if seen_tags:
+        statements.append("-- Ensure all tags exist")
+        tag_values = ", ".join([f"({_sql_str(t)}, 1)" for t in sorted(seen_tags)])
+        statements.append(f"INSERT INTO `tags` (`name`, `is_active`) VALUES {tag_values} ON DUPLICATE KEY UPDATE `is_active` = 1;")
+        statements.append("")
+
+    # ── Normalize Casing ──────────────────────────────────────────────────────
+    statements.append("-- Normalize casing based on canonical definitions in areas, modules, tags")
+    statements.append("UPDATE `modelref` m JOIN `areas` a ON m.area = a.name SET m.area = a.name;")
+    statements.append("UPDATE `partref` p JOIN `modules` m ON p.module = m.name SET p.module = m.name;")
+    statements.append("UPDATE `partref` p JOIN `tags` t ON p.tag = t.name SET p.tag = t.name;")
+    statements.append("")
+
     statements.append("COMMIT;")
     statements.append("")
     statements.append(f"-- Summary: {len(seen_modelcodes)} model(s), {sum(part_counts.values())} part(s)")

@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panasonic — Dashboard</title>
-    <meta name="description" content="PMPC SFIS Dashboard — Production Management System">
+    <title>Panasonic Dashboard</title>
+    <meta name="description" content="PMPC SFIS Dashboard Production Management System">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -43,21 +43,53 @@
         }
 
         /* BOM Module Custom Row Colors & Hover States */
-        .data-table tbody tr.bom-row-crs { background-color: #f0f9ff !important; }
-        .data-table tbody tr.bom-row-crs:hover { background-color: #e0f2fe !important; }
-        .data-table tbody tr.bom-row-crs.selected { background-color: #bae6fd !important; }
+        .data-table tbody tr.bom-row-crs {
+            background-color: #f0f9ff !important;
+        }
 
-        .data-table tbody tr.bom-row-gms { background-color: #f7fee7 !important; }
-        .data-table tbody tr.bom-row-gms:hover { background-color: #ecfccb !important; }
-        .data-table tbody tr.bom-row-gms.selected { background-color: #d9f99d !important; }
+        .data-table tbody tr.bom-row-crs:hover {
+            background-color: #e0f2fe !important;
+        }
 
-        .data-table tbody tr.bom-row-spamsi { background-color: #fdf2f8 !important; }
-        .data-table tbody tr.bom-row-spamsi:hover { background-color: #fce7f3 !important; }
-        .data-table tbody tr.bom-row-spamsi.selected { background-color: #fbcfe8 !important; }
+        .data-table tbody tr.bom-row-crs.selected {
+            background-color: #bae6fd !important;
+        }
 
-        .data-table tbody tr.bom-row-spamso { background-color: #fff7ed !important; }
-        .data-table tbody tr.bom-row-spamso:hover { background-color: #ffedd5 !important; }
-        .data-table tbody tr.bom-row-spamso.selected { background-color: #fed7aa !important; }
+        .data-table tbody tr.bom-row-gms {
+            background-color: #f7fee7 !important;
+        }
+
+        .data-table tbody tr.bom-row-gms:hover {
+            background-color: #ecfccb !important;
+        }
+
+        .data-table tbody tr.bom-row-gms.selected {
+            background-color: #d9f99d !important;
+        }
+
+        .data-table tbody tr.bom-row-spamsi {
+            background-color: #fdf2f8 !important;
+        }
+
+        .data-table tbody tr.bom-row-spamsi:hover {
+            background-color: #fce7f3 !important;
+        }
+
+        .data-table tbody tr.bom-row-spamsi.selected {
+            background-color: #fbcfe8 !important;
+        }
+
+        .data-table tbody tr.bom-row-spamso {
+            background-color: #fff7ed !important;
+        }
+
+        .data-table tbody tr.bom-row-spamso:hover {
+            background-color: #ffedd5 !important;
+        }
+
+        .data-table tbody tr.bom-row-spamso.selected {
+            background-color: #fed7aa !important;
+        }
     </style>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -67,7 +99,7 @@
     <div class="app-shell">
         <div class="sidebar-backdrop" onclick="document.body.classList.remove('sidebar-open')"></div>
 
-        <!-- ════════════════════════ SIDEBAR ════════════════════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SIDEBAR â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <div class="sidebar-brand">Panasonic</div>
@@ -233,6 +265,7 @@
                     </svg>
                     <span>Shifts</span>
                 </button>
+                {% if current_user.role != 'operator' %}
                 <button class="sidebar-item" data-panel="lines" id="nav-lines">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -286,6 +319,7 @@
                     </svg>
                     <span>Areas</span>
                 </button>
+                {% endif %}
             </nav>
 
             <div class="sidebar-footer">
@@ -326,7 +360,7 @@
             </div>
         </aside>
 
-        <!-- ════════════════════════ MAIN AREA ════════════════════════ -->
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN AREA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
         <div class="main-area">
             <header class="mobile-header">
                 <div class="mobile-header-logo">
@@ -344,7 +378,7 @@
                 </button>
             </header>
 
-            <!-- ═══════════════ PANEL: CRS ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: CRS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-crs">
                 <div class="panel-topbar">
                     <div>
@@ -361,7 +395,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="crs-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="crs-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadCRSData(1)">Search</button>
@@ -380,18 +414,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="crs-btn-details" disabled
                                     onclick="if(tableSelection.crs) viewCRSDetails(tableSelection.crs)">Details</button>
-                                <button class="btn btn-secondary" id="crs-btn-edit" disabled
-                                    onclick="if(tableSelection.crs) openEditModal('crs', tableSelection.crs)">Edit</button>
-                                <button class="btn btn-danger" id="crs-btn-delete" disabled
-                                    onclick="if(tableSelection.crs) deleteRecord('crs', tableSelection.crs.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="crs-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="crs-btn-edit" disabled
+                                    onclick="if(tableSelection.crs) openEditModal('crs', tableSelection.crs)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="crs-btn-delete" disabled
+                                    onclick="if(tableSelection.crs) deleteRecord('crs', tableSelection.crs.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="crs-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="crs-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('crs', 'id')">No. <span class="sort-indicator" id="crs-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('crs', 'id')">No. <span
+                                                class="sort-indicator" id="crs-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('crs', 'time')">Date / Time <span
                                                 class="sort-indicator" id="crs-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('crs', 'modelcode')">Model Code <span
@@ -406,7 +445,18 @@
                                     <tr>
                                         <td colspan="5" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     CRS records.</p>
@@ -421,7 +471,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: GMS ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: GMS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-gms">
                 <div class="panel-topbar">
                     <div>
@@ -438,7 +488,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="gms-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="gms-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadGMSData(1)">Search</button>
@@ -457,18 +507,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="gms-btn-details" disabled
                                     onclick="if(tableSelection.gms) viewGMSDetails(tableSelection.gms)">Details</button>
-                                <button class="btn btn-secondary" id="gms-btn-edit" disabled
-                                    onclick="if(tableSelection.gms) openEditModal('gms', tableSelection.gms)">Edit</button>
-                                <button class="btn btn-danger" id="gms-btn-delete" disabled
-                                    onclick="if(tableSelection.gms) deleteRecord('gms', tableSelection.gms.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="gms-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="gms-btn-edit" disabled
+                                    onclick="if(tableSelection.gms) openEditModal('gms', tableSelection.gms)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="gms-btn-delete" disabled
+                                    onclick="if(tableSelection.gms) deleteRecord('gms', tableSelection.gms.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="gms-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="gms-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('gms', 'id')">No. <span class="sort-indicator" id="gms-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('gms', 'id')">No. <span
+                                                class="sort-indicator" id="gms-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('gms', 'time')">Date / Time <span
                                                 class="sort-indicator" id="gms-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('gms', 'modelcode')">Model Code <span
@@ -488,7 +543,18 @@
                                     <tr>
                                         <td colspan="8" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     GMS records.</p>
@@ -503,7 +569,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Air Tight Test ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Air Tight Test â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-att">
                 <div class="panel-topbar">
                     <div>
@@ -520,7 +586,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="att-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="att-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadATTData(1)">Search</button>
@@ -539,11 +605,15 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="att-btn-details" disabled
                                     onclick="if(tableSelection.att) viewATTDetails(tableSelection.att)">Details</button>
-                                <button class="btn btn-secondary" id="att-btn-edit" disabled
-                                    onclick="if(tableSelection.att) openEditModal('att', tableSelection.att)">Edit</button>
-                                <button class="btn btn-danger" id="att-btn-delete" disabled
-                                    onclick="if(tableSelection.att) deleteRecord('att', tableSelection.att.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="att-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="att-btn-edit" disabled
+                                    onclick="if(tableSelection.att) openEditModal('att', tableSelection.att)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="att-btn-delete" disabled
+                                    onclick="if(tableSelection.att) deleteRecord('att', tableSelection.att.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="att-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="legend"
@@ -570,7 +640,8 @@
                             <table class="data-table" id="att-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('att', 'id')">No. <span class="sort-indicator" id="att-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('att', 'id')">No. <span
+                                                class="sort-indicator" id="att-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('att', 'time')">Date / Time <span
                                                 class="sort-indicator" id="att-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('att', 'modelcode')">Model Code <span
@@ -607,7 +678,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: SPAMSI ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: SPAMSI â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-spamsi">
                 <div class="panel-topbar">
                     <div>
@@ -624,7 +695,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="spamsi-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="spamsi-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadSPAMSIData(1)">Search</button>
@@ -642,18 +713,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="spamsi-btn-details" disabled
                                     onclick="if(tableSelection.spamsi) viewSPAMSIDetails(tableSelection.spamsi)">Details</button>
-                                <button class="btn btn-secondary" id="spamsi-btn-edit" disabled
-                                    onclick="if(tableSelection.spamsi) openEditModal('spamsi', tableSelection.spamsi)">Edit</button>
-                                <button class="btn btn-danger" id="spamsi-btn-delete" disabled
-                                    onclick="if(tableSelection.spamsi) deleteRecord('spamsi', tableSelection.spamsi.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="spamsi-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="spamsi-btn-edit" disabled
+                                    onclick="if(tableSelection.spamsi) openEditModal('spamsi', tableSelection.spamsi)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="spamsi-btn-delete" disabled
+                                    onclick="if(tableSelection.spamsi) deleteRecord('spamsi', tableSelection.spamsi.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="spamsi-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="spamsi-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('spamsi', 'id')">No. <span class="sort-indicator" id="spamsi-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('spamsi', 'id')">No. <span
+                                                class="sort-indicator" id="spamsi-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('spamsi', 'time')">Date / Time <span
                                                 class="sort-indicator" id="spamsi-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('spamsi', 'modelcode')">Model Code
@@ -669,7 +745,18 @@
                                     <tr>
                                         <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     SPAMSI records.</p>
@@ -685,11 +772,11 @@
             </div>
 
 
-            <!-- ═══════════════ PANEL: SPAMSO ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: SPAMSO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-spamso">
                 <div class="panel-topbar">
                     <div>
-                        <h1 class="panel-title">Safety Parts Monitoring System (Outdoor)</h1>
+                        <h1 class="panel-title">Safety Parts (Outdoor)</h1>
                         <p class="panel-subtitle">Track safety part assemblies and verification results</p>
                     </div>
                 </div>
@@ -702,7 +789,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="spamso-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="spamso-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadSPAMSOData(1)">Search</button>
@@ -720,18 +807,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="spamso-btn-details" disabled
                                     onclick="if(tableSelection.spamso) viewSPAMSODetails(tableSelection.spamso)">Details</button>
-                                <button class="btn btn-secondary" id="spamso-btn-edit" disabled
-                                    onclick="if(tableSelection.spamso) openEditModal('spamso', tableSelection.spamso)">Edit</button>
-                                <button class="btn btn-danger" id="spamso-btn-delete" disabled
-                                    onclick="if(tableSelection.spamso) deleteRecord('spamso', tableSelection.spamso.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="spamso-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="spamso-btn-edit" disabled
+                                    onclick="if(tableSelection.spamso) openEditModal('spamso', tableSelection.spamso)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="spamso-btn-delete" disabled
+                                    onclick="if(tableSelection.spamso) deleteRecord('spamso', tableSelection.spamso.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="spamso-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="spamso-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('spamso', 'id')">No. <span class="sort-indicator" id="spamso-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('spamso', 'id')">No. <span
+                                                class="sort-indicator" id="spamso-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('spamso', 'time')">Date / Time <span
                                                 class="sort-indicator" id="spamso-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('spamso', 'modelcode')">Model Code
@@ -747,7 +839,18 @@
                                     <tr>
                                         <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     SPAMSO records.</p>
@@ -762,7 +865,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Wiring & Construction ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Wiring & Construction â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-wci">
                 <div class="panel-topbar">
                     <div>
@@ -779,7 +882,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="wci-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="wci-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadWCIData(1)">Search</button>
@@ -797,18 +900,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="wci-btn-details" disabled
                                     onclick="if(tableSelection.wci) viewWCIDetails(tableSelection.wci)">Details</button>
-                                <button class="btn btn-secondary" id="wci-btn-edit" disabled
-                                    onclick="if(tableSelection.wci) openEditModal('wci', tableSelection.wci)">Edit</button>
-                                <button class="btn btn-danger" id="wci-btn-delete" disabled
-                                    onclick="if(tableSelection.wci) deleteRecord('wci', tableSelection.wci.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="wci-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="wci-btn-edit" disabled
+                                    onclick="if(tableSelection.wci) openEditModal('wci', tableSelection.wci)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="wci-btn-delete" disabled
+                                    onclick="if(tableSelection.wci) deleteRecord('wci', tableSelection.wci.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="wci-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="wci-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('wci', 'id')">No. <span class="sort-indicator" id="wci-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('wci', 'id')">No. <span
+                                                class="sort-indicator" id="wci-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('wci', 'time')">Date / Time <span
                                                 class="sort-indicator" id="wci-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('wci', 'modelcode')">Model <span
@@ -825,7 +933,18 @@
                                     <tr>
                                         <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     WCI records.</p>
@@ -840,7 +959,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Running Inspection ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Running Inspection â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-insp3run">
                 <div class="panel-topbar">
                     <div>
@@ -857,7 +976,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="insp3run-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="insp3run-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadRITData(1)">Search</button>
@@ -875,18 +994,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="insp3run-btn-details" disabled
                                     onclick="if(tableSelection.insp3run) viewRITDetails(tableSelection.insp3run)">Details</button>
-                                <button class="btn btn-secondary" id="insp3run-btn-edit" disabled
-                                    onclick="if(tableSelection.insp3run) openEditModal('insp3run', tableSelection.insp3run)">Edit</button>
-                                <button class="btn btn-danger" id="insp3run-btn-delete" disabled
-                                    onclick="if(tableSelection.insp3run) deleteRecord('insp3run', tableSelection.insp3run.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="insp3run-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="insp3run-btn-edit" disabled
+                                    onclick="if(tableSelection.insp3run) openEditModal('insp3run', tableSelection.insp3run)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="insp3run-btn-delete" disabled
+                                    onclick="if(tableSelection.insp3run) deleteRecord('insp3run', tableSelection.insp3run.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="insp3run-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="insp3run-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('insp3run', 'id')">No. <span class="sort-indicator" id="insp3run-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('insp3run', 'id')">No. <span
+                                                class="sort-indicator" id="insp3run-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('insp3run', 'time')">Date / Time <span
                                                 class="sort-indicator" id="insp3run-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('insp3run', 'modelcode')">Model <span
@@ -895,7 +1019,8 @@
                                                 class="sort-indicator" id="insp3run-sort-serial"></span></th>
 
                                         <th class="sortable" onclick="handleSort('insp3run', 'overallstatus')">Overall
-                                            <span class="sort-indicator" id="insp3run-sort-overallstatus"></span></th>
+                                            <span class="sort-indicator" id="insp3run-sort-overallstatus"></span>
+                                        </th>
                                         <th class="sortable" onclick="handleSort('insp3run', 'inspector')">Inspector
                                             <span class="sort-indicator" id="insp3run-sort-inspector"></span>
                                         </th>
@@ -905,7 +1030,18 @@
                                     <tr>
                                         <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     RIT records.</p>
@@ -920,7 +1056,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Final Inspection ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Final Inspection â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-fit">
                 <div class="panel-topbar">
                     <div>
@@ -937,7 +1073,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="fit-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="fit-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadFITData(1)">Search</button>
@@ -955,18 +1091,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="fit-btn-details" disabled
                                     onclick="if(tableSelection.fit) viewFITDetails(tableSelection.fit)">Details</button>
-                                <button class="btn btn-secondary" id="fit-btn-edit" disabled
-                                    onclick="if(tableSelection.fit) openEditModal('fit', tableSelection.fit)">Edit</button>
-                                <button class="btn btn-danger" id="fit-btn-delete" disabled
-                                    onclick="if(tableSelection.fit) deleteRecord('fit', tableSelection.fit.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="fit-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="fit-btn-edit" disabled
+                                    onclick="if(tableSelection.fit) openEditModal('fit', tableSelection.fit)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="fit-btn-delete" disabled
+                                    onclick="if(tableSelection.fit) deleteRecord('fit', tableSelection.fit.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="fit-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="fit-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('fit', 'id')">No. <span class="sort-indicator" id="fit-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('fit', 'id')">No. <span
+                                                class="sort-indicator" id="fit-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('fit', 'time')">Date / Time <span
                                                 class="sort-indicator" id="fit-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('fit', 'modelcode')">Model <span
@@ -983,7 +1124,18 @@
                                     <tr>
                                         <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     FIT records.</p>
@@ -998,7 +1150,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Repair Station ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Repair Station â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-repair">
                 <div class="panel-topbar">
                     <div>
@@ -1015,7 +1167,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="repair-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="repair-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadRepairData(1)">Search</button>
@@ -1033,18 +1185,23 @@
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
                                 <button class="btn btn-primary" id="repair-btn-details" disabled
                                     onclick="if(tableSelection.repair) viewRepairDetails(tableSelection.repair)">Details</button>
-                                <button class="btn btn-secondary" id="repair-btn-edit" disabled
-                                    onclick="if(tableSelection.repair) openEditModal('repair', tableSelection.repair)">Edit</button>
-                                <button class="btn btn-danger" id="repair-btn-delete" disabled
-                                    onclick="if(tableSelection.repair) deleteRecord('repair', tableSelection.repair.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="repair-total">—</span></div>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="repair-btn-edit" disabled
+                                    onclick="if(tableSelection.repair) openEditModal('repair', tableSelection.repair)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="repair-btn-delete" disabled
+                                    onclick="if(tableSelection.repair) deleteRecord('repair', tableSelection.repair.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="repair-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="repair-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('cbpcb', 'id')">No. <span class="sort-indicator" id="cbpcb-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('cbpcb', 'id')">No. <span
+                                                class="sort-indicator" id="cbpcb-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('repair', 'time')">Date / Time <span
                                                 class="sort-indicator" id="repair-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('repair', 'modelcode')">Model <span
@@ -1084,12 +1241,12 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Prod Tag Tracker ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Prod Tag Tracker â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-prodtag">
                 <div class="panel-topbar">
                     <div>
                         <h1 class="panel-title">Prod Tag Tracker</h1>
-                        <p class="panel-subtitle">Unified quality status — view if a serial is ready for Prod Tag
+                        <p class="panel-subtitle">Unified quality status â€” view if a serial is ready for Prod Tag
                             printing</p>
                     </div>
                 </div>
@@ -1102,7 +1259,7 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="prodtag-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="prodtag-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadProdTagTracker(1)">Search</button>
@@ -1129,7 +1286,7 @@
                                 Print
                             </button>
                             <div class="stats" style="margin-left:auto;">
-                                <div class="stat-pill">Total: <span id="prodtag-total">—</span></div>
+                                <div class="stat-pill">Total: <span id="prodtag-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
@@ -1181,7 +1338,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: FGCP ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: FGCP â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-fgcp">
                 <div class="panel-topbar">
                     <div>
@@ -1216,6 +1373,8 @@
                             <div style="margin-left: auto; display: flex; gap: 8px;">
                                 <button class="btn btn-secondary" id="ts-btn-print" disabled
                                     onclick="if(tableSelection.ts) window.open('/admin/print-transfer-slip/' + tableSelection.ts.id, '_blank')">Print</button>
+                                <button class="btn btn-secondary" id="ts-btn-export-csv" disabled
+                                    onclick="if(tableSelection.ts) triggerTransferCSV(tableSelection.ts.id)">Export CSV</button>
                                 <button class="btn btn-secondary" onclick="window.location.reload()" title="Refresh"
                                     style="padding: 0.5rem 0.75rem; display: flex; align-items: center; justify-content: center;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -1264,7 +1423,8 @@
                                                     </svg>
                                                 </div>
                                                 <h4 class="empty-state-title">No Transfer Slips</h4>
-                                                <span class="empty-state-sub">Select a date or use search to view transfer
+                                                <span class="empty-state-sub">Select a date or use search to view
+                                                    transfer
                                                     slips.</span>
                                             </div>
                                         </td>
@@ -1276,7 +1436,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Print QC Reports ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Print QC Reports â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-qcreports">
                 <div class="panel-topbar">
                     <div>
@@ -1362,7 +1522,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════ PANEL: Master Data ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: Master Data â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <!-- --- PANEL: Work Schedule --- -->
             <div class="main-panel active" id="panel-worksched">
                 <div class="panel-topbar">
@@ -1526,7 +1686,7 @@
                                             <option value="All">All Modules</option>
                                         </select>
 
-                                        <button class="btn btn-secondary" onclick="loadBOM()"
+                                        <button class="btn btn-secondary" onclick="loadModels(); if(typeof loadAllModelConfigs === 'function') loadAllModelConfigs(); loadBOM();"
                                             style="padding: 0.5rem 0.75rem; display: flex; align-items: center; justify-content: center;"
                                             title="Refresh">
                                             <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round"
@@ -1607,10 +1767,10 @@
                                         <tr>
                                             <th style="width:50px">No.</th>
                                             <th>Model Code</th>
-                                            <th>Gas Charge (Base ±)</th>
-                                            <th>Op Current (Base ±)</th>
-                                            <th>Input Power (Base ±)</th>
-                                            <th>Temp Diff (Base ±)</th>
+                                            <th>Gas Charge (Base Â±)</th>
+                                            <th>Op Current (Base Â±)</th>
+                                            <th>Input Power (Base Â±)</th>
+                                            <th>Temp Diff (Base Â±)</th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -1652,7 +1812,7 @@
                 </div>
             </div>
 
-            <!-- 🎛️ PANEL: Scoreboard 🎛️ -->
+            <!-- ðŸŽ›ï¸ PANEL: Scoreboard ðŸŽ›ï¸ -->
             <div class="main-panel" id="panel-scoreboard">
                 <div class="panel-topbar">
                     <div>
@@ -1802,7 +1962,7 @@
                                         style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">
                                         On-Going Production</h3>
                                     <div style="font-size: 28px; font-weight: 800; color: var(--warning);"
-                                        id="sb-og-model">—</div>
+                                        id="sb-og-model">â€”</div>
                                 </div>
                                 <div style="text-align: center;">
                                     <div
@@ -1827,7 +1987,7 @@
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--border); background-color: transparent;"
                                     id="sb-og-circle">
-                                    <span style="font-size: 32px; font-weight: 900;" id="sb-og-icon">—</span>
+                                    <span style="font-size: 32px; font-weight: 900;" id="sb-og-icon">â€”</span>
                                     <span style="font-size: 12px; font-weight: 700;" id="sb-og-status">N/A</span>
                                 </div>
                             </div>
@@ -1846,7 +2006,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 CRS</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-crs-model">—</div>
+                                                id="sb-wip-crs-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-crs">0</div>
@@ -1858,7 +2018,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 ATT</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-att-model">—</div>
+                                                id="sb-wip-att-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-att">0</div>
@@ -1870,7 +2030,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 GMS</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-gms-model">—</div>
+                                                id="sb-wip-gms-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-gms">0</div>
@@ -1882,7 +2042,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 SPAMSI</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-spamsi-model">—</div>
+                                                id="sb-wip-spamsi-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-spamsi">0</div>
@@ -1894,7 +2054,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 SPAMSO</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-spamso-model">—</div>
+                                                id="sb-wip-spamso-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-spamso">0</div>
@@ -1906,7 +2066,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 WCI</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-wc-model">—</div>
+                                                id="sb-wip-wc-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-wc">0</div>
@@ -1918,7 +2078,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 RIT</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-ri-model">—</div>
+                                                id="sb-wip-ri-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-ri">0</div>
@@ -1930,7 +2090,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 FIT</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-fi-model">—</div>
+                                                id="sb-wip-fi-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-fi">0</div>
@@ -1942,7 +2102,7 @@
                                                 style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">
                                                 PIT</div>
                                             <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 5px; min-height: 14px;"
-                                                id="sb-wip-pit-model">—</div>
+                                                id="sb-wip-pit-model">â€”</div>
                                         </div>
                                         <div style="font-size: 24px; font-weight: 800; color: var(--primary);"
                                             id="sb-wip-pit">0</div>
@@ -1955,7 +2115,7 @@
                 </div>
             </div>
 
-            <!-- ═══ PANEL: Shifts ═══ -->
+            <!-- â•â•â• PANEL: Shifts â•â•â• -->
             <div class="main-panel" id="panel-shifts">
                 <div class="panel-topbar">
                     <div>
@@ -1969,21 +2129,21 @@
                             style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                             <h3 style="margin:0; font-size: 1.125rem; font-weight: 600;">System Shifts</h3>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                            <button class="btn btn-secondary" disabled="" id="shift-edit-btn"
-                                onclick="openShiftModal('edit')">Edit</button>
-                            <button class="btn btn-secondary" onclick="fetchShifts()"
-                                style="padding: 0.5rem 0.75rem; display: flex; align-items: center; justify-content: center;"
-                                title="Refresh">
-                                <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round"
-                                    stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <polyline points="1 20 1 14 7 14"></polyline>
-                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15">
-                                    </path>
-                                </svg>
-                                <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
-                            </button>
+                                <button class="btn btn-secondary" disabled="" id="shift-edit-btn"
+                                    onclick="openShiftModal('edit')">Edit</button>
+                                <button class="btn btn-secondary" onclick="fetchShifts()"
+                                    style="padding: 0.5rem 0.75rem; display: flex; align-items: center; justify-content: center;"
+                                    title="Refresh">
+                                    <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <polyline points="1 20 1 14 7 14"></polyline>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15">
+                                        </path>
+                                    </svg>
+                                    <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
+                                </button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -2007,7 +2167,7 @@
                 </div>
             </div>
 
-            <!-- ═══ PANEL: Line Status Viewer ═══ -->
+            <!-- â•â•â• PANEL: Line Status Viewer â•â•â• -->
             <div class="main-panel" id="panel-linestat">
                 <div class="panel-topbar">
                     <div>
@@ -2019,45 +2179,94 @@
                     <div class="panel-card">
                         <div class="controls"
                             style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
-                            <div class="admin-inner-tabs" id="linestat-tabs" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; background: transparent; padding: 0;">
-                                <button class="tab-btn active" onclick="setLinestatTab('all')" id="btn-tab-linestat-all">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></svg>
+                            <div class="admin-inner-tabs" id="linestat-tabs"
+                                style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; background: transparent; padding: 0;">
+                                <button class="tab-btn active" onclick="setLinestatTab('all')"
+                                    id="btn-tab-linestat-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                                        <polyline points="2 12 12 17 22 12" />
+                                        <polyline points="2 17 12 22 22 17" />
+                                    </svg>
                                     <span class="tab-text">All</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('crs')" id="btn-tab-linestat-crs">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path
+                                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                    </svg>
                                     <span class="tab-text">CRS</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('att')" id="btn-tab-linestat-att">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
                                     <span class="tab-text">ATT</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('gms')" id="btn-tab-linestat-gms">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                                    </svg>
                                     <span class="tab-text">GMS</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('spamsi')" id="btn-tab-linestat-spamsi">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
                                     <span class="tab-text">SPAMSI</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('spamso')" id="btn-tab-linestat-spamso">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
                                     <span class="tab-text">SPAMSO</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('wci')" id="btn-tab-linestat-wci">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                                    </svg>
                                     <span class="tab-text">WCI</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('rit')" id="btn-tab-linestat-rit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                    </svg>
                                     <span class="tab-text">RIT</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('fit')" id="btn-tab-linestat-fit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M9 11l3 3L22 4" />
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                    </svg>
                                     <span class="tab-text">FIT</span>
                                 </button>
                                 <button class="tab-btn" onclick="setLinestatTab('pit')" id="btn-tab-linestat-pit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                                    </svg>
                                     <span class="tab-text">PIT</span>
                                 </button>
                             </div>
@@ -2082,15 +2291,51 @@
                                 #linestat-table.filtered td:not(.col-common) {
                                     display: none !important;
                                 }
-                                #linestat-table.show-crs th.col-crs, #linestat-table.show-crs td.col-crs { display: table-cell !important; }
-                                #linestat-table.show-att th.col-att, #linestat-table.show-att td.col-att { display: table-cell !important; }
-                                #linestat-table.show-gms th.col-gms, #linestat-table.show-gms td.col-gms { display: table-cell !important; }
-                                #linestat-table.show-spamsi th.col-spamsi, #linestat-table.show-spamsi td.col-spamsi { display: table-cell !important; }
-                                #linestat-table.show-spamso th.col-spamso, #linestat-table.show-spamso td.col-spamso { display: table-cell !important; }
-                                #linestat-table.show-wci th.col-wci, #linestat-table.show-wci td.col-wci { display: table-cell !important; }
-                                #linestat-table.show-rit th.col-rit, #linestat-table.show-rit td.col-rit { display: table-cell !important; }
-                                #linestat-table.show-fit th.col-fit, #linestat-table.show-fit td.col-fit { display: table-cell !important; }
-                                #linestat-table.show-pit th.col-pit, #linestat-table.show-pit td.col-pit { display: table-cell !important; }
+
+                                #linestat-table.show-crs th.col-crs,
+                                #linestat-table.show-crs td.col-crs {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-att th.col-att,
+                                #linestat-table.show-att td.col-att {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-gms th.col-gms,
+                                #linestat-table.show-gms td.col-gms {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-spamsi th.col-spamsi,
+                                #linestat-table.show-spamsi td.col-spamsi {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-spamso th.col-spamso,
+                                #linestat-table.show-spamso td.col-spamso {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-wci th.col-wci,
+                                #linestat-table.show-wci td.col-wci {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-rit th.col-rit,
+                                #linestat-table.show-rit td.col-rit {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-fit th.col-fit,
+                                #linestat-table.show-fit td.col-fit {
+                                    display: table-cell !important;
+                                }
+
+                                #linestat-table.show-pit th.col-pit,
+                                #linestat-table.show-pit td.col-pit {
+                                    display: table-cell !important;
+                                }
                             </style>
                             <table class="data-table" id="linestat-table">
                                 <thead>
@@ -2139,33 +2384,34 @@
                                         <th class="col-spamso">SPAMSO Model</th>
                                         <th class="col-spamso">SPAMSO Rem.</th>
                                         <th class="col-spamso">Out Model</th>
-                                        <th class="col-wci">WC Model</th>
-                                        <th class="col-wci">WC Rem.</th>
-                                        <th class="col-rit">RI Model</th>
-                                        <th class="col-rit">RI Rem.</th>
-                                        <th class="col-rit">RI Prog H</th>
-                                        <th class="col-rit">RI Prog F</th>
-                                        <th class="col-rit">RI Data1</th>
-                                        <th class="col-rit">RI Data1 Tol+</th>
-                                        <th class="col-rit">RI Data1 Tol-</th>
-                                        <th class="col-rit">RI Data2</th>
-                                        <th class="col-rit">RI Data2 Tol+</th>
-                                        <th class="col-rit">RI Data2 Tol-</th>
-                                        <th class="col-rit">RI Data3</th>
-                                        <th class="col-rit">RI Data3 Tol+</th>
-                                        <th class="col-rit">RI Data3 Tol-</th>
-                                        <th class="col-rit">RI Heat1</th>
-                                        <th class="col-rit">RI Heat2</th>
-                                        <th class="col-fit">FI Model</th>
-                                        <th class="col-fit">FI Rem.</th>
-                                        <th class="col-fit">FI Data1</th>
-                                        <th class="col-fit">FI Data1 Tol+</th>
-                                        <th class="col-fit">FI Data1 Tol-</th>
-                                        <th class="col-fit">FI Data2</th>
-                                        <th class="col-fit">FI Data2 Tol+</th>
-                                        <th class="col-fit">FI Data2 Tol-</th>
+                                        <th class="col-wci">WCI Model</th>
+                                        <th class="col-wci">WCI Rem.</th>
+                                        <th class="col-rit">RIT Model</th>
+                                        <th class="col-rit">RIT Rem.</th>
+                                        <th class="col-rit">RIT Prog H</th>
+                                        <th class="col-rit">RIT Prog F</th>
+                                        <th class="col-rit">RIT Data1</th>
+                                        <th class="col-rit">RIT Data1 Tol+</th>
+                                        <th class="col-rit">RIT Data1 Tol-</th>
+                                        <th class="col-rit">RIT Data2</th>
+                                        <th class="col-rit">RIT Data2 Tol+</th>
+                                        <th class="col-rit">RIT Data2 Tol-</th>
+                                        <th class="col-rit">RIT Data3</th>
+                                        <th class="col-rit">RIT Data3 Tol+</th>
+                                        <th class="col-rit">RIT Data3 Tol-</th>
+                                        <th class="col-rit">RIT Heat1</th>
+                                        <th class="col-rit">RIT Heat2</th>
+                                        <th class="col-fit">FIT Model</th>
+                                        <th class="col-fit">FIT Rem.</th>
+                                        <th class="col-fit">FIT Data1</th>
+                                        <th class="col-fit">FIT Data1 Tol+</th>
+                                        <th class="col-fit">FIT Data1 Tol-</th>
+                                        <th class="col-fit">FIT Data2</th>
+                                        <th class="col-fit">FIT Data2 Tol+</th>
+                                        <th class="col-fit">FIT Data2 Tol-</th>
                                         <th class="col-pit">PIT Model</th>
                                         <th class="col-pit">PIT Rem.</th>
+                                        <th class="col-pit">PIT TWS</th>
                                         <th class="col-common">Last Updated</th>
                                     </tr>
                                 </thead>
@@ -2180,7 +2426,7 @@
                 </div>
             </div>
 
-            <!-- ═══ PANEL: Production Lines ═══ -->
+            <!-- â•â•â• PANEL: Production Lines â•â•â• -->
             <div class="main-panel" id="panel-lines">
                 <div class="panel-topbar">
                     <div>
@@ -2229,7 +2475,13 @@
                                         <td colspan="5" class="empty-state">
                                             <div class="empty-state-wrapper">
                                                 <div class="empty-state-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                                    </svg>
                                                 </div>
                                                 <h4 class="empty-state-title">Loading lines...</h4>
                                             </div>
@@ -2242,7 +2494,7 @@
                     </div>
                 </div>
             </div>
-            <!-- ═══ PANEL: Modules Management ═══ -->
+            <!-- â•â•â• PANEL: Modules Management â•â•â• -->
             <div class="main-panel" id="panel-modules">
                 <div class="panel-topbar">
                     <div>
@@ -2290,7 +2542,16 @@
                                         <td colspan="5" class="empty-state">
                                             <div class="empty-state-wrapper">
                                                 <div class="empty-state-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                                        </path>
+                                                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                                    </svg>
                                                 </div>
                                                 <h4 class="empty-state-title">Loading modules...</h4>
                                             </div>
@@ -2303,7 +2564,7 @@
                     </div>
                 </div>
             </div>
-            <!-- ═══ PANEL: Tags Management ═══ -->
+            <!-- â•â•â• PANEL: Tags Management â•â•â• -->
             <div class="main-panel" id="panel-tags">
                 <div class="panel-topbar">
                     <div>
@@ -2351,7 +2612,15 @@
                                         <td colspan="5" class="empty-state">
                                             <div class="empty-state-wrapper">
                                                 <div class="empty-state-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z">
+                                                        </path>
+                                                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                                    </svg>
                                                 </div>
                                                 <h4 class="empty-state-title">Loading tags...</h4>
                                             </div>
@@ -2364,7 +2633,7 @@
                     </div>
                 </div>
             </div>
-            <!-- ═══ PANEL: Areas Management ═══ -->
+            <!-- â•â•â• PANEL: Areas Management â•â•â• -->
             <div class="main-panel" id="panel-areas">
                 <div class="panel-topbar">
                     <div>
@@ -2404,7 +2673,13 @@
                                         <td colspan="5" class="empty-state">
                                             <div class="empty-state-wrapper">
                                                 <div class="empty-state-icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                        <circle cx="12" cy="10" r="3"></circle>
+                                                    </svg>
                                                 </div>
                                                 <h4 class="empty-state-title">Loading areas...</h4>
                                             </div>
@@ -2417,7 +2692,7 @@
                     </div>
                 </div>
             </div>
-            <!-- ═══ PANEL: User Management ═══ -->
+            <!-- â•â•â• PANEL: User Management â•â•â• -->
             <div class="main-panel" id="panel-users">
                 <div class="panel-topbar">
                     <div>
@@ -2472,7 +2747,7 @@
                     </div>
                 </div>
             </div>
-            <!-- ═══════════════ PANEL: PIT ═══════════════ -->
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• PANEL: PIT â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div class="main-panel" id="panel-pit">
                 <div class="panel-topbar">
                     <div>
@@ -2489,25 +2764,31 @@
                             </div>
                             <div class="control-group">
                                 <label>Serial:</label>
-                                <input type="text" id="pit-serial-filter" placeholder="Search serial…"
+                                <input type="text" id="pit-serial-filter" placeholder="Search serial..."
                                     style="max-width:180px;">
                             </div>
                             <button class="btn btn-primary" onclick="loadPITData(1)">Search</button>
-                            <button class="btn btn-secondary" onclick="loadPITData(1)"
-                                title="Refresh">Refresh</button>
+                            <button class="btn btn-secondary" onclick="loadPITData(1)" title="Refresh">Refresh</button>
                             <div class="stats" style="margin-left:auto; display: flex; gap: 8px;">
-                                <button class="btn btn-secondary" id="pit-btn-edit" disabled
-                                    onclick="if(tableSelection.pit) openEditModal('pit', tableSelection.pit)">Edit</button>
-                                <button class="btn btn-danger" id="pit-btn-delete" disabled
-                                    onclick="if(tableSelection.pit) deleteRecord('pit', tableSelection.pit.id)">Delete</button>
-                                <div class="stat-pill">Total: <span id="pit-total">—</span></div>
+                                <button class="btn btn-primary" id="pit-btn-details" disabled
+                                    onclick="if(tableSelection.pit) viewPITDetails(tableSelection.pit)">Details</button>
+                                {% if current_user.role != 'operator' %}<button class="btn btn-secondary"
+                                    id="pit-btn-edit" disabled
+                                    onclick="if(tableSelection.pit) openEditModal('pit', tableSelection.pit)">Edit</button>{%
+                                endif %}
+                                {% if current_user.role != 'operator' %}<button class="btn btn-danger"
+                                    id="pit-btn-delete" disabled
+                                    onclick="if(tableSelection.pit) deleteRecord('pit', tableSelection.pit.id)">Delete</button>{%
+                                endif %}
+                                <div class="stat-pill">Total: <span id="pit-total">â€”</span></div>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="pit-table">
                                 <thead>
                                     <tr>
-                                        <th class="sortable" onclick="handleSort('pit', 'id')">No. <span class="sort-indicator" id="pit-sort-id"></span></th>
+                                        <th class="sortable" onclick="handleSort('pit', 'id')">No. <span
+                                                class="sort-indicator" id="pit-sort-id"></span></th>
                                         <th class="sortable" onclick="handleSort('pit', 'time')">Date / Time <span
                                                 class="sort-indicator" id="pit-sort-time"></span></th>
                                         <th class="sortable" onclick="handleSort('pit', 'modelcode')">Model Code
@@ -2515,11 +2796,6 @@
                                         </th>
                                         <th class="sortable" onclick="handleSort('pit', 'serial')">Serial <span
                                                 class="sort-indicator" id="pit-sort-serial"></span></th>
-                                        <th class="sortable" onclick="handleSort('pit', 'status')">Status 1 <span
-                                                class="sort-indicator" id="pit-sort-status"></span></th>
-                                        <th class="sortable" onclick="handleSort('pit', 'status2')">Status 2 <span class="sort-indicator" id="pit-sort-status2"></span></th>
-                                        <th class="sortable" onclick="handleSort('pit', 'status3')">Status 3 <span class="sort-indicator" id="pit-sort-status3"></span></th>
-                                        <th class="sortable" onclick="handleSort('pit', 'status4')">Status 4 <span class="sort-indicator" id="pit-sort-status4"></span></th>
                                         <th class="sortable" onclick="handleSort('pit', 'overallstatus')">Overall <span
                                                 class="sort-indicator" id="pit-sort-overallstatus"></span></th>
                                         <th class="sortable" onclick="handleSort('pit', 'inspector')">Inspector
@@ -2529,9 +2805,20 @@
                                 </thead>
                                 <tbody id="pit-tbody">
                                     <tr>
-                                        <td colspan="10" class="empty-state">
+                                        <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
-                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+                                                <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg"
+                                                        width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <path
+                                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z">
+                                                        </path>
+                                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                                    </svg></div>
                                                 <h4 class="empty-state-title">No data loaded</h4>
                                                 <p class="empty-state-desc">Select a date or enter a serial to search
                                                     PIT records.</p>

@@ -88,6 +88,16 @@ class Config:
         r'C:\Users\DELL\Desktop\Product Info Tag'
     )
 
+    # Bulk Model Import Directories
+    BULK_MODEL_IMPORT_INPUT_DIR = os.environ.get(
+        'BULK_MODEL_IMPORT_INPUT_DIR',
+        os.path.join(os.path.dirname(__file__), 'tools', 'bulk_model_import', 'input')
+    )
+    BULK_MODEL_IMPORT_ARCHIVE_DIR = os.environ.get(
+        'BULK_MODEL_IMPORT_ARCHIVE_DIR',
+        os.path.join(os.path.dirname(__file__), 'tools', 'bulk_model_import', 'archive')
+    )
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""

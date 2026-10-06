@@ -468,7 +468,8 @@ CREATE TABLE users (
 );
 
 INSERT IGNORE INTO `users` (`id`, `username`, `password_hash`, `full_name`, `role`, `is_active`, `must_change_password`) VALUES
-    (1, 'dev_glaee', 'scrypt:32768:8:1$BGIEyY4lKmHpdNCF$8afb6db376d8f1197525e44cc281f4bbe3b77fa39625f6bc61b61c1dabcec5a8642ee5bb2917401c28504e39c7e34c2bdc32c2b3873cb5021672eb0d70a92dc0', 'System Administrator', 'admin', true, 1);
+    (1, 'dev_glaee', 'scrypt:32768:8:1$BGIEyY4lKmHpdNCF$8afb6db376d8f1197525e44cc281f4bbe3b77fa39625f6bc61b61c1dabcec5a8642ee5bb2917401c28504e39c7e34c2bdc32c2b3873cb5021672eb0d70a92dc0', 'System Administrator', 'admin', true, 1),
+    (3, 'CJ Mojica', 'scrypt:32768:8:1$xDQqBjiidI6qm8iI$768397462c02c73a4145bb44b7005add3077baf3a2e8e5c59d582cb9f26cb7fd5de3275489316b89c1a152ec5390e63ba8ff481ac5083b116f28ab3915f9ebe9', 'Carlos Joaquin Mojica', 'operator', true, 0);
 
 
 CREATE TABLE worksched (
@@ -486,6 +487,9 @@ CREATE TABLE worksched (
 	PRIMARY KEY (id), 
 	CONSTRAINT uq_worksched_line_date_model UNIQUE (lineno, date, modelcode)
 );
+
+INSERT IGNORE INTO worksched (lineno, seq, modelcode, plan, act, takttime, date, finalized) VALUES
+('L1', 1, 'CW-U921JPH', 100, 20, 45, '2026-10-01', 0);
 
 CREATE TABLE IF NOT EXISTS system_state (
     `key_name`   VARCHAR(50)  NOT NULL PRIMARY KEY,		

@@ -1746,8 +1746,8 @@
                 const setAttCheck = (rowIdx, val) => {
                     const tds = attRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) {
-                        if (val === 'GOOD' || val === 'PASS' || val === 'OK' || val === 'REVIEW' || val === 'N/A' || (['GOOD','PASS','OK'].includes(unitData.att_status) && !val)) tds[0].checked = true;
-                        else if (val === 'NG') tds[1].checked = true;
+                        if (val === 'GOOD' || val === 'PASS' || val === 'OK' || val === 'REVIEW' || val === 'N/A') tds[0].checked = true;
+                        else if (val === 'NG' || val === 'NO GOOD' || val === 'No Good') tds[1].checked = true;
                     }
                 };
                 setAttCheck(0, unitData.att_status1);
@@ -1764,12 +1764,12 @@
             if (gasChargeInput && unitData.gms_gascharge) {
                 gasChargeInput.value = unitData.gms_gascharge;
             }
-            if (['GOOD', 'PASS', 'OK'].includes(unitData.gms_status)) {
+            if (unitData.gms_status && ['GOOD', 'PASS', 'OK'].includes(unitData.gms_status.toUpperCase())) {
                 inspectorSections[1].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[0].checked = true;
                 });
-            } else if (['FAIL', 'NG', 'NO GOOD'].includes(unitData.gms_status)) {
+            } else if (unitData.gms_status && ['FAIL', 'NG', 'NO GOOD'].includes(unitData.gms_status.toUpperCase())) {
                 inspectorSections[1].querySelectorAll('tbody tr').forEach(tr => {
                     const tds = tr.querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) tds[1].checked = true;
@@ -1785,8 +1785,8 @@
             if (wciRows.length >= 1) {
                 const tds = wciRows[0].querySelectorAll('td.center input[type="checkbox"]');
                 if (tds.length >= 2) {
-                    if (unitData.wci_status1 === 'GOOD' || (unitData.wci_status === 'GOOD' && !unitData.wci_status1)) tds[0].checked = true;
-                    else if (unitData.wci_status1 === 'NG') tds[1].checked = true;
+                    if (unitData.wci_status1 && ['GOOD', 'PASS', 'OK'].includes(unitData.wci_status1.toUpperCase())) tds[0].checked = true;
+                    else if (unitData.wci_status1 && ['FAIL', 'NG', 'NO GOOD'].includes(unitData.wci_status1.toUpperCase())) tds[1].checked = true;
                 }
             }
         }
@@ -1799,9 +1799,9 @@
             if (constrRows.length >= 3) {
                 const setConstrCheck = (rowIdx, val) => {
                     const tds = constrRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
-                    if (tds.length >= 2) {
-                        if (val === 'GOOD' || val === 'PASS' || val === 'OK') tds[0].checked = true;
-                        else if (val === 'NG') tds[1].checked = true;
+                    if (tds.length >= 2 && val) {
+                        if (['GOOD', 'PASS', 'OK'].includes(val.toUpperCase())) tds[0].checked = true;
+                        else if (['FAIL', 'NG', 'NO GOOD'].includes(val.toUpperCase())) tds[1].checked = true;
                     }
                 };
                 setConstrCheck(0, unitData.wci_status2); // No touching materials
@@ -1840,17 +1840,17 @@
                 if (unitData.wci_status5) {
                     const tds = leakRows[0].querySelectorAll('td.center input[type="checkbox"]');
                     if (tds.length >= 2) {
-                        if (['GOOD', 'PASS', 'OK'].includes(unitData.wci_status5)) tds[0].checked = true;
-                        else if (unitData.wci_status5 === 'NG') tds[1].checked = true;
+                        if (['GOOD', 'PASS', 'OK'].includes(unitData.wci_status5.toUpperCase())) tds[0].checked = true;
+                        else if (['FAIL', 'NG', 'NO GOOD'].includes(unitData.wci_status5.toUpperCase())) tds[1].checked = true;
                     }
                 }
                 
                 // Row 1: Must be no Leak (WCI Status 6 / Status 7)
                 const tdsLeak = leakRows[1].querySelectorAll('td.center input[type="checkbox"]');
                 if (tdsLeak.length >= 2) {
-                    if (unitData.wci_status6 === 'NG' || (unitData.wci_status7 && unitData.wci_status6 !== 'GOOD' && unitData.wci_status6 !== 'PASS' && unitData.wci_status6 !== 'OK')) {
+                    if (['FAIL', 'NG', 'NO GOOD'].includes(unitData.wci_status6 ? unitData.wci_status6.toUpperCase() : '') || (unitData.wci_status7 && unitData.wci_status6 !== 'GOOD' && unitData.wci_status6 !== 'PASS' && unitData.wci_status6 !== 'OK')) {
                         tdsLeak[1].checked = true; // NO GOOD
-                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.wci_status6)) {
+                    } else if (['GOOD', 'PASS', 'OK'].includes(unitData.wci_status6 ? unitData.wci_status6.toUpperCase() : '')) {
                         tdsLeak[0].checked = true; // GOOD
                     }
                 }
@@ -1864,7 +1864,7 @@
                         const tds = runRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
                         if (tds.length >= 2) {
                             if (val === 'GOOD' || val === 'PASS' || val === 'OK') tds[0].checked = true;
-                            else if (val === 'NG') tds[1].checked = true;
+                            else if (val === 'NG' || val === 'NO GOOD' || val === 'No Good') tds[1].checked = true;
                         }
                     }
                 };
@@ -1891,31 +1891,7 @@
                 setCheck(11, unitData.rit_status10);
             }
 
-            // Final Inspection (FIT specific logic)
-            if (rightTables.length > 2) {
-                const fitRows = rightTables[2].querySelectorAll('tbody tr');
-                if (fitRows.length > 8) {
-                    const setFitCheck = (rowIdx, val) => {
-                        if (fitRows[rowIdx]) {
-                            const tds = fitRows[rowIdx].querySelectorAll('td.center input[type="checkbox"]');
-                            if (tds.length >= 2) {
-                                if (val === 'GOOD' || val === 'PASS' || val === 'OK') tds[0].checked = true;
-                                else if (val === 'NG') tds[1].checked = true;
-                            }
-                        }
-                    };
-                    
-                    setFitCheck(0, unitData.fit_status3); // Insulation Resistance
-                    setFitCheck(1, unitData.fit_status1); // Must be no leak
-                    setFitCheck(2, unitData.fit_status4); // Nameplate & Barcode
-                    setFitCheck(3, unitData.fit_status5); // Correct Model Label
-                    setFitCheck(4, unitData.fit_status6); // Correct Manual Complete
-                    setFitCheck(5, unitData.fit_status7); // Remote and Battery
-                    setFitCheck(6, unitData.fit_status8); // Operation Instruction
-                    setFitCheck(7, unitData.fit_status9); // Screw Bag
-                    setFitCheck(8, unitData.fit_status10); // Grille Complete
-                }
-            }
+
 
             if (unitData.rit_inspector) {
                 rightTables[0].querySelectorAll('.inspector-input').forEach(div => {
@@ -1983,9 +1959,11 @@
             setFitCheck(fitRows[8], unitData.fit_status10);
 
             // Derived Logic for Correct Manual Complete (Row 4)
-            // Checked ONLY when status7, status8, and status9 are GOOD
+            // GOOD when status7, status8, and status9 are ALL GOOD. NO GOOD if any are present and not all good.
             if (isGood(unitData.fit_status7) && isGood(unitData.fit_status8) && isGood(unitData.fit_status9)) {
                 setFitCheck(fitRows[4], 'GOOD');
+            } else if (unitData.fit_status7 || unitData.fit_status8 || unitData.fit_status9) {
+                setFitCheck(fitRows[4], 'NG');
             }
             
             if (unitData.fit_inspector) {

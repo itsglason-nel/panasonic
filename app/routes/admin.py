@@ -76,13 +76,21 @@ def admin_required(f):
     """Decorator: allow only admin and super_admin roles."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'admin':
+        role = getattr(current_user, 'role', None)
+        role_str = str(role).strip().lower() if role else 'none'
+        if '.' in role_str:
+            role_str = role_str.split('.')[-1]
+            
+        is_admin_prop = getattr(current_user, 'is_admin', False)
+        
+        if not current_user.is_authenticated or (role_str not in ('admin', 'super_admin') and not is_admin_prop):
             logger.warning(
                 'Unauthorized admin API access attempt by user "%s" (role: %s) on %s',
                 getattr(current_user, 'username', 'anonymous'),
-                getattr(current_user, 'role', 'none'),
+                role,
                 request.path,
             )
+
             return jsonify({'error': 'Forbidden — admin access required.'}), 403
         return f(*args, **kwargs)
     return decorated
@@ -90,7 +98,7 @@ def admin_required(f):
 @admin_bp.route('/admin')
 @login_required
 def admin_page():
-    if current_user.role not in ('admin', 'supervisor'):
+    if current_user.role not in ('admin', 'supervisor', 'operator'):
         return redirect(url_for('scoreboard.all_lines'))
     return render_template('admin.html')
 
@@ -144,6 +152,20 @@ def get_schedules():
     from app.models.linestat import LineStat
     linestat_dict = {ls.lineno: ls for ls in LineStat.query.all()}
 
+    crs_counts = {}
+    schedule_dates = list(set([s.date for s in schedules]))
+    if schedule_dates:
+        from app.models.crs import CRS
+        from sqlalchemy import func
+        crs_query = db.session.query(func.date(CRS.time), CRS.modelcode, CRS.lineno, func.count(CRS.id)).filter(
+            func.date(CRS.time).in_(schedule_dates)
+        )
+        if lineno_str:
+            crs_query = crs_query.filter(CRS.lineno == lineno_str)
+            
+        for crs_date_str, modelcode, lineno, count in crs_query.group_by(func.date(CRS.time), CRS.modelcode, CRS.lineno).all():
+            crs_counts[(str(crs_date_str), modelcode, lineno)] = count
+
     schedules_data = []
     total_qty = 0
     has_ghosts = False
@@ -194,6 +216,7 @@ def get_schedules():
             'model_id': s.id,
             'planned_qty': s.plan,
             'actual_qty': s.act,
+            'crs_qty': crs_counts.get((str(s.date), s.modelcode, s.lineno), 0),
             'takt_time': s.takttime,
             'shift': 'DAY',
             'status': 'ON_GOING' if s.act < s.plan else 'DONE',
@@ -293,10 +316,11 @@ def wip_resolve():
     from datetime import datetime
     today_date = datetime.now().date()
     
-    # Find the most recent date before today that has schedules
+    # Find the most recent date before today that has unfinished schedules
     ghost_date = db.session.query(db.func.max(WorkSched.date)).filter(
         WorkSched.date < today_date,
-        WorkSched.lineno == lineno
+        WorkSched.lineno == lineno,
+        WorkSched.act < WorkSched.plan
     ).scalar()
     
     if not ghost_date:
@@ -311,118 +335,37 @@ def wip_resolve():
     if not unfinished_scheds:
         return jsonify({'success': False, 'error': 'No unfinished schedules found on the most recent date.'})
         
-    if action == 'clear':
-        # Discard & Clear all
-        for sched in unfinished_scheds:
-            sched.plan = sched.act
-            
-        linestat = LineStat.query.filter_by(lineno=lineno).first()
-        if linestat:
-            from datetime import datetime
-            linestat.status = 'No Work'
-            linestat.active_date = None
-            linestat.crsmodelcode = None
-            linestat.crsvar = 0
-            linestat.attmodelcode = None
-            linestat.attvar = 0
-            linestat.gmsmodelcode = None
-            linestat.gmsvar = 0
-            linestat.inmodelcode = None
-            linestat.invar = 0
-            linestat.inunique = None
-            linestat.inpart1mod = None
-            linestat.inpart1desc = None
-            linestat.inpart2mod = None
-            linestat.inpart2desc = None
-            linestat.inpart3mod = None
-            linestat.inpart3desc = None
-            linestat.inpart4mod = None
-            linestat.inpart4desc = None
-            linestat.inpart5mod = None
-            linestat.inpart5desc = None
-            linestat.inpart6mod = None
-            linestat.inpart6desc = None
-            linestat.outmodelcode = None
-            linestat.outvar = 0
-            linestat.outpart1mod = None
-            linestat.outpart1desc = None
-            linestat.outpart2mod = None
-            linestat.outpart2desc = None
-            linestat.outpart3mod = None
-            linestat.outpart3desc = None
-            linestat.compmod = None
-            linestat.fan1mod = None
-            linestat.fan2mod = None
-            linestat.crspart1mod = None
-            linestat.crspart1desc = None
-            linestat.crspart2mod = None
-            linestat.crspart2desc = None
-            linestat.crspart3mod = None
-            linestat.crspart3desc = None
-            linestat.crspart4mod = None
-            linestat.crspart4desc = None
-            linestat.area = None
-            linestat.serialstart = None
-            linestat.gascharge = 0
-            linestat.gmstolpos = 0
-            linestat.gmstolneg = 0
-            linestat.outmodel = None
-            linestat.wcimodelcode = None
-            linestat.wcivar = 0
-            linestat.ritmodelcode = None
-            linestat.ritvar = 0
-            linestat.ritprogh = None
-            linestat.ritprogf = None
-            linestat.ritdata1 = None
-            linestat.ritdata1tolpos = None
-            linestat.ritdata1tolneg = None
-            linestat.ritdata2 = None
-            linestat.ritdata2tolpos = None
-            linestat.ritdata2tolneg = None
-            linestat.ritdata3 = None
-            linestat.ritdata3tolpos = None
-            linestat.ritdata3tolneg = None
-            linestat.ritheat1 = None
-            linestat.ritheat2 = None
-            linestat.fitmodelcode = None
-            linestat.fitvar = 0
-            linestat.pitmodelcode = None
-            linestat.pitvar = 0
-            linestat.updtime = datetime.now()
-            
-        db.session.commit()
-        return jsonify({'success': True})
-        
-    elif action == 'continue':
+    if action in ['clear', 'continue']:
         linestat = LineStat.query.filter_by(lineno=lineno).first()
         active_model_codes = set()
         
-        if linestat and linestat.active_date == ghost_date:
-            if linestat.crsvar and linestat.crsvar > 0:
-                active_model_codes.add(linestat.crsmodelcode)
-            if linestat.attvar and linestat.attvar > 0:
-                active_model_codes.add(linestat.attmodelcode)
-            if linestat.gmsvar and linestat.gmsvar > 0:
-                active_model_codes.add(linestat.gmsmodelcode)
-            if linestat.invar and linestat.invar > 0:
-                active_model_codes.add(linestat.inmodelcode)
-            if linestat.outvar and linestat.outvar > 0:
-                active_model_codes.add(linestat.outmodelcode)
-            if linestat.wcivar and linestat.wcivar > 0:
-                active_model_codes.add(linestat.wcimodelcode)
-            if linestat.ritvar and linestat.ritvar > 0:
-                active_model_codes.add(linestat.ritmodelcode)
-            if linestat.fitvar and linestat.fitvar > 0:
-                active_model_codes.add(linestat.fitmodelcode)
-            if linestat.pitvar and linestat.pitvar > 0:
-                active_model_codes.add(linestat.pitmodelcode)
+        if linestat:
+            if linestat.crsvar and linestat.crsvar > 0 and linestat.crsmodelcode:
+                active_model_codes.add(linestat.crsmodelcode.strip())
+            if linestat.attvar and linestat.attvar > 0 and linestat.attmodelcode:
+                active_model_codes.add(linestat.attmodelcode.strip())
+            if linestat.gmsvar and linestat.gmsvar > 0 and linestat.gmsmodelcode:
+                active_model_codes.add(linestat.gmsmodelcode.strip())
+            if linestat.invar and linestat.invar > 0 and linestat.inmodelcode:
+                active_model_codes.add(linestat.inmodelcode.strip())
+            if linestat.outvar and linestat.outvar > 0 and linestat.outmodelcode:
+                active_model_codes.add(linestat.outmodelcode.strip())
+            if linestat.wcivar and linestat.wcivar > 0 and linestat.wcimodelcode:
+                active_model_codes.add(linestat.wcimodelcode.strip())
+            if linestat.ritvar and linestat.ritvar > 0 and linestat.ritmodelcode:
+                active_model_codes.add(linestat.ritmodelcode.strip())
+            if linestat.fitvar and linestat.fitvar > 0 and linestat.fitmodelcode:
+                active_model_codes.add(linestat.fitmodelcode.strip())
+            if linestat.pitvar and linestat.pitvar > 0 and linestat.pitmodelcode:
+                active_model_codes.add(linestat.pitmodelcode.strip())
                 
         # Get next sequence number for today
         last_sched = WorkSched.query.filter_by(lineno=lineno, date=today_date).order_by(WorkSched.seq.desc()).first()
         next_seq = 0 if not last_sched else last_sched.seq + 1
-        
+
         for sched in unfinished_scheds:
-            if sched.modelcode not in active_model_codes:
+            s_model = sched.modelcode.strip() if sched.modelcode else ''
+            if s_model not in active_model_codes:
                 # Unstarted schedule
                 if str(sched.id) in unstarted_plans:
                     # User checked it -> create new schedule for today
@@ -456,57 +399,142 @@ def wip_resolve():
                 
             else:
                 # Active model on the conveyor
-                max_var = 0
-                if linestat.crsmodelcode == sched.modelcode and linestat.crsvar:
-                    max_var = max(max_var, linestat.crsvar)
-                if linestat.attmodelcode == sched.modelcode and linestat.attvar:
-                    max_var = max(max_var, linestat.attvar)
-                if linestat.gmsmodelcode == sched.modelcode and linestat.gmsvar:
-                    max_var = max(max_var, linestat.gmsvar)
-                if linestat.inmodelcode == sched.modelcode and linestat.invar:
-                    max_var = max(max_var, linestat.invar)
-                if linestat.outmodelcode == sched.modelcode and linestat.outvar:
-                    max_var = max(max_var, linestat.outvar)
+                if action == 'clear':
+                    # Discard & Clear
+                    sched.plan = sched.act
+                elif action == 'continue':
+                    max_var = 0
+                    if linestat.crsmodelcode and linestat.crsmodelcode.strip() == s_model and linestat.crsvar:
+                        max_var = max(max_var, linestat.crsvar)
+                    if linestat.attmodelcode and linestat.attmodelcode.strip() == s_model and linestat.attvar:
+                        max_var = max(max_var, linestat.attvar)
+                    if linestat.gmsmodelcode and linestat.gmsmodelcode.strip() == s_model and linestat.gmsvar:
+                        max_var = max(max_var, linestat.gmsvar)
+                    if linestat.inmodelcode and linestat.inmodelcode.strip() == s_model and linestat.invar:
+                        max_var = max(max_var, linestat.invar)
+                    if linestat.outmodelcode and linestat.outmodelcode.strip() == s_model and linestat.outvar:
+                        max_var = max(max_var, linestat.outvar)
+                        
+                    final_plan = max_var
                     
-                final_plan = max_var
-                
-                # If they updated the plan for the CRS model, check if it's higher
-                if linestat.crsmodelcode == sched.modelcode and crs_new_plan:
-                    try:
-                        crs_plan_val = int(crs_new_plan)
-                        if crs_plan_val > final_plan:
-                            final_plan = crs_plan_val
-                    except ValueError:
-                        pass
-                
-                if final_plan > 0:
-                    # Fix 4: Check for existing today-schedule to avoid UniqueConstraint crash
-                    existing = WorkSched.query.filter_by(lineno=lineno, date=today_date, modelcode=sched.modelcode).first()
-                    if existing:
-                        existing.plan += final_plan
-                    else:
-                        new_sched = WorkSched(
-                            lineno=lineno,
-                            seq=next_seq,
-                            modelcode=sched.modelcode,
-                            plan=final_plan,
-                            act=0, 
-                            takttime=sched.takttime,
-                            date=today_date
-                        )
-                        db.session.add(new_sched)
-                        next_seq += 1
+                    # If they updated the plan for the CRS model, check if it's higher
+                    if linestat.crsmodelcode and linestat.crsmodelcode.strip() == s_model and crs_new_plan:
+                        try:
+                            crs_plan_val = int(crs_new_plan)
+                            if crs_plan_val > final_plan:
+                                final_plan = crs_plan_val
+                        except ValueError:
+                            pass
                     
-                sched.plan = sched.act
-        
-        # Fix 3: Transition linestat.active_date to today so the SP's sequence
-        # lookup finds today's newly created schedules instead of yesterday's.
-        if linestat:
-            linestat.active_date = today_date
-            linestat.updtime = datetime.now()
+                    if final_plan > 0:
+                        # Fix 4: Check for existing today-schedule to avoid UniqueConstraint crash
+                        existing = WorkSched.query.filter_by(lineno=lineno, date=today_date, modelcode=sched.modelcode).first()
+                        if existing:
+                            existing.plan += final_plan
+                        else:
+                            new_sched = WorkSched(
+                                lineno=lineno,
+                                seq=next_seq,
+                                modelcode=sched.modelcode,
+                                plan=final_plan,
+                                act=0, 
+                                takttime=sched.takttime,
+                                date=today_date
+                            )
+                            db.session.add(new_sched)
+                            next_seq += 1
+                        
+                    sched.plan = sched.act
 
+        if action == 'clear':
+            if linestat:
+                from datetime import datetime
+                linestat.status = 'No Work'
+                linestat.active_date = None
+                linestat.crsmodelcode = None
+                linestat.crsvar = 0
+                linestat.attmodelcode = None
+                linestat.attvar = 0
+                linestat.gmsmodelcode = None
+                linestat.gmsvar = 0
+                linestat.inmodelcode = None
+                linestat.invar = 0
+                linestat.inunique = None
+                linestat.inpart1mod = None
+                linestat.inpart1desc = None
+                linestat.inpart2mod = None
+                linestat.inpart2desc = None
+                linestat.inpart3mod = None
+                linestat.inpart3desc = None
+                linestat.inpart4mod = None
+                linestat.inpart4desc = None
+                linestat.inpart5mod = None
+                linestat.inpart5desc = None
+                linestat.inpart6mod = None
+                linestat.inpart6desc = None
+                linestat.outmodelcode = None
+                linestat.outvar = 0
+                linestat.outpart1mod = None
+                linestat.outpart1desc = None
+                linestat.outpart2mod = None
+                linestat.outpart2desc = None
+                linestat.outpart3mod = None
+                linestat.outpart3desc = None
+                linestat.compmod = None
+                linestat.fan1mod = None
+                linestat.fan2mod = None
+                linestat.crspart1mod = None
+                linestat.crspart1desc = None
+                linestat.crspart2mod = None
+                linestat.crspart2desc = None
+                linestat.crspart3mod = None
+                linestat.crspart3desc = None
+                linestat.crspart4mod = None
+                linestat.crspart4desc = None
+                linestat.area = None
+                linestat.serialstart = None
+                linestat.gascharge = 0
+                linestat.gmstolpos = 0
+                linestat.gmstolneg = 0
+                linestat.outmodel = None
+                linestat.wcimodelcode = None
+                linestat.wcivar = 0
+                linestat.ritmodelcode = None
+                linestat.ritvar = 0
+                linestat.ritprogh = None
+                linestat.ritprogf = None
+                linestat.ritdata1 = None
+                linestat.ritdata1tolpos = None
+                linestat.ritdata1tolneg = None
+                linestat.ritdata2 = None
+                linestat.ritdata2tolpos = None
+                linestat.ritdata2tolneg = None
+                linestat.ritdata3 = None
+                linestat.ritdata3tolpos = None
+                linestat.ritdata3tolneg = None
+                linestat.ritheat1 = None
+                linestat.ritheat2 = None
+                linestat.fitmodelcode = None
+                linestat.fitvar = 0
+                linestat.fitdata1 = None
+                linestat.fitdata1tolpos = None
+                linestat.fitdata1tolneg = None
+                linestat.fitdata2 = None
+                linestat.fitdata2tolpos = None
+                linestat.fitdata2tolneg = None
+                linestat.pitmodelcode = None
+                linestat.pitvar = 0
+                linestat.pittws = None
+                linestat.updtime = datetime.now()
+        elif action == 'continue':
+            # Fix 3: Transition linestat.active_date to today so the SP's sequence
+            # lookup finds today's newly created schedules instead of yesterday's.
+            if linestat:
+                from datetime import datetime
+                linestat.active_date = today_date
+                linestat.updtime = datetime.now()
         db.session.commit()
-
+        
         # If the belt has no active models (all were unstarted ghost schedules),
         # initialize linestat from the new today-schedules at seq 0.
         # Otherwise, bump updtime so the PLC knows new queued work exists.
@@ -526,7 +554,6 @@ def wip_resolve():
 
 @admin_bp.route('/admin/api/next-sequence', methods=['GET'])
 @login_required
-@admin_required
 def get_next_sequence():
     line_id = request.args.get('line_id', '1')
     date_str = request.args.get('date')
@@ -546,7 +573,6 @@ def get_next_sequence():
 
 @admin_bp.route('/admin/api/schedule', methods=['POST'])
 @login_required
-@admin_required
 def add_schedule():
     data = request.get_json()
     raw_line = data.get('line_id', 1)
@@ -608,7 +634,6 @@ def add_schedule():
 
 @admin_bp.route('/admin/api/schedule/<int:sid>', methods=['PUT', 'DELETE'])
 @login_required
-@admin_required
 def edit_delete_schedule(sid):
     sched = db.get_or_404(WorkSched, sid)
     
@@ -763,8 +788,18 @@ def edit_delete_schedule(sid):
             diff = new_plan - sched.plan
             
             if diff != 0:
-                if diff < 0 and new_plan < sched.act:
-                    return jsonify({'success': False, 'error': f'Cannot decrease plan below completed units ({sched.act}).'})
+                # ── Hard floor: count units that have physically entered the line ──
+                # sched.act only reflects PIT-completed units. CRS is the entry
+                # point, so any unit scanned there is already "in the pipeline".
+                from sqlalchemy import text as sa_text
+                crs_count = db.session.query(func.count(CRS.id)).filter(
+                    CRS.modelcode == sched.modelcode,
+                    CRS.lineno == sched.lineno,
+                    func.date(CRS.time) == sched.date
+                ).scalar() or 0
+                floor = max(sched.act, crs_count)
+                if diff < 0 and new_plan < floor:
+                    return jsonify({'success': False, 'error': f'Cannot decrease plan below {floor} — {crs_count} unit(s) already scanned at CRS ({sched.act} completed at PIT).'})
                 
                 stations_to_awaken = []
                 
@@ -834,7 +869,6 @@ def edit_delete_schedule(sid):
 
 @admin_bp.route('/admin/api/module-schedules', methods=['GET', 'PUT', 'DELETE'])
 @login_required
-@admin_required
 def module_schedules():
     if request.method == 'GET':
         return jsonify({'module_schedules': []})
@@ -861,7 +895,6 @@ def get_models():
 
 @admin_bp.route('/admin/api/model', methods=['POST'])
 @login_required
-@admin_required
 def add_model():
     return jsonify({
         'success': False,
@@ -870,7 +903,6 @@ def add_model():
 
 @admin_bp.route('/admin/api/model/<modelcode>', methods=['DELETE'])
 @login_required
-@admin_required
 def delete_model(modelcode):
     """Delete all BOM rows and modelref for the given model code."""
     if is_model_active_on_schedule(modelcode):
@@ -908,7 +940,6 @@ def get_all_modelrefs():
 
 @admin_bp.route('/admin/api/modelref/<modelcode>', methods=['PUT'])
 @login_required
-@admin_required
 def update_modelref(modelcode):
     if is_model_active_on_schedule(modelcode):
         return jsonify({'success': False, 'error': 'Cannot edit: Model is currently active on the work schedule.'}), 400
@@ -1063,7 +1094,6 @@ def is_production_running():
 
 @admin_bp.route('/admin/api/bom', methods=['POST'])
 @login_required
-@admin_required
 def add_bom():
     data = request.get_json()
     modelcode = data.get('modelcode', '')
@@ -1089,7 +1119,6 @@ def add_bom():
 
 @admin_bp.route('/admin/api/bom/<int:bid>', methods=['PUT', 'DELETE'])
 @login_required
-@admin_required
 def edit_delete_bom(bid):
     part = db.get_or_404(PartRef, bid)
     
@@ -1684,12 +1713,13 @@ def get_spamsi_data():
             'serial': r.serial, 
             'inspector': r.inspector or '—', 
             'inserial': r.inserial,
-            'part1mod': r.part1mod, 'part1desc': r.part1desc, 'part1serial': r.part1serial,
-            'part2mod': r.part2mod, 'part2desc': r.part2desc, 'part2serial': r.part2serial,
-            'part3mod': r.part3mod, 'part3desc': r.part3desc, 'part3serial': r.part3serial,
-            'part4mod': r.part4mod, 'part4desc': r.part4desc, 'part4serial': r.part4serial,
-            'part5mod': r.part5mod, 'part5desc': r.part5desc, 'part5serial': r.part5serial,
-            'part6mod': r.part6mod, 'part6desc': r.part6desc, 'part6serial': r.part6serial,
+            'inserial_det': parse_serial_dates(r.inserial),
+            'part1mod': r.part1mod, 'part1desc': r.part1desc, 'part1serial': r.part1serial, 'part1_det': parse_serial_dates(r.part1serial),
+            'part2mod': r.part2mod, 'part2desc': r.part2desc, 'part2serial': r.part2serial, 'part2_det': parse_serial_dates(r.part2serial),
+            'part3mod': r.part3mod, 'part3desc': r.part3desc, 'part3serial': r.part3serial, 'part3_det': parse_serial_dates(r.part3serial),
+            'part4mod': r.part4mod, 'part4desc': r.part4desc, 'part4serial': r.part4serial, 'part4_det': parse_serial_dates(r.part4serial),
+            'part5mod': r.part5mod, 'part5desc': r.part5desc, 'part5serial': r.part5serial, 'part5_det': parse_serial_dates(r.part5serial),
+            'part6mod': r.part6mod, 'part6desc': r.part6desc, 'part6serial': r.part6serial, 'part6_det': parse_serial_dates(r.part6serial),
             'lineno': r.lineno
         } for r in records]
     })
@@ -1717,9 +1747,10 @@ def get_spamso_data():
             'inspector': r.inspector or '—', 
             'outmodel': r.outmodel,
             'outserial': r.outserial,
-            'part1mod': r.part1mod, 'part1desc': r.part1desc, 'part1serial': r.part1serial,
-            'part2mod': r.part2mod, 'part2desc': r.part2desc, 'part2serial': r.part2serial,
-            'part3mod': r.part3mod, 'part3desc': r.part3desc, 'part3serial': r.part3serial,
+            'outserial_det': parse_serial_dates(r.outserial),
+            'part1mod': r.part1mod, 'part1desc': r.part1desc, 'part1serial': r.part1serial, 'part1_det': parse_serial_dates(r.part1serial),
+            'part2mod': r.part2mod, 'part2desc': r.part2desc, 'part2serial': r.part2serial, 'part2_det': parse_serial_dates(r.part2serial),
+            'part3mod': r.part3mod, 'part3desc': r.part3desc, 'part3serial': r.part3serial, 'part3_det': parse_serial_dates(r.part3serial),
             'lineno': r.lineno
         } for r in records]
     })
@@ -1741,7 +1772,7 @@ def get_wci_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'inspector': r.inspector or '—', 'status1': r.status1 or '', 'status2': r.status2 or '', 'status3': r.status3 or '', 'status4': r.status4 or '', 'status5': r.status5 or '', 'status6': r.status6 or '', 'status7': r.status7 or '', 'remarks': 'Past NG History' if ng.get(r.serial) else 'No remarks'} for r in records]
+        'records': [{'id': r.id, 'lineno': r.lineno or '—', 'time': r.time.strftime('%Y-%m-%d %H:%M:%S'), 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'inspector': r.inspector or '—', 'status1': r.status1 or '', 'status2': r.status2 or '', 'status3': r.status3 or '', 'status4': r.status4 or '', 'status5': r.status5 or '', 'status6': r.status6 or '', 'status7': r.status7 or '', 'remarks': 'Past NG History' if ng.get(r.serial) else 'No remarks'} for r in records]
     })
 
 @admin_bp.route('/admin/api/rit-data', methods=['GET'])
@@ -1759,7 +1790,7 @@ def get_rit_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'inspector': r.inspector or '—', 'status1': r.status1 or '', 'status2': r.status2 or '', 'status3': r.status3 or '', 'status4': r.status4 or '', 'status5': r.status5 or '', 'status6': r.status6 or '', 'status7': r.status7 or '', 'status8': r.status8 or '', 'status9': r.status9 or '', 'status10': r.status10 or '', 'data1': str(r.data1) if r.data1 is not None else '', 'data2': str(r.data2) if r.data2 is not None else '', 'data3': str(r.data3) if r.data3 is not None else '', 'progh': r.progh or '', 'progf': r.progf or '', 'remarks': 'Past NG History' if ng.get(r.serial) else 'No remarks'} for r in records]
+        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'inspector': r.inspector or '—', 'status1': r.status1 or '', 'status2': r.status2 or '', 'status3': r.status3 or '', 'status4': r.status4 or '', 'status5': r.status5 or '', 'status6': r.status6 or '', 'status7': r.status7 or '', 'status8': r.status8 or '', 'status9': r.status9 or '', 'status10': r.status10 or '', 'data1': str(r.data1) if r.data1 is not None else '', 'data2': str(r.data2) if r.data2 is not None else '', 'data3': str(r.data3) if r.data3 is not None else '', 'progh': r.progh or '', 'progf': r.progf or '', 'lineno': r.lineno or ''} for r in records]
     })
 
 
@@ -1768,7 +1799,7 @@ def get_rit_data():
 @admin_bp.route('/admin/api/pit-data', methods=['GET'])
 def get_pit_data():
     page = request.args.get('page', 1, type=int)
-    per_page = 50
+    per_page = request.args.get('per_page', 50, type=int)
     sort_by = request.args.get('sort_by', 'time')
     sort_dir = request.args.get('sort_dir', 'desc')
     date_filter = request.args.get('date', '')
@@ -1815,7 +1846,7 @@ def get_pit_data():
         'total': pagination.total,
         'page': page,
         'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'status1': r.status1, 'status2': r.status2, 'status3': r.status3, 'status4': r.status4, 'inspector': r.inspector or '—'} for r in pagination.items]
+        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'status1': r.status1, 'status2': r.status2, 'status3': r.status3, 'status4': r.status4, 'inspector': r.inspector or '—', 'lineno': r.lineno or '—'} for r in pagination.items]
     })
 
 @admin_bp.route('/admin/api/pit-data/<int:id>', methods=['PUT', 'DELETE'])
@@ -1854,7 +1885,7 @@ def get_fit_data():
     ng = _check_ng_history(records)
     return jsonify({
         'total': total, 'page': page, 'per_page': per_page,
-        'records': [{'id': r.id, 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'inspector': r.inspector or '—', 'status1': r.status1 or '', 'status2': r.status2 or '', 'status3': r.status3 or '', 'data1': float(r.data1) if r.data1 is not None else '', 'data2': float(r.data2) if r.data2 is not None else '', 'status4': r.status4 or '', 'status5': r.status5 or '', 'status6': r.status6 or '', 'status7': r.status7 or '', 'status8': r.status8 or '', 'status9': r.status9 or '', 'status10': r.status10 or '', 'remarks': 'Past NG History' if ng.get(r.serial) else 'No remarks'} for r in records]
+        'records': [{'id': r.id, 'lineno': r.lineno or '—', 'time': r.time.strftime('%Y-%m-%d %H:%M:%S') if r.time else '', 'modelcode': r.modelcode, 'serial': r.serial, 'overallstatus': r.overallstatus, 'inspector': r.inspector or '—', 'status1': r.status1 or '', 'status2': r.status2 or '', 'status3': r.status3 or '', 'data1': float(r.data1) if r.data1 is not None else '', 'data2': float(r.data2) if r.data2 is not None else '', 'status4': r.status4 or '', 'status5': r.status5 or '', 'status6': r.status6 or '', 'status7': r.status7 or '', 'status8': r.status8 or '', 'status9': r.status9 or '', 'status10': r.status10 or '', 'remarks': 'Past NG History' if ng.get(r.serial) else 'No remarks'} for r in records]
     })
 
 
@@ -1968,7 +1999,6 @@ def get_prod_tag_tracker():
 
 @admin_bp.route('/sys/api/lines', methods=['GET'])
 @login_required
-@admin_required
 def sys_get_lines():
     lines = Line.query.order_by(Line.lineno).all()
     return jsonify([{
@@ -2037,7 +2067,6 @@ def get_active_lines():
 
 @admin_bp.route('/sys/api/modules', methods=['GET'])
 @login_required
-@admin_required
 def get_modules():
     modules = Module.query.order_by(Module.id).all()
     return jsonify([{
@@ -2099,7 +2128,6 @@ def get_active_modules():
 
 @admin_bp.route('/sys/api/tags', methods=['GET'])
 @login_required
-@admin_required
 def get_tags():
     tags = Tag.query.order_by(Tag.id).all()
     return jsonify([{
@@ -2161,7 +2189,6 @@ def get_active_tags():
 # the line-state stored procedure and is intentionally not a foreign key.
 @admin_bp.route('/sys/api/areas', methods=['GET'])
 @login_required
-@admin_required
 def get_areas():
     areas = Area.query.order_by(Area.id).all()
     return jsonify([{
@@ -2247,7 +2274,6 @@ def get_active_areas():
 
 @admin_bp.route('/sys/api/users', methods=['GET'])
 @login_required
-@admin_required
 def get_users():
     users = User.query.order_by(User.role, User.username).all()
     return jsonify([{
@@ -2403,16 +2429,7 @@ def print_specific_qc():
         barcode_arv_date = parsed_dates[1]
         
         arv_date = barcode_arv_date
-        if not arv_date:
-            if part.module.upper() == 'CRS':
-                arv_date = crs_record.time.strftime("%m/%d/%Y") if crs_record.time else ""
-            elif part.module.upper() == 'SPAMSI':
-                arv_date = spamsi_record.time.strftime("%m/%d/%Y") if spamsi_record and spamsi_record.time else ""
-            elif part.module.upper() == 'SPAMSO':
-                arv_date = spamso_record.time.strftime("%m/%d/%Y") if spamso_record and spamso_record.time else ""
-            elif part.module.upper() == 'PACKAGING':
-                arv_date = pit_record.time.strftime("%m/%d/%Y") if pit_record and pit_record.time else ""
-            
+
         parts_list.append({
             'partno': part.partno,
             'partdesc': part.partdesc,
@@ -2445,7 +2462,6 @@ def print_specific_qc():
 
 @admin_bp.route('/admin/api/linestat-viewer', methods=['GET'])
 @login_required
-@admin_required
 def get_linestat_viewer():
     from app.models.linestat import LineStat
     try:
@@ -2717,7 +2733,6 @@ def post_conveyor_action():
 
 @admin_bp.route('/admin/api/shifts', methods=['GET', 'POST'])
 @login_required
-@admin_required
 def api_shifts():
     if request.method == 'GET':
         try:
@@ -2756,7 +2771,6 @@ def api_shifts():
 
 @admin_bp.route('/admin/api/shifts/<int:shift_id>', methods=['PUT', 'DELETE'])
 @login_required
-@admin_required
 def api_shift_detail(shift_id):
     shift = Shift.query.get_or_404(shift_id)
 
@@ -2973,7 +2987,22 @@ def create_transfer_slip():
     db.session.add(new_slip)
     db.session.commit()
     
+    # 4. Trigger CSV Generation automatically on manual creation
+    from app.services.csv_generator import generate_transfer_slip_csv
+    generate_transfer_slip_csv(new_slip.id)
+    
     return jsonify({'success': True, 'slip_id': new_slip.id, 'ref_number': new_slip.ref_number})
+
+@admin_bp.route('/admin/api/trigger-transfer-csv/<int:slip_id>', methods=['POST'])
+@login_required
+def trigger_transfer_csv(slip_id):
+    """Trigger the generation of the Transfer Slip CSV manually."""
+    from app.services.csv_generator import generate_transfer_slip_csv
+    success = generate_transfer_slip_csv(slip_id)
+    if success:
+        return jsonify({'success': True, 'message': 'CSV generated successfully on the server.'})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to generate CSV. Check server logs.'}), 500
 
 
 @admin_bp.route('/admin/print-transfer-slip/<int:slip_id>', methods=['GET'])
@@ -3018,10 +3047,15 @@ def print_transfer_slip(slip_id):
     
     if serials:
         pit_records = PIT.query.filter(PIT.serial.in_(serials)).all()
-        times = [p.time for p in pit_records if p.time]
-        if times:
-            start_time = min(times).strftime('%H:%M:%S')
-            end_time = max(times).strftime('%H:%M:%S')
+        pit_times = [p.time for p in pit_records if p.time]
+        if pit_times:
+            end_time = max(pit_times).strftime('%H:%M:%S')
+            
+        from app.models.crs import CRS
+        crs_records = CRS.query.filter(CRS.serial.in_(serials)).all()
+        crs_times = [c.time for c in crs_records if c.time]
+        if crs_times:
+            start_time = min(crs_times).strftime('%H:%M:%S')
 
     return render_template(
         'admin/print_transfer_slip.html', 

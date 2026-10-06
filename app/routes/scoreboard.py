@@ -34,8 +34,6 @@ def line_scoreboard(line_no):
 @scoreboard_bp.route('/api/scoreboard/data', methods=['GET'])
 def get_scoreboard_data():
     date_str = request.args.get('date', '').strip()
-    if not date_str:
-        date_str = datetime.now().strftime('%Y-%m-%d')
     line_no = request.args.get('line')
     if line_no == 'all':
         line_no = None
@@ -168,8 +166,6 @@ def get_scoreboard_logs():
         
     limit = request.args.get('limit', 15, type=int)
     date_str = request.args.get('date', '').strip()
-    if not date_str:
-        date_str = datetime.now().strftime('%Y-%m-%d')
     
     model_filter = request.args.get('model', '').strip()
     sort_order = request.args.get('sort', 'desc').strip().lower()
@@ -257,8 +253,6 @@ def get_scoreboard_models():
         line_no = None
         
     date_str = request.args.get('date', '').strip()
-    if not date_str:
-        date_str = datetime.now().strftime('%Y-%m-%d')
     
     target_date = None
     if date_str:

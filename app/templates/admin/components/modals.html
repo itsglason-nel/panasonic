@@ -183,7 +183,11 @@
 
             <div class="form-group">
                 <label>Quantity:</label>
-                <input type="number" id="sched-qty" min="1" placeholder="Enter Quantity">
+                <div style="display: flex; gap: 8px;">
+                    <input type="number" id="sched-qty" min="1" placeholder="Enter Quantity" style="flex: 1;" oninput="checkSchedQtyWarning()">
+                    <button type="button" class="btn btn-secondary" id="sched-btn-crs" style="display: none; padding: 0 12px; font-size: 13px;" onclick="setPlanToCRS()">Set to Actual (CRS)</button>
+                </div>
+                <div id="sched-qty-warning" style="display: none; color: #d97706; font-size: 12px; margin-top: 6px; padding: 8px; background-color: #fef3c7; border-radius: 4px; border: 1px solid #fde68a;"></div>
             </div>
 
             <div class="form-group">
@@ -796,32 +800,22 @@
             <div
                 style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
-                        / Time</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date / Time</span>
                     <strong id="crs-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Line
-                        No</span>
-                    <strong id="crs-det-lineno" style="font-size: 14px; color: var(--text-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
-                        Code</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model Code</span>
                     <strong id="crs-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="crs-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Inspector</span>
-                    <strong id="crs-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 4px;">
+                        <span id="crs-det-status" class="status-badge status-ok" style="font-size: 13px; padding: 4px 10px;">MATCHED</span>
+                    </div>
                 </div>
             </div>
 
@@ -970,7 +964,15 @@
                 </div>
             </div>
 
-            <div class="modal-actions" style="margin-top: 24px;">
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <div><span style="color:var(--text-secondary);">Inspector:</span> <strong id="crs-det-inspector" style="color: var(--text-primary);"></strong></div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong id="crs-det-lineno" style="color: var(--text-primary);"></strong></div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; position: sticky; bottom: 0; background: white; padding: 16px 0; margin: 0; border-top: 1px solid var(--border-light); z-index: 10; box-shadow: 0 20px 0 20px white;">
                 <button class="btn btn-secondary" onclick="closeCRSDetailsModal()">Close</button>
             </div>
         </div>
@@ -989,32 +991,21 @@
             <div
                 style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
-                        / Time</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date / Time</span>
                     <strong id="att-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
-                        Code</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model Code</span>
                     <strong id="att-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="att-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Line
-                        No</span>
-                    <strong id="att-det-lineno" style="font-size: 14px; color: var(--text-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Inspector</span>
-                    <strong id="att-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 4px;" id="att-det-top-status">
+                    </div>
                 </div>
             </div>
 
@@ -1023,7 +1014,7 @@
                 <div
                     style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
                     <h4
-                        style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                        style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center;">
                         Inspection Statuses</h4>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; justify-content: space-between; font-size: 13px;">
@@ -1050,7 +1041,7 @@
                 <div
                     style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
                     <h4
-                        style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                        style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center;">
                         Brazzer Operators</h4>
                     <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
                         <div style="display: flex; justify-content: space-between;">
@@ -1085,6 +1076,14 @@
                 </div>
             </div>
 
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <div><span style="color:var(--text-secondary);">Inspector:</span> <strong id="att-det-inspector" style="color: var(--text-primary);"></strong></div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong id="att-det-lineno" style="color: var(--text-primary);"></strong></div>
+                </div>
+            </div>
+
             <div class="modal-actions" style="margin-top: 24px;">
                 <button class="btn btn-secondary" onclick="closeATTDetailsModal()">Close</button>
             </div>
@@ -1094,36 +1093,31 @@
 
 <!-- GMS Details Modal -->
 <div id="modal-gms-details" class="modal-overlay">
-    <div class="modal-content" style="max-width: 500px; width: 95%;">
+    <div class="modal-content" style="max-width: 600px; width: 95%;">
         <div class="modal-header">
             <h3 class="modal-title">Gas Management System Record Details</h3>
             <button class="modal-close" onclick="closeGMSDetailsModal()">&times;</button>
         </div>
         <div class="modal-body">
+            <!-- Header Info -->
             <div
-                style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
-                        / Time</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date / Time</span>
                     <strong id="gms-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
-                        Code</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model Code</span>
                     <strong id="gms-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="gms-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Line
-                        No</span>
-                    <strong id="gms-det-lineno" style="font-size: 14px; color: var(--text-primary);"></strong>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 4px;" id="gms-det-top-status">
+                    </div>
                 </div>
             </div>
 
@@ -1131,7 +1125,7 @@
                 <div
                     style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
                     <h4
-                        style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                        style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center;">
                         Inspection Status</h4>
                     <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1145,22 +1139,13 @@
                         </div>
                     </div>
                 </div>
-                <div
-                    style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
-                    <h4
-                        style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
-                        Additional Information</h4>
-                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color:var(--text-secondary);">Inspector:</span>
-                            <strong id="gms-det-inspector" style="color: var(--text-primary);"></strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <span style="color:var(--text-secondary);">Remarks:</span>
-                            <strong id="gms-det-remarks"
-                                style="color: var(--text-primary); max-width: 60%; text-align: right; word-wrap: break-word;"></strong>
-                        </div>
-                    </div>
+            </div>
+
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <div><span style="color:var(--text-secondary);">Inspector:</span> <strong id="gms-det-inspector" style="color: var(--text-primary);"></strong></div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong id="gms-det-lineno" style="color: var(--text-primary);"></strong></div>
                 </div>
             </div>
 
@@ -1476,9 +1461,13 @@
                         style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="insp3run-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
-                <div style="flex: 1; min-width: 80px; text-align: right;">
-                    <span id="insp3run-det-status" class="status-badge"
-                        style="font-size: 13px; padding: 4px 10px;"></span>
+                <div style="flex: 1; min-width: 120px;">
+                    <span
+                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 2px;">
+                        <span id="insp3run-det-status" class="status-badge"
+                            style="font-size: 13px; padding: 4px 10px;"></span>
+                    </div>
                 </div>
             </div>
 
@@ -1486,7 +1475,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                 <!-- Operational Checks -->
                 <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center;">
                         Operational Checks</h4>
                     <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
                         <div style="display: flex; justify-content: space-between;"><span style="color:var(--text-secondary);">Airswing:</span><strong id="insp3run-det-airswing" style="color: var(--text-primary);"></strong></div>
@@ -1499,7 +1488,7 @@
 
                 <!-- Cooling & Heating Tubes -->
                 <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center;">
                         Cooling & Heating Tubes</h4>
                     <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
                         <div style="display: flex; justify-content: space-between;"><span style="color:var(--text-secondary);">Evap Cooling:</span><strong id="insp3run-det-evapc" style="color: var(--text-primary);"></strong></div>
@@ -1511,7 +1500,7 @@
 
                 <!-- Performance Metrics -->
                 <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 16px;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: center; text-align: center;">
                         Performance Measurements</h4>
                     <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
                         <div style="display: flex; justify-content: space-between;"><span style="color:var(--text-secondary);">Op Current:</span><div style="display:flex; gap: 8px;"><span id="insp3run-det-curr" style="color: var(--text-secondary);"></span><strong id="insp3run-det-curr-status" style="color: var(--text-primary);"></strong></div></div>
@@ -1524,11 +1513,11 @@
             <!-- Meta info -->
             <div
                 style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
-                <div style="display: flex; gap: 24px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
                     <div><span style="color:var(--text-secondary);">Inspector:</span> <strong
                             id="insp3run-det-inspector" style="color: var(--text-primary);"></strong></div>
-                    <div style="flex: 1;"><span style="color:var(--text-secondary);">Remarks:</span> <strong
-                            id="insp3run-det-remarks" style="color: var(--text-primary);"></strong></div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong
+                            id="insp3run-det-lineno" style="color: var(--text-primary);"></strong></div>
                 </div>
             </div>
 
@@ -1794,45 +1783,27 @@
         <div class="modal-body">
             <!-- Header Info -->
             <div
-                style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
-                        / Time</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date / Time</span>
                     <strong id="spamsi-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Line
-                        No</span>
-                    <strong id="spamsi-det-lineno" style="font-size: 14px; color: var(--text-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
-                        Code</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model Code</span>
                     <strong id="spamsi-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="spamsi-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Indoor
-                        Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Indoor Serial</span>
                     <strong id="spamsi-det-inserial" style="font-size: 14px; color: var(--accent-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Inspector</span>
-                    <strong id="spamsi-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
             </div>
 
             <h4
-                style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                 Safety Parts Scans</h4>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
@@ -1852,6 +1823,10 @@
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamsi-det-p1serial" style="font-weight:500; font-family:var(--font-mono);"></span>
                     </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamsi-det-p1mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamsi-det-p1arv" style="font-weight:500;"></span></div>
+                    </div>
                 </div>
 
                 <!-- Part 2 -->
@@ -1868,6 +1843,10 @@
                             style="font-weight:500;"></span></div>
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamsi-det-p2serial" style="font-weight:500; font-family:var(--font-mono);"></span>
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamsi-det-p2mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamsi-det-p2arv" style="font-weight:500;"></span></div>
                     </div>
                 </div>
 
@@ -1886,6 +1865,10 @@
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamsi-det-p3serial" style="font-weight:500; font-family:var(--font-mono);"></span>
                     </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamsi-det-p3mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamsi-det-p3arv" style="font-weight:500;"></span></div>
+                    </div>
                 </div>
 
                 <!-- Part 4 -->
@@ -1902,6 +1885,10 @@
                             style="font-weight:500;"></span></div>
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamsi-det-p4serial" style="font-weight:500; font-family:var(--font-mono);"></span>
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamsi-det-p4mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamsi-det-p4arv" style="font-weight:500;"></span></div>
                     </div>
                 </div>
 
@@ -1920,6 +1907,10 @@
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamsi-det-p5serial" style="font-weight:500; font-family:var(--font-mono);"></span>
                     </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamsi-det-p5mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamsi-det-p5arv" style="font-weight:500;"></span></div>
+                    </div>
                 </div>
 
                 <!-- Part 6 -->
@@ -1937,8 +1928,26 @@
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamsi-det-p6serial" style="font-weight:500; font-family:var(--font-mono);"></span>
                     </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamsi-det-p6mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamsi-det-p6arv" style="font-weight:500;"></span></div>
+                    </div>
                 </div>
 
+            </div>
+
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <div style="display: flex; gap: 24px;">
+                        <div><span style="color:var(--text-secondary);">Inspector:</span> <strong id="spamsi-det-inspector" style="color: var(--text-primary);"></strong></div>
+                    </div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong id="spamsi-det-lineno" style="color: var(--text-primary);"></strong></div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; position: sticky; bottom: 0; background: var(--bg-main); padding: 16px 0 0 0; box-shadow: 0 -10px 10px -10px var(--bg-main), 0 20px 0 20px var(--bg-main); z-index: 10;">
+                <button class="btn btn-secondary" onclick="closeSPAMSIDetailsModal()">Close</button>
             </div>
         </div>
     </div>
@@ -1954,51 +1963,31 @@
         <div class="modal-body">
             <!-- Header Info -->
             <div
-                style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
-                        / Time</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date / Time</span>
                     <strong id="spamso-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Line
-                        No</span>
-                    <strong id="spamso-det-lineno" style="font-size: 14px; color: var(--text-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
-                        Code</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model Code</span>
                     <strong id="spamso-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="spamso-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Outdoor
-                        Model</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Outdoor Model</span>
                     <strong id="spamso-det-outmodel" style="font-size: 14px; color: var(--accent-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Outdoor
-                        Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Outdoor Serial</span>
                     <strong id="spamso-det-outserial" style="font-size: 14px; color: var(--accent-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Inspector</span>
-                    <strong id="spamso-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
             </div>
 
             <h4
-                style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                 Safety Parts Scans</h4>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
@@ -2018,6 +2007,10 @@
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamso-det-p1serial" style="font-weight:500; font-family:var(--font-mono);"></span>
                     </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamso-det-p1mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamso-det-p1arv" style="font-weight:500;"></span></div>
+                    </div>
                 </div>
 
                 <!-- Part 2 -->
@@ -2034,6 +2027,10 @@
                             style="font-weight:500;"></span></div>
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamso-det-p2serial" style="font-weight:500; font-family:var(--font-mono);"></span>
+                    </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamso-det-p2mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamso-det-p2arv" style="font-weight:500;"></span></div>
                     </div>
                 </div>
 
@@ -2052,8 +2049,26 @@
                     <div style="font-size: 13px;"><span style="color:var(--text-secondary);">Serial:</span> <span
                             id="spamso-det-p3serial" style="font-weight:500; font-family:var(--font-mono);"></span>
                     </div>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-light);">
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Mfg Date:</span> <span id="spamso-det-p3mfg" style="font-weight:500;"></span></div>
+                        <div style="font-size: 12px; margin-bottom: 2px;"><span style="color:var(--text-secondary);">Arv Date:</span> <span id="spamso-det-p3arv" style="font-weight:500;"></span></div>
+                    </div>
                 </div>
 
+            </div>
+
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <div style="display: flex; gap: 24px;">
+                        <div><span style="color:var(--text-secondary);">Inspector:</span> <strong id="spamso-det-inspector" style="color: var(--text-primary);"></strong></div>
+                    </div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong id="spamso-det-lineno" style="color: var(--text-primary);"></strong></div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; position: sticky; bottom: 0; background: var(--bg-main); padding: 16px 0 0 0; box-shadow: 0 -10px 10px -10px var(--bg-main), 0 20px 0 20px var(--bg-main); z-index: 10;">
+                <button class="btn btn-secondary" onclick="closeSPAMSODetailsModal()">Close</button>
             </div>
         </div>
     </div>
@@ -2247,38 +2262,29 @@
         </div>
         <div class="modal-body">
             <div
-                style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
-                        / Time</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date / Time</span>
                     <strong id="wci-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
-                        Code</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model Code</span>
                     <strong id="wci-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
                     <strong id="wci-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Inspector</span>
-                    <strong id="wci-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
-                </div>
-                <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
-                    <strong id="wci-det-status" style="font-size: 14px; color: var(--text-primary);"></strong>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 2px;">
+                        <span id="wci-det-status" class="status-badge" style="font-size: 13px; padding: 4px 10px;"></span>
+                    </div>
                 </div>
             </div>
 
             <h4
-                style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                 Inspection Results</h4>
 
             <table class="data-table" style="margin-bottom: 20px;">
@@ -2314,11 +2320,18 @@
                 </tbody>
             </table>
 
-            <div class="form-group">
-                <label>Remarks / NG History</label>
-                <div id="wci-det-remarks"
-                    style="background: var(--bg-card); padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 13px; min-height: 60px; color: var(--text-secondary);">
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <div style="display: flex; gap: 24px;">
+                        <div><span style="color:var(--text-secondary);">Inspector:</span> <strong id="wci-det-inspector" style="color: var(--text-primary);"></strong></div>
+                    </div>
+                    <div style="text-align: right;"><span style="color:var(--text-secondary);">Line No.:</span> <strong id="wci-det-lineno" style="color: var(--text-primary);"></strong></div>
                 </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; position: sticky; bottom: 0; background: var(--bg-main); padding: 16px 0 0 0; box-shadow: 0 -10px 10px -10px var(--bg-main), 0 20px 0 20px var(--bg-main); z-index: 10;">
+                <button class="btn btn-secondary" onclick="closeModal('modal-wci-details')">Close</button>
             </div>
         </div>
     </div>
@@ -2326,14 +2339,14 @@
 
 <!-- Modal: FIT Details -->
 <div id="modal-fit-details" class="modal-overlay">
-    <div class="modal-content" style="max-width: 700px; width: 95%;">
+    <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
         <div class="modal-header">
             <h3 class="modal-title">Final Inspection Details</h3>
             <button class="modal-close" onclick="closeModal('modal-fit-details')">&times;</button>
         </div>
         <div class="modal-body">
             <div
-                style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
                 <div style="flex: 1; min-width: 120px;">
                     <span
                         style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
@@ -2352,15 +2365,16 @@
                     <strong id="fit-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
                 </div>
                 <div style="flex: 1; min-width: 120px;">
-                    <span
-                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Inspector</span>
-                    <strong id="fit-det-inspector" style="font-size: 14px; color: var(--text-primary);"></strong>
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 2px;">
+                        <span id="fit-det-status" class="status-badge" style="font-size: 13px; padding: 4px 10px;"></span>
+                    </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 20px;">
                 <div>
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                         Safety & Measurements</h4>
                     <table class="data-table">
                         <tbody>
@@ -2388,7 +2402,7 @@
                     </table>
                 </div>
                 <div>
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                         Labels & Tags</h4>
                     <table class="data-table">
                         <tbody>
@@ -2405,9 +2419,9 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 20px;">
                 <div>
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                         Manual & Accessories</h4>
                     <table class="data-table">
                         <tbody>
@@ -2431,7 +2445,7 @@
                     </table>
                 </div>
                 <div>
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #333; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                    <h4 style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
                         Grille Condition</h4>
                     <table class="data-table">
                         <tbody>
@@ -2444,11 +2458,101 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Remarks</label>
-                <div id="fit-det-remarks"
-                    style="background: var(--bg-card); padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 13px; min-height: 40px; color: var(--text-secondary);">
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span style="color: var(--text-secondary);">Inspector: <strong id="fit-det-inspector" style="color: var(--text-primary);"></strong></span>
+                    <span style="color: var(--text-secondary);">Line No.: <strong id="fit-det-lineno" style="color: var(--text-primary);"></strong></span>
                 </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; position: sticky; bottom: 0; background: white; padding: 16px 0; margin: 0; border-top: 1px solid var(--border-light); z-index: 10; box-shadow: 0 20px 0 20px white;">
+                <button class="btn btn-secondary" onclick="closeModal('modal-fit-details')">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: PIT Details -->
+<div id="modal-pit-details" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px; width: 95%;">
+        <div class="modal-header">
+            <h3 class="modal-title">Packaging Inspection Details</h3>
+            <button class="modal-close" onclick="closeModal('modal-pit-details')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div
+                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; background: var(--bg-main); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                <div style="flex: 1; min-width: 120px;">
+                    <span
+                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Date
+                        / Time</span>
+                    <strong id="pit-det-date" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <span
+                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Model
+                        Code</span>
+                    <strong id="pit-det-model" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <span
+                        style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Serial</span>
+                    <strong id="pit-det-serial" style="font-size: 14px; color: var(--text-primary);"></strong>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <span style="display:block; font-size: 11px; color: #333; text-transform: uppercase; font-weight: 600;">Status</span>
+                    <div style="margin-top: 2px;">
+                        <span id="pit-det-status" class="status-badge" style="font-size: 13px; padding: 4px 10px;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <h4 style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
+                        Inspection Checks</h4>
+                    <table class="data-table">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 500;">Status 1</td>
+                                <td id="pit-det-status1"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">Status 2</td>
+                                <td id="pit-det-status2"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 16px 0; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; height: 38px; display: flex; align-items: center; justify-content: flex-start; text-align: left;">
+                        &nbsp;</h4>
+                    <table class="data-table">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 500;">Status 3</td>
+                                <td id="pit-det-status3"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500;">Status 4</td>
+                                <td id="pit-det-status4"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Meta info -->
+            <div style="margin-top: 16px; padding: 12px; background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span style="color: var(--text-secondary);">Inspector: <strong id="pit-det-inspector" style="color: var(--text-primary);"></strong></span>
+                    <span style="color: var(--text-secondary);">Line No.: <strong id="pit-det-lineno" style="color: var(--text-primary);"></strong></span>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 24px; position: sticky; bottom: 0; background: white; padding: 16px 0; margin: 0; border-top: 1px solid var(--border-light); z-index: 10; box-shadow: 0 20px 0 20px white;">
+                <button class="btn btn-secondary" onclick="closeModal('modal-pit-details')">Close</button>
             </div>
         </div>
     </div>
