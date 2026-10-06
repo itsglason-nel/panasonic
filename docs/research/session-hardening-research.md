@@ -48,6 +48,9 @@ e. **Static routes / Downloads**:
 ## Recommended Order
 1. Cache-Control Header Hardening (Phase 2)
 2. Cookie Hardening (Phase 3)
+   - **Env Vars**: `HARDEN_API_CACHE` (default ON), `REQUIRE_HTTPS` (default OFF). Accepted values: 1/true/yes/on for True, 0/false/no/off for False.
+   - **Rollback**: To rollback, unset the `REQUIRE_HTTPS` env var and restart the server, or run `git revert c95a893` with a normal push.
+   - **Expected Baseline**: Cookie `session` must show HttpOnly checked, Path=/, SameSite=Lax, Secure unchecked. (Setting REQUIRE_HTTPS=True turns on Secure, which would log everyone out over plain HTTP).
 3. Per-Tab Tokens (Phase 4 - DEFERRED)
 4. Phase 5: Verification and Cleanup
    - Verify test users are gone.
