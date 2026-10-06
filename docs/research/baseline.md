@@ -28,4 +28,4 @@ User A logged out (redirects to login): True
 ## Conclusion
 The baseline system is functional and stable. 
 Login, logout, server-rendered views (`/dashboard` / `/admin`), and API fetch endpoints operate as expected.
-Cookie host-isolation behaves correctly by treating `127.0.0.1` and `localhost` as distinct entities with their own session cookies, verifying the alternative approach to Phase 4.
+Cookie host-isolation behaves correctly by treating `127.0.0.1` and `localhost` as distinct entities with their own pmpc_session cookies, verifying the alternative approach to Phase 4.

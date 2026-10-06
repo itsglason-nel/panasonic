@@ -23,13 +23,13 @@ e. **Static routes / Downloads**:
    - Serves static files from `static_folder='static'`.
 
 ## Decision on Server-Rendered Pages
-**Analysis**: Browser page navigations (Back/Forward, address bar) don't carry an `Authorization` header, so they fall back to the session cookie. This creates a mismatch risk if per-tab tokens are used.
+**Analysis**: Browser page navigations (Back/Forward, address bar) don't carry an `Authorization` header, so they fall back to the pmpc_session cookie. This creates a mismatch risk if per-tab tokens are used.
 **Decision**: We will rely on browser host isolation (e.g., `localhost` vs `127.0.0.1`) instead of per-tab tokens to handle multiple concurrent user sessions without breaking server-rendered templates. Per-tab tokens (and the associated `<meta>` tag mismatch check) are DEFERRED.
 
 ## Library Findings
 - **Flask-Login (0.6.3)**: 
-  - *Load Order & `current_user` caching*: By reading the installed 0.6.3 source code, `current_user` proxies to `_get_user()`, which caches the user on `flask.g._login_user`. Crucially, `LoginManager._load_user()` checks the session *first*. If a session cookie exists, it never calls `request_loader`. Therefore, to make the token override the cookie, we MUST use a `before_request` hook to decode the token and manually set `flask.g._login_user = user`. This completely bypasses the cookie loading.
-  - *Login Action*: Never call `login_user()` for token requests, as it writes the user ID to the session cookie.
+  - *Load Order & `current_user` caching*: By reading the installed 0.6.3 source code, `current_user` proxies to `_get_user()`, which caches the user on `flask.g._login_user`. Crucially, `LoginManager._load_user()` checks the session *first*. If a pmpc_session cookie exists, it never calls `request_loader`. Therefore, to make the token override the cookie, we MUST use a `before_request` hook to decode the token and manually set `flask.g._login_user = user`. This completely bypasses the cookie loading.
+  - *Login Action*: Never call `login_user()` for token requests, as it writes the user ID to the pmpc_session cookie.
   - *Session Protection*: `basic` only marks the session not fresh and never logs out; `strong` clears non-permanent sessions (mine).
   - *Idle Timeout*: The server-side TTL acts as an idle timeout (unverified until B2 is done).
   - *Sources*: [Flask-Login 0.6.x Source Code - `_get_user`](https://github.com/maxcountryman/flask-login/blob/0.6.3/flask_login/utils.py#L26), [Flask-Login 0.6.x Source Code - `_load_user`](https://github.com/maxcountryman/flask-login/blob/0.6.3/flask_login/login_manager.py#L329)
@@ -50,7 +50,7 @@ e. **Static routes / Downloads**:
 2. Cookie Hardening (Phase 3)
    - **Env Vars**: `HARDEN_API_CACHE` (default ON), `REQUIRE_HTTPS` (default OFF). Accepted values: 1/true/yes/on for True, 0/false/no/off for False.
    - **Rollback**: To rollback, unset the `REQUIRE_HTTPS` env var and restart the server, or run `git revert c95a893` with a normal push.
-   - **Expected Baseline**: Cookie `session` must show HttpOnly checked, Path=/, SameSite=Lax, Secure unchecked. (Setting REQUIRE_HTTPS=True turns on Secure, which would log everyone out over plain HTTP).
+   - **Expected Baseline**: Cookie `pmpc_session` must show HttpOnly checked, Path=/, SameSite=Lax, Secure unchecked. (Setting REQUIRE_HTTPS=True turns on Secure, which would log everyone out over plain HTTP).
 3. Per-Tab Tokens (Phase 4 - DEFERRED)
 4. Phase 5: Verification and Cleanup
    - Verify test users are gone.
