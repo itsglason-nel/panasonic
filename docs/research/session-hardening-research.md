@@ -47,7 +47,10 @@ e. **Static routes / Downloads**:
 ## Recommended Order
 1. Cache-Control Header Hardening (Phase 2)
 2. Cookie Hardening (Phase 3)
-3. Phase 4: Per-Tab Tokens (DEFERRED)
+3. Per-Tab Tokens (Phase 4 - DEFERRED)
+4. Phase 5: Verification and Cleanup
+   - Verify test users are gone.
+   - Flush test sessions.
 
 ## DECISION GATE: Server-Rendered Data
 **Count of templates rendering user data**: 5 (`dashboard.html`, `base.html`, `admin.html`, `admin/components/scripts.html`, `admin/components/modals.html`).
@@ -66,3 +69,6 @@ Due to the heavy reliance on server-side rendering of user data, skipping Phase 
 
 ### Risks Noted
 - **Silent Session Fallback**: In `app/__init__.py` (lines 47-61), if Redis connection fails on startup, the application silently catches the exception and falls back to `filesystem` sessions (`app/.flask_sessions/`). This means horizontal scaling or multi-process deployments could suffer from split-brain sessions without any immediate error being thrown.
+- **Live Database & Config**: Both `DevelopmentConfig` and `ProductionConfig` use the identical `plcdata` MySQL database URI. Test users (ids 4 and 5) were created directly in the live database during previous script runs.
+- **Startup Side Effects**: Calling `create_app('development')` triggers live side effects: it runs `db.create_all()`, updates the `linestat` table (`UPDATE linestat SET updtime = NOW()`), and starts three background observer threads.
+- **Test-User Deletion Record**: Test users 4 and 5 (`test_user_a`, `test_user_b`) were manually deleted using a plain PyMySQL script (`DELETE FROM users WHERE id IN (4, 5)`), and their corresponding session files were flushed from `.flask_sessions`.
