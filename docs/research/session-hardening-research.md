@@ -10,59 +10,62 @@
 a. **Usage of auth constructs**:
    - `session`, `session_ext`, `login_manager`, `before_request`, `after_request` are initialized and heavily used in `app/__init__.py`.
    - Redis is used for Flask-Session.
-   - `current_user` is widely used in templates (e.g. `base.html`, `dashboard.html`, `admin.html`) to display `current_user.username`, `full_name`, and `role`.
+   - `current_user` is widely used in templates to display `current_user.username`, `full_name`, and `role`.
    - `SECRET_KEY` is loaded in `config.py` from the environment.
 b. **Login/Logout**:
    - Login uses standard form POST to `/auth/login`, validates CSRF, uses `login_user(user)`, and redirects.
-   - Logout is a GET to `/auth/logout`, calls `logout_user()`, and redirects.
+   - Logout is a GET link to `/auth/logout`, calls `logout_user()`, and redirects.
 c. **fetch/XHR calls**:
    - Around 40+ `fetch()` calls located mostly in `app/templates/admin/components/scripts.html` and other templates.
-   - They are same-origin.
-   - `window.fetch` is already wrapped in `scripts.html` to intercept 401s and 302 redirects to `/auth/login`. This is the perfect place to inject the `Authorization` header.
+   - `window.fetch` is already wrapped in `scripts.html` to intercept 401s and 302 redirects to `/auth/login`. We must *extend* this existing wrapper rather than replace it.
 d. **Server-rendered HTML vs JSON**:
    - The app heavily relies on server-rendered HTML pages that embed user data directly (e.g., `{{ current_user.full_name }}`).
 e. **Static routes / Downloads**:
-   - Serves static files from `static_folder='static'`. There are no explicit custom `send_file` downloads that would be affected by cache-control, but we must ensure static assets are not hit with `no-store`.
+   - Serves static files from `static_folder='static'`.
 
 ## Decision on Server-Rendered Pages
-**Analysis**: Browser page navigations (Back/Forward, address bar) don't carry an `Authorization` header, so they fall back to the session cookie. This means if tab 1 is User A and tab 2 is User B, reloading tab 2 will initially render with User A's data (the cookie owner), until the JS token overrides API calls.
-**Decision**: Use a client-side mismatch check. The server will embed the cookie's user ID in the HTML (e.g. `<script>const htmlUserId = {{ current_user.id }};</script>`). The JS wrapper will decode the tab's JWT (without verifying the signature, just reading the payload) and compare its `sub` claim to `htmlUserId`. If they mismatch, the JS can visually warn the user, or we can consider the tab token completely isolated and ignore the HTML state for API requests (though this causes visual inconsistency). A safer approach is clearing the token and reloading if a mismatch is detected, effectively forcing the tab to sync with the active session cookie.
-**Risks**: Brief flash of incorrect user name on full page reload before JS catches the mismatch.
+**Analysis**: Browser page navigations (Back/Forward, address bar) don't carry an `Authorization` header, so they fall back to the session cookie. This means if tab 1 is User A and tab 2 is User B, reloading tab 2 will initially render with User A's data (the cookie owner).
+**Decision**: Use a client-side mismatch check. The server will embed the cookie's user ID in the HTML using ONE hidden `<meta>` tag:
+`{% if current_user.is_authenticated %}<meta name="user-id" content="{{ current_user.id }}">{% endif %}`
+This guards against breaking anonymous pages like the login screen. (No CSP header is currently set in the app that would block this).
+The JS fetch wrapper will decode the tab's JWT and compare its `sub` claim to the meta tag.
+**Mismatch Strategy**: Fail-closed mismatch. Instead of silently reloading or switching identity, the app will fail closed with a blocking notice and explicit choices.
 
 ## Library Findings
 - **Flask-Login (0.6.3)**: 
-  - *Request Loader*: The `request_loader` callback is used to authenticate a request via headers (Bearer token). It receives the Flask `request` object. 
-  - *Load Order*: Flask-Login first attempts to load from the session (via `user_loader`), then falls back to `request_loader`. If a token is provided in the header, we must ensure the `request_loader` takes precedence or properly sets the `current_user` overriding the session.
-  - *Session Protection*: Set via `login_manager.session_protection = "strong"`. It tracks IP and User-Agent; if they change, the session is rejected.
-  - *Sources*: [Flask-Login Request Loader docs](https://flask-login.readthedocs.io/), [StackOverflow](https://stackoverflow.com/questions/36269449)
+  - *Load Order & `current_user` caching*: By reading the installed 0.6.3 source code, `current_user` proxies to `_get_user()`, which caches the user on `flask.g._login_user`. Crucially, `LoginManager._load_user()` checks the session *first*. If a session cookie exists, it never calls `request_loader`. Therefore, to make the token override the cookie, we MUST use a `before_request` hook to decode the token and manually set `flask.g._login_user = user`. This completely bypasses the cookie loading.
+  - *Login Action*: Never call `login_user()` for token requests, as it writes the user ID to the session cookie.
+  - *Session Protection*: Set via `login_manager.session_protection`. The default behavior is `"basic"`.
+  - *Sources*: [Flask-Login 0.6.x Source Code - `_get_user`](https://github.com/maxcountryman/flask-login/blob/0.6.3/flask_login/utils.py#L26), [Flask-Login 0.6.x Source Code - `_load_user`](https://github.com/maxcountryman/flask-login/blob/0.6.3/flask_login/login_manager.py#L329)
 - **Flask-Session (0.8.0) & Flask (3.1.1)**:
-  - *Config*: Uses `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE`, `SESSION_COOKIE_SECURE`. Flask-Session integrates with these standard Flask config options.
-  - *Sources*: [Flask Sessions](https://flask.palletsprojects.com/en/3.1.x/config/#SESSION_COOKIE_HTTPONLY)
+  - *Config*: Uses `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE`, `SESSION_COOKIE_SECURE`.
+  - *Sources*: [Flask Session configuration](https://flask.palletsprojects.com/en/3.1.x/config/#SESSION_COOKIE_HTTPONLY)
 - **PyJWT (2.9.0)**:
-  - *Usage*: Validates `exp` (expiration) and `iat` (issued at) automatically if configured. Uses HS256 for symmetric signing.
-  - *Exceptions*: `jwt.ExpiredSignatureError`, `jwt.InvalidTokenError`.
-  - *Sources*: [PyJWT Docs](https://pyjwt.readthedocs.io/en/stable/)
-- **Cache-Control & bfcache**:
-  - `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` ensures browsers do not store the page in disk/memory, preventing the Back-Forward Cache (bfcache) from showing an authenticated page after logout. `Vary: Cookie, Authorization` is also critical.
-  - *Sources*: [MDN Web Docs Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control)
-- **Browser Behavior (Tokens & Cookies)**:
-  - `sessionStorage` is isolated per-tab (even same origin).
-  - Cookies are scoped by host. `localhost` and `127.0.0.1` are treated as different hosts, so they maintain separate cookie jars. Cookies ignore port numbers.
-  - *Sources*: [MDN Web Docs Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)
-- **Security / OWASP**:
-  - OWASP recommends against storing JWTs in `localStorage` due to XSS risks. `sessionStorage` mitigates persistence but is still vulnerable to XSS. Cookies with `HttpOnly` and `SameSite` are preferred for primary auth. The token is an *additional* layer for tab isolation.
-  - *Sources*: [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+  - *Usage*: Validates `exp` (expiration) and `iat` (issued at).
+  - *Sources*: [PyJWT Docs](https://pyjwt.readthedocs.io/en/2.9.0/)
+- **Cache-Control, bfcache & Vary**:
+  - `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` prevents bfcache. However, some aggressive browsers may ignore it. A fallback is a `pageshow` event listener: if `event.persisted` is true, force `location.reload()`.
+  - When modifying the `Vary` header (e.g., `Vary: Cookie, Authorization`), we must append to it rather than overwriting existing values.
+  - *Sources*: [MDN Web Docs Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control), [MDN Web Docs bfcache](https://web.dev/articles/bfcache)
+- **Logout GET Requests**:
+  - Since logout is a simple GET link (`<a href="/auth/logout">`), we must intercept the click in JS to clear the token from `sessionStorage` before the browser navigates away, or clear the token universally when the login page loads.
+- **CSRF with Fetch POSTs**:
+  - The API blueprints are already exempted from CSRF in `app/__init__.py`. If we add token auth to them, CSRF is naturally mitigated (tokens aren't automatically sent by the browser like cookies).
 
-## Risks
-1. **Flask-Login Load Order**: `request_loader` normally acts as a fallback to `user_loader`. To make the token *override* the cookie, we might need a custom `before_request` hook or carefully manage the `request_loader` to prioritize the header over the session.
-2. **XSS Vulnerability**: Storing JWT in `sessionStorage` makes it readable by JS, so any XSS vulnerability in the app could steal the token.
-3. **Cache-Control side effects**: Disabling cache for HTML could increase server load, though it's necessary for security. We must ensure static assets bypass this.
+## Token Strategy (Confirmed)
+- **Duration**: 30-minute sliding token, capped at an 8-hour absolute maximum.
+- **Expiration**: No auto-minting on expiry. Expiry returns a 401, forcing the user to log in again.
 
 ## Recommended Order
 1. Cache-Control Header Hardening (Phase 2)
 2. Cookie Hardening (Phase 3)
 3. Per-Tab Tokens (Phase 4)
 
-## Open Questions
-- Should the per-tab token refresh automatically, or simply expire and force the user to re-auth? (A simple strategy is extending the token upon API activity if it's near expiration).
-- How strictly should we handle the user-mismatch between the tab's token and the session cookie on full page reloads?
+## DECISION GATE: Server-Rendered Data
+**Count of templates rendering user data**: 5 (`dashboard.html`, `base.html`, `admin.html`, `admin/components/scripts.html`, `admin/components/modals.html`).
+**Count of routes**: Multiple core routes across `admin.py`, `auth.py`, and `api.py` rely on server-side rendering or `current_user` variables directly injected into HTML.
+
+**Recommendation on Phase 4 (Per-Tab Tokens)**:
+Due to the heavy reliance on server-side rendering of user data, skipping Phase 4 is highly recommended. The server will *always* render the initial HTML page with the cookie's user identity. If tab 2 has a token for User B, but the cookie belongs to User A, tab 2 will initially load User A's HTML, trigger the client-side mismatch check, and block the UI. This negates the benefit of per-tab tokens (seamless multi-account usage) because full page navigations will constantly trip the mismatch blocker.
+
+**Alternative**: Use browser host isolation (e.g., `a.localhost` vs `b.localhost`, or different IPs like `127.0.0.1` vs `127.0.0.2`). Browsers natively isolate cookies by host. This achieves perfect per-tab/per-window isolation without any code changes, completely avoiding the complexities of JWTs, mismatch checks, and XSS risks.
