@@ -28,6 +28,14 @@ socketio = SocketIO()
 csrf = CSRFProtect()
 
 
+def parse_bool_env(var_name, default_val):
+    val = os.environ.get(var_name, '').strip().lower()
+    if val in ('1', 'true', 'yes', 'on'):
+        return True
+    elif val in ('0', 'false', 'no', 'off'):
+        return False
+    return default_val
+
 def create_app(config_name=None):
     """Create and configure the Flask application."""
     if config_name is None:
@@ -41,11 +49,13 @@ def create_app(config_name=None):
     app.config.from_object(config_map[config_name])
     
     # ── Custom Config Flags ──
-    harden_val = os.environ.get('HARDEN_API_CACHE', '').strip().lower()
-    if harden_val in ('0', 'false', 'no', 'off'):
-        app.config['HARDEN_API_CACHE'] = False
-    else:
-        app.config['HARDEN_API_CACHE'] = True
+    app.config['HARDEN_API_CACHE'] = parse_bool_env('HARDEN_API_CACHE', True)
+    require_https = parse_bool_env('REQUIRE_HTTPS', False)
+    
+    app.config['SESSION_COOKIE_SECURE'] = require_https
+    app.config['REMEMBER_COOKIE_SECURE'] = require_https
+    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 
     # ── Initialize extensions ──
     db.init_app(app)
