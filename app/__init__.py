@@ -39,6 +39,13 @@ def create_app(config_name=None):
         template_folder='templates',
     )
     app.config.from_object(config_map[config_name])
+    
+    # ── Custom Config Flags ──
+    harden_val = os.environ.get('HARDEN_API_CACHE', '').strip().lower()
+    if harden_val in ('0', 'false', 'no', 'off'):
+        app.config['HARDEN_API_CACHE'] = False
+    else:
+        app.config['HARDEN_API_CACHE'] = True
 
     # ── Initialize extensions ──
     db.init_app(app)
@@ -110,7 +117,8 @@ def create_app(config_name=None):
         if request.endpoint == 'static':
             return response
             
-        harden_api = str(os.environ.get('HARDEN_API_CACHE', 'True')).lower() == 'true'
+        from flask import current_app
+        harden_api = current_app.config.get('HARDEN_API_CACHE', True)
 
         # Cache-control for HTML and JSON pages — prevent browser from caching authenticated pages
         is_html = response.content_type and 'text/html' in response.content_type
