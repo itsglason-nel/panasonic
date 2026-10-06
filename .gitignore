@@ -39,3 +39,6 @@ node_modules/
 
 # Compiled assets
 *.pyc
+
+# Local scripts
+scratch/
