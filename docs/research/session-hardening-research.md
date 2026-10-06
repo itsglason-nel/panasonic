@@ -30,7 +30,8 @@ e. **Static routes / Downloads**:
 - **Flask-Login (0.6.3)**: 
   - *Load Order & `current_user` caching*: By reading the installed 0.6.3 source code, `current_user` proxies to `_get_user()`, which caches the user on `flask.g._login_user`. Crucially, `LoginManager._load_user()` checks the session *first*. If a session cookie exists, it never calls `request_loader`. Therefore, to make the token override the cookie, we MUST use a `before_request` hook to decode the token and manually set `flask.g._login_user = user`. This completely bypasses the cookie loading.
   - *Login Action*: Never call `login_user()` for token requests, as it writes the user ID to the session cookie.
-  - *Session Protection*: Set via `login_manager.session_protection`. The default behavior is `"basic"`.
+  - *Session Protection*: `basic` only marks the session not fresh and never logs out; `strong` clears non-permanent sessions (mine).
+  - *Idle Timeout*: The server-side TTL acts as an idle timeout (unverified until B2 is done).
   - *Sources*: [Flask-Login 0.6.x Source Code - `_get_user`](https://github.com/maxcountryman/flask-login/blob/0.6.3/flask_login/utils.py#L26), [Flask-Login 0.6.x Source Code - `_load_user`](https://github.com/maxcountryman/flask-login/blob/0.6.3/flask_login/login_manager.py#L329)
 - **Flask-Session (0.8.0) & Flask (3.1.1)**:
   - *Config*: Uses `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE`, `SESSION_COOKIE_SECURE`.
