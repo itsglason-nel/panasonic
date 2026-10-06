@@ -34,6 +34,7 @@
   - `checkpoint-phase-2b`
   - `checkpoint-phase-2c`
   - `checkpoint-phase-3`
+  - **Expected Baseline**: Cookie `pmpc_session` must show HttpOnly checked, Path=/, SameSite=Lax, Secure unchecked.
 
 ## D. Cleanup Checklist
 - [x] Test users 4 and 5 gone: Re-run query confirmed 0 rows for ids 4, 5, or `test_user_%`.
@@ -49,7 +50,12 @@
 - Session folder threshold (`SESSION_FILE_THRESHOLD=500` default) which deletes older active sessions when exceeded.
 - The Back-button result if it failed in manual testing (no template edits without approval).
 
-## F. Files Changed
+## F. Phase 4 (Per-Tab Tokens)
+- **Status**: Skipped by decision. 
+- **Reason**: User-specific data is rendered server-side on most pages (`{{ current_user.* }}`), so tokens would show one account on the page while API calls run as another. 
+- **Supported alternatives**: Separate hosts (`localhost` vs `127.0.0.1`), `a.localhost` / `b.localhost`, or private windows. Not a failure and not a TODO.
+
+## G. Files Changed
 - `app/__init__.py` (Added `after_request` cache-control, session/cookie config flags)
 - `.gitignore` (Added `.flask_sessions/`)
 - `docs/research/session-hardening-research.md` (Updated with research and decisions)
