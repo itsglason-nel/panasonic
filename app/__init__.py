@@ -109,9 +109,14 @@ def create_app(config_name=None):
         # Skip Cache-Control/Vary modifications for static files
         if request.endpoint == 'static':
             return response
+            
+        harden_api = str(os.environ.get('HARDEN_API_CACHE', 'True')).lower() == 'true'
 
         # Cache-control for HTML and JSON pages — prevent browser from caching authenticated pages
-        if response.content_type and ('text/html' in response.content_type or 'application/json' in response.content_type):
+        is_html = response.content_type and 'text/html' in response.content_type
+        is_json = response.content_type and 'application/json' in response.content_type
+        
+        if is_html or (is_json and harden_api):
             response.headers.setdefault('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             response.headers.setdefault('Pragma', 'no-cache')
             response.headers.setdefault('Expires', '0')
