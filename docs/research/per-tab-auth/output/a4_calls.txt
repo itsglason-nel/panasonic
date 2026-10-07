@@ -1,5 +1,3 @@
-# 04-non-fetch-requests.md
-```
 app\templates\admin.html:16 -> window.location.replace('/auth/logout');
 app\templates\admin.html:1278 -> onclick="if(tableSelection.prodtag) window.open('/admin/print-tag/' + encodeURIComponent(tableSelection.prodtag.serial), '_blank', 'noopener,noreferrer')"
 app\templates\admin.html:1375 -> onclick="if(tableSelection.ts) window.open('/admin/print-transfer-slip/' + tableSelection.ts.id, '_blank')">Print</button>
@@ -25,4 +23,3 @@ app\templates\admin\components\scripts.html:5288 -> window.openCreateTransferSli
 app\templates\admin\components\scripts.html:5546 -> window.openQCReportModal = function () {
 app\templates\admin\components\scripts.html:5549 -> window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serial.trim())}`, '_blank');
 app\templates\admin\components\scripts.html:5561 -> window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serialsStr)}`, '_blank');
-```

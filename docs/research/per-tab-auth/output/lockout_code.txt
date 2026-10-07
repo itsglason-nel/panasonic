@@ -1,0 +1,14 @@
+12: # ── Brute-force protection ────────────────────────────────────────────────────
+13: MAX_ATTEMPTS = 5
+14: LOCKOUT_SECONDS = 300  # 5 minutes
+15: _login_attempts = defaultdict(list)  # IP → [timestamp, ...]
+16: 
+17: 
+18: def _is_locked_out(ip):
+19:     """Check if IP is locked out. Also prune old entries."""
+20:     now = time.time()
+21:     # Keep only attempts within the lockout window
+22:     _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < LOCKOUT_SECONDS]
+23:     return len(_login_attempts[ip]) >= MAX_ATTEMPTS
+24: 
+25: 

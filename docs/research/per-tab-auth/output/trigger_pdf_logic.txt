@@ -1,0 +1,21 @@
+1510: @admin_bp.route('/admin/api/trigger-pdf/<serial>', methods=['POST'])
+1511: @login_required
+1512: def trigger_pdf(serial):
+1513:     """Trigger the automated generation of the Production Information Tag PDF for a unit.
+1514:     This can be called when a unit finishes PIT or from the UI."""
+1515:     from app.services.pdf_generator import generate_tag_pdf
+1516:     from flask import request
+1517:     # Extract port from the request host to ensure we hit the right local server instance
+1518:     try:
+1519:         port = int(request.host.split(':')[1]) if ':' in request.host else 80
+1520:     except ValueError:
+1521:         port = 8080
+1522:     
+1523:     success = generate_tag_pdf(serial, port=port)
+1524:     if success:
+1525:         return jsonify({'success': True, 'message': f'PDF generated successfully for {serial}.'})
+1526:     else:
+1527:         return jsonify({'success': False, 'error': 'Failed to generate PDF. Check logs.'}), 500
+1528: 
+1529: def _get_tag_data(serial):
+1530:     """Gather data from CRS, GMS, ATT, WCI for a specific serial number."""

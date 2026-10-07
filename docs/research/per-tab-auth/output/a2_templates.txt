@@ -1,5 +1,3 @@
-# 02-templates.md
-```
 admin.html: cu=27, sess=4, loops=0, ifs=22, safes=0, tojsons=0
 base.html: cu=11, sess=0, loops=1, ifs=8, safes=0, tojsons=0
 dashboard.html: cu=2, sess=0, loops=0, ifs=0, safes=0, tojsons=0
@@ -13,4 +11,3 @@ modals.html: cu=3, sess=1, loops=0, ifs=0, safes=0, tojsons=0
 scripts.html: cu=1, sess=1, loops=0, ifs=0, safes=0, tojsons=0
 all_lines.html: cu=0, sess=0, loops=1, ifs=0, safes=0, tojsons=0
 line.html: cu=0, sess=0, loops=0, ifs=0, safes=0, tojsons=0
-```

@@ -1,0 +1,9 @@
+app\templates\base.html:144 -> fetch('/api/lines/active')
+app\templates\admin\components\scripts.html:338 -> fetch('/api/lines/active')
+app\templates\admin\components\scripts.html:380 -> fetch(`/admin/api/schedules?date=${encodeURIComponent(date)}&line_id=${lineId}`)
+app\templates\admin\components\scripts.html:428 -> fetch(`/admin/api/schedules?date=${encodeURIComponent(dateStr)}&line_id=${sched.line_code}`)
+app\templates\admin\components\scripts.html:605 -> fetch(`/admin/api/schedules?date=${encodeURIComponent(dateStr)}&line_id=${targetLine}`)
+app\templates\admin\components\scripts.html:931 -> fetch(`/admin/api/schedules?date=${encodeURIComponent(date)}&line_id=${lineId}`).then(r => r.json()),
+app\templates\admin\components\scripts.html:1324 -> return fetch('/api/areas/active')
+app\templates\admin\components\scripts.html:2147 -> fetch('/api/modules/active')
+app\templates\admin\components\scripts.html:2176 -> fetch('/api/tags/active')

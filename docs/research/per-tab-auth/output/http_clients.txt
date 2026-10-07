@@ -1,5 +1,3 @@
-# 06-non-browser-clients.md
-```
 launcher.pyw:11 -> import socket
 launcher.pyw:131 -> self.server_socket = None
 launcher.pyw:507 -> with socket.create_connection(('127.0.0.1', port), timeout=0.5) as s:
@@ -24,4 +22,3 @@ app\routes\api.py:31 -> socket_timeout=0.5,
 app\services\weight_reader.py:12 -> import socket
 app\services\weight_reader.py:98 -> sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 docs\research\per-tab-auth\scripts\master_audit.py:99 -> if any(x in l for x in ['import requests', 'urllib', 'httpx', 'http.client', 'aiohttp', 'Invoke-WebRequest', 'socket']):
-```
