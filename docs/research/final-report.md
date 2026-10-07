@@ -22,6 +22,7 @@
   - What can log users out: Nothing. It only affects the `Cache-Control` header on API and HTML responses to prevent bfcache ghosts.
 - `REQUIRE_HTTPS`: Default is OFF. Accepted values: `1`, `true`, `yes`, `on` for True; `0`, `false`, `no`, `off` for False.
   - What can log users out: Setting it to ON in a plain HTTP environment. Browsers will refuse the `Secure` cookie and instantly log everyone out.
+- **Expected Baseline**: Cookie `pmpc_session` must show HttpOnly checked, Path=/, SameSite=Lax, Secure unchecked.
 
 ## C. Rollback
 - **Fastest Rollback**: Unset `REQUIRE_HTTPS` and `HARDEN_API_CACHE` in the environment and restart the launcher.
@@ -34,7 +35,6 @@
   - `checkpoint-phase-2b`
   - `checkpoint-phase-2c`
   - `checkpoint-phase-3`
-  - **Expected Baseline**: Cookie `pmpc_session` must show HttpOnly checked, Path=/, SameSite=Lax, Secure unchecked.
 
 ## D. Cleanup Checklist
 - [x] Test users 4 and 5 gone: Re-run query confirmed 0 rows for ids 4, 5, or `test_user_%`.
@@ -47,7 +47,8 @@
 - Tracked `scratch/fix_admin.py` which executes live DB writes to `WorkSched` and `linestat`.
 - Committed Keyence manual PDF in the codebase history.
 - Empty `.db` initialization files (SQLite) committed in git history.
-- Session folder threshold (`SESSION_FILE_THRESHOLD=500` default) which deletes older active sessions when exceeded.
+- Session folder threshold: the threshold counts session FILES (anonymous and not-yet-expired included); pruning removes the least recently active first; counts on Oct 7 2026 are 174 total, 68 anonymous; watch the file count, no change made.
+  - Causes of anonymous files: Verified: `flash()` messages for failed logins, CSRF token generation on login page load. Unverified (guess): navigating the site anonymously where tracking/state is briefly held.
 - The Back-button result if it failed in manual testing (no template edits without approval).
 
 ## F. Phase 4 (Per-Tab Tokens)
