@@ -52,7 +52,7 @@
 - The Back-button result if it failed in manual testing (no template edits without approval).
 
 ## F. Phase 4 (Per-Tab Tokens)
-- **Status**: Skipped by decision. 
+- **Status**: Skipped by decision. per-tab login: research started on branch feature/per-tab-auth, paused, NOT part of this PR, its findings are unverified.
 - **Reason**: User-specific data is rendered server-side on most pages (`{{ current_user.* }}`), so tokens would show one account on the page while API calls run as another. 
 - **Supported alternatives**: Separate hosts (`localhost` vs `127.0.0.1`), `a.localhost` / `b.localhost`, or private windows. Not a failure and not a TODO.
 
