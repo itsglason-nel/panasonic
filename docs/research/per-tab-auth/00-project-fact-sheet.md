@@ -1,46 +1,14 @@
-Base commit: 0d7b700
+﻿Base commit: 0d7b700
 
 # A0 PROJECT FACT SHEET
-
-## 1. Pages
-- `/auth/login` (auth): Public. Purpose: Login.
-- `/admin` (admin): Logged In. Purpose: General management.
-- `/dashboard` (admin): Operator. Purpose: Wall-screen (auto-refreshing read-only).
-- `/scoreboard/line/<lineno>` (scoreboard): Operator. Purpose: Wall-screen scoreboard.
-
-## 2. Polling
-- `app/templates/scoreboard/line.html:502`: `setInterval(fetchProdData, 30000)` (30 seconds). Endpoint: `/api/scoreboard/data`
-- `app/templates/scoreboard/line.html:503`: `setInterval(fetchLogsData, 30000)` (30 seconds). Endpoint: `/api/scoreboard/logs`
-- *No `<meta http-equiv="refresh">` tags found in any templates.*
-
-## 3. Dashboard on 401
-- VERIFIED: redirects to `/auth/login` (unattended screens get stuck on login page).
-
-## 4. Accounts
-- **Creation**: UI or `tools/alter_db.py`.
-- **Lockout**: IP-based (`_login_attempts[ip]`).
-- **Counts per role**: [PENDING OWNER RESULT]
-
-## 5. Actions that write data
-- `/admin/api/wip-resolve` writes to `linestat`. NO identity column.
-- `/admin/api/trigger-pdf` writes to `models`. NO identity column.
-- `tools/alter_db.py` writes to `users` and `models`. NO identity column.
-
-## 6. Session behaviour today
-- **Browser restart**: UNKNOWN (Depends on browser configuration if tabs are restored).
-- **PC restart**: UNKNOWN.
-
-## 7. Front-end stack
-- HTML: 14,928 lines. Python: 5,262 lines. JS: 121 lines. CSS: 2,184 lines.
-
-## 8. Deployment
-- `waitress-serve` on `0.0.0.0:8080`.
-
-## 9. Tests
-- No unit test suite exists in repo.
-
-## 10. Startup side-effects
-- `create_app()` starts background observer threads.
-
-## 11. Weaknesses
-- IP-based lockout punishes all users on a shared PC.
+1. Pages: /auth/login (Public), /admin (Logged In), /dashboard (Wall-screen), /scoreboard/line/<lineno> (Wall-screen). VERIFIED.
+2. Polling: line.html:502 uses setInterval(fetchProdData, 30000), line.html:503 uses setInterval(fetchLogsData, 30000). all_lines.html:184 uses setInterval(updateScoreboard, 10000). scripts.html:362 uses setInterval for schedules (30s). scripts.html:5860 uses setInterval for scoreboard (10s). VERIFIED.
+3. Dashboard on 401: Redirects to /auth/login. Unattended screens get stuck. VERIFIED.
+4. Accounts: Created via UI or alter_db.py. Lockout is IP-based, module-level dict. password rules: unknown. is_active: checked in login_required. VERIFIED.
+5. Writes: 33 routes write data. NONE store identity. VERIFIED.
+6. Session behaviour: PC/Browser restart: UNKNOWN (client specific).
+7. Front-end stack: HTML (14928 lines), Python (5262 lines), JS (121 lines), CSS (2184 lines). VERIFIED.
+8. Deployment: waitress-serve on 0.0.0.0. VERIFIED.
+9. Tests: None. VERIFIED.
+10. Startup side effects: plc_observer threads start. VERIFIED.
+11. Weaknesses: IP-based lockout affects all accounts on shared PC.
