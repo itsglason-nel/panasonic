@@ -48,17 +48,17 @@
 - Committed Keyence manual PDF in the codebase history.
 - Empty `.db` initialization files (SQLite) committed in git history.
 - Session folder threshold: the threshold counts session FILES (anonymous and not-yet-expired included); pruning removes the least recently active first; counts on Oct 7 2026 are 174 total, 68 anonymous; watch the file count, no change made.
-  - Causes of anonymous files: Verified: `flash()` messages for failed logins, CSRF token generation on login page load. Unverified (guess): navigating the site anonymously where tracking/state is briefly held.
+  - Causes of anonymous files: Unverified: `flash()` messages for failed logins, CSRF token generation on login page load, navigating the site anonymously where tracking/state is briefly held.
 - The Back-button result if it failed in manual testing (no template edits without approval).
 
 ## F. Phase 4 (Per-Tab Tokens)
-- **Status**: Skipped by decision. per-tab login: research started on branch feature/per-tab-auth, paused, NOT part of this PR, its findings are unverified.
+- **Status**: Phase 4 (per-tab login): earlier skipped by decision; research reopened as a separate project on branch feature/per-tab-auth, paused, not part of this PR, findings unverified.
 - **Reason**: User-specific data is rendered server-side on most pages (`{{ current_user.* }}`), so tokens would show one account on the page while API calls run as another. 
-- **Supported alternatives**: Separate hosts (`localhost` vs `127.0.0.1`), `a.localhost` / `b.localhost`, or private windows. Not a failure and not a TODO.
+- **Supported alternatives**: Separate hosts (`localhost` vs `127.0.0.1`), `a.localhost` / `b.localhost`, or private windows.
 
 ## G. Files Changed
 - `app/__init__.py` (Added `after_request` cache-control, session/cookie config flags)
-- `.gitignore` (Added `.flask_sessions/`)
+- `.gitignore` (Added `scratch/`)
 - `docs/research/session-hardening-research.md` (Updated with research and decisions)
 - `docs/research/baseline.md` (Added)
 - `docs/research/baseline-headers.md` (Added)
