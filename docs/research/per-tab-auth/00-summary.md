@@ -1,61 +1,30 @@
 # 00-summary.md
-
-## WRITES TABLE
+## A6 REDO
 ```
-app\routes\admin.py:302 -> wip_resolve ['POST'] | Writes: True
-app\routes\admin.py:576 -> add_schedule ['POST'] | Writes: True
-app\routes\admin.py:637 -> edit_delete_schedule ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:872 -> module_schedules ['GET', 'PUT', 'DELETE'] | Writes: False
-app\routes\admin.py:898 -> add_model ['POST'] | Writes: False
-app\routes\admin.py:906 -> delete_model ['DELETE'] | Writes: True
-app\routes\admin.py:943 -> update_modelref ['PUT'] | Writes: True
-app\routes\admin.py:1097 -> add_bom ['POST'] | Writes: True
-app\routes\admin.py:1122 -> edit_delete_bom ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:1174 -> save_settings ['PUT'] | Writes: False
-app\routes\admin.py:1231 -> reopen_day ['POST'] | Writes: True
-app\routes\admin.py:1350 -> update_crs_data ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:1403 -> update_gms_data ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:1466 -> update_att_data ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:1512 -> trigger_pdf ['POST'] | Writes: False
-app\routes\admin.py:1853 -> handle_pit_record ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2016 -> create_line ['POST'] | Writes: True
-app\routes\admin.py:2036 -> edit_delete_line ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2083 -> create_module ['POST'] | Writes: True
-app\routes\admin.py:2102 -> edit_delete_module ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2144 -> create_tag ['POST'] | Writes: True
-app\routes\admin.py:2163 -> edit_delete_tag ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2206 -> create_area ['POST'] | Writes: True
-app\routes\admin.py:2227 -> edit_delete_area ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2292 -> create_user ['POST'] | Writes: True
-app\routes\admin.py:2319 -> edit_delete_user ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2585 -> post_conveyor_action ['POST'] | Writes: True
-app\routes\admin.py:2736 -> api_shifts ['GET', 'POST'] | Writes: True
-app\routes\admin.py:2774 -> api_shift_detail ['PUT', 'DELETE'] | Writes: True
-app\routes\admin.py:2917 -> create_transfer_slip ['POST'] | Writes: True
-app\routes\admin.py:2998 -> trigger_transfer_csv ['POST'] | Writes: False
-app\routes\api.py:181 -> submit_station ['POST'] | Writes: True
-app\routes\auth.py:53 -> login ['GET', 'POST'] | Writes: False
-app\routes\auth.py:132 -> change_password ['POST'] | Writes: True
-```
-
-## LOCKOUT
-```
-12: # ── Brute-force protection ────────────────────────────────────────────────────
-13: MAX_ATTEMPTS = 5
-14: LOCKOUT_SECONDS = 300  # 5 minutes
-15: _login_attempts = defaultdict(list)  # IP → [timestamp, ...]
-16: 
-17: 
-18: def _is_locked_out(ip):
-19:     """Check if IP is locked out. Also prune old entries."""
-20:     now = time.time()
-21:     # Keep only attempts within the lockout window
-22:     _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < LOCKOUT_SECONDS]
-23:     return len(_login_attempts[ip]) >= MAX_ATTEMPTS
-24: 
-25: 
+launcher.pyw:11 -> import socket
+launcher.pyw:131 -> self.server_socket = None
+launcher.pyw:507 -> with socket.create_connection(('127.0.0.1', port), timeout=0.5) as s:
+launcher.pyw:635 -> self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+launcher.pyw:636 -> self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+launcher.pyw:638 -> self.server_socket.bind(('127.0.0.1', SINGLE_INSTANCE_PORT))
+launcher.pyw:639 -> self.server_socket.listen(5)
+launcher.pyw:647 -> if not self.server_socket:
+launcher.pyw:649 -> conn, addr = self.server_socket.accept()
+launcher.pyw:664 -> if self.server_socket:
+launcher.pyw:666 -> self.server_socket.close()
+launcher.pyw:669 -> self.server_socket = None
+launcher.pyw:1595 -> s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+launcher.pyw:1601 -> except socket.error:
+wsgi.py:5 -> from app import create_app, socketio
+wsgi.py:10 -> socketio.run(
+app\__init__.py:9 -> from flask_socketio import SocketIO  # type: ignore
+app\__init__.py:27 -> socketio = SocketIO()
+app\__init__.py:68 -> socket_timeout=1, # Quick timeout for the fallback check
+app\__init__.py:95 -> socketio.init_app(app, async_mode='eventlet', cors_allowed_origins=cors_origins)
+app\routes\api.py:31 -> socket_timeout=0.5,
+app\services\weight_reader.py:12 -> import socket
+app\services\weight_reader.py:98 -> sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+docs\research\per-tab-auth\scripts\master_audit.py:99 -> if any(x in l for x in ['import requests', 'urllib', 'httpx', 'http.client', 'aiohttp', 'Invoke-WebRequest', 'socket']):
 ```
 ANALYST NOTES (INFERRED):
-- Code guarantees IP-based dictionary state tracking in memory.
-- Does NOT persist across restarts.
-- Locks out all accounts on a shared PC if IP fails 5 times.
+launcher.pyw:507 is a TCP connect socket check only.

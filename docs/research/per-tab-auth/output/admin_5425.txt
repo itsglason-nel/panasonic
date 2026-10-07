@@ -1,0 +1,16 @@
+    </div>
+</div>
+
+<!-- Modal: Repair Details -->
+<div id="modal-repair-details" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Repair Details</h3>
+            <button class="modal-close" onclick="closeModal('modal-repair-details')">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align:center; padding: 40px 20px;">
+            <p style="color:var(--text-secondary); margin-bottom:10px;">Detailed repair logs view not fully implemented
+                yet.</p>
+            <p><strong>Serial:</strong> <span id="repair-det-serial"></span></p>
+        </div>
+    </div>

@@ -1,28 +1,6 @@
 # 04-non-fetch-requests.md
 ```
-app\templates\admin.html:16 -> window.location.replace('/auth/logout');
-app\templates\admin.html:1278 -> onclick="if(tableSelection.prodtag) window.open('/admin/print-tag/' + encodeURIComponent(tableSelection.prodtag.serial), '_blank', 'noopener,noreferrer')"
-app\templates\admin.html:1375 -> onclick="if(tableSelection.ts) window.open('/admin/print-transfer-slip/' + tableSelection.ts.id, '_blank')">Print</button>
-app\templates\login.html:274 -> <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="off">
-app\templates\admin\components\scripts.html:12 -> window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
-app\templates\admin\components\scripts.html:16 -> window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
-app\templates\admin\components\scripts.html:597 -> window.openScheduleModal = function (mode) {
-app\templates\admin\components\scripts.html:917 -> window.openModuleScheduleModal = function () {
-app\templates\admin\components\scripts.html:1071 -> window.openModuleSchedEdit = function () {
-app\templates\admin\components\scripts.html:1431 -> window.openModelConfigModal = function (tab, modelcode) {
-app\templates\admin\components\scripts.html:1641 -> window.openAddModelModal = function () {
-app\templates\admin\components\scripts.html:1681 -> window.openBomModal = function (mode) {
-app\templates\admin\components\scripts.html:3121 -> window.open(`/admin/print-tag/${encodeURIComponent(serial.trim())}`, '_blank', 'noopener,noreferrer');
-app\templates\admin\components\scripts.html:3129 -> window.openEditModal = function (type, record) {
-app\templates\admin\components\scripts.html:3582 -> setTimeout(() => window.location.href = d.redirect, 1500);
-app\templates\admin\components\scripts.html:4008 -> window.openProfileModal = function () {
-app\templates\admin\components\scripts.html:4129 -> window.openSerialStartModal = function (mode) {
-app\templates\admin\components\scripts.html:4280 -> window.openGasTolModal = function (mode) {
-app\templates\admin\components\scripts.html:4503 -> window.openQCReportModal = function () {
-app\templates\admin\components\scripts.html:4575 -> window.open(url, '_blank', 'noopener,noreferrer');
-app\templates\admin\components\scripts.html:5130 -> window.open(url, '_blank', 'noopener,noreferrer');
-app\templates\admin\components\scripts.html:5288 -> window.openCreateTransferSlipModal = function () {
-app\templates\admin\components\scripts.html:5546 -> window.openQCReportModal = function () {
-app\templates\admin\components\scripts.html:5549 -> window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serial.trim())}`, '_blank');
-app\templates\admin\components\scripts.html:5561 -> window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serialsStr)}`, '_blank');
+
 ```
+ANALYST NOTES (INFERRED):
+Lines 5425-5440 of admin.html are NOT inside the fetch wrapper.
