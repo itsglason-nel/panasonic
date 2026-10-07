@@ -1,0 +1,119 @@
+Base commit: 0d7b700
+
+# A3 FRONTEND REQUESTS
+
+## Fetch, XHR, and Location Assignments
+
+- `app\static\js\app.js:82`: `return fetch(url, {`
+- `app\static\js\app.js:90`: `return fetch(url, {`
+- `app\templates\admin.html:16`: `window.location.replace('/auth/logout');`
+- `app\templates\admin.html:1278`: `onclick="if(tableSelection.prodtag) window.open('/admin/print-tag/' + encodeURIComponent(tableSelection.prodtag.serial), '_blank', 'noopener,noreferrer')"`
+- `app\templates\admin.html:1375`: `onclick="if(tableSelection.ts) window.open('/admin/print-transfer-slip/' + tableSelection.ts.id, '_blank')">Print</button>`
+- `app\templates\base.html:144`: `fetch('/api/lines/active')`
+- `app\templates\admin\components\scripts.html:12`: `window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);`
+- `app\templates\admin\components\scripts.html:16`: `window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);`
+- `app\templates\admin\components\scripts.html:240`: `fetch(`/admin/api/next-sequence?line_id=${e.target.value}&date=${encodeURIComponent(currentDate)}`)`
+- `app\templates\admin\components\scripts.html:338`: `fetch('/api/lines/active')`
+- `app\templates\admin\components\scripts.html:380`: `fetch(`/admin/api/schedules?date=${encodeURIComponent(date)}&line_id=${lineId}`)`
+- `app\templates\admin\components\scripts.html:428`: `fetch(`/admin/api/schedules?date=${encodeURIComponent(dateStr)}&line_id=${sched.line_code}`)`
+- `app\templates\admin\components\scripts.html:523`: `return fetch('/admin/api/models')`
+- `app\templates\admin\components\scripts.html:597`: `window.openScheduleModal = function (mode) {`
+- `app\templates\admin\components\scripts.html:605`: `fetch(`/admin/api/schedules?date=${encodeURIComponent(dateStr)}&line_id=${targetLine}`)`
+- `app\templates\admin\components\scripts.html:678`: `fetch(`/admin/api/next-sequence?line_id=${targetLine}&date=${encodeURIComponent(currentDate)}`)`
+- `app\templates\admin\components\scripts.html:762`: `fetch(url, {`
+- `app\templates\admin\components\scripts.html:793`: `fetch(`/admin/api/conveyor/status/${lineCode}`)`
+- `app\templates\admin\components\scripts.html:868`: `fetch(`/admin/api/conveyor/action`, {`
+- `app\templates\admin\components\scripts.html:897`: `fetch(`/admin/api/schedule/${selectedScheduleId}`, {`
+- `app\templates\admin\components\scripts.html:917`: `window.openModuleScheduleModal = function () {`
+- `app\templates\admin\components\scripts.html:931`: `fetch(`/admin/api/schedules?date=${encodeURIComponent(date)}&line_id=${lineId}`).then(r => r.json()),`
+- `app\templates\admin\components\scripts.html:932`: `fetch('/admin/api/models').then(r => r.json())`
+- `app\templates\admin\components\scripts.html:946`: `fetch(`/admin/api/bom?modelcode=${encodeURIComponent(m)}`).then(r => r.json()).then(d => ({`
+- `app\templates\admin\components\scripts.html:1071`: `window.openModuleSchedEdit = function () {`
+- `app\templates\admin\components\scripts.html:1093`: `fetch(`/admin/api/schedule/${_msSelected.id}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:1115`: `return fetch('/admin/api/models')`
+- `app\templates\admin\components\scripts.html:1205`: `fetch(`/admin/api/bom?modelcode=${encodeURIComponent(modelcode)}`)`
+- `app\templates\admin\components\scripts.html:1324`: `return fetch('/api/areas/active')`
+- `app\templates\admin\components\scripts.html:1364`: `fetch('/admin/api/modelref')`
+- `app\templates\admin\components\scripts.html:1431`: `window.openModelConfigModal = function (tab, modelcode) {`
+- `app\templates\admin\components\scripts.html:1434`: `fetch('/admin/api/modelref/' + encodeURIComponent(modelcode))`
+- `app\templates\admin\components\scripts.html:1526`: `fetch(`/admin/api/modelref/${encodeURIComponent(modelcode)}`, {`
+- `app\templates\admin\components\scripts.html:1545`: `fetch(`/admin/api/bom?modelcode=${encodeURIComponent(modelcode)}`)`
+- `app\templates\admin\components\scripts.html:1641`: `window.openAddModelModal = function () {`
+- `app\templates\admin\components\scripts.html:1681`: `window.openBomModal = function (mode) {`
+- `app\templates\admin\components\scripts.html:1920`: `fetch('/admin/api/modelref/' + encodeURIComponent(mc))`
+- `app\templates\admin\components\scripts.html:2090`: `modelConfigPromise = fetch(`/admin/api/modelref/${encodeURIComponent(modelcode)}`, {`
+- `app\templates\admin\components\scripts.html:2102`: `return fetch(url, {`
+- `app\templates\admin\components\scripts.html:2147`: `fetch('/api/modules/active')`
+- `app\templates\admin\components\scripts.html:2176`: `fetch('/api/tags/active')`
+- `app\templates\admin\components\scripts.html:2199`: `fetch(`/admin/api/bom/${selectedBomId}`, {`
+- `app\templates\admin\components\scripts.html:2231`: `fetch(`/admin/api/model/${encodeURIComponent(selectedModel)}`, {`
+- `app\templates\admin\components\scripts.html:2373`: `fetch(url)`
+- `app\templates\admin\components\scripts.html:2436`: `fetch(url)`
+- `app\templates\admin\components\scripts.html:2501`: `fetch(url)`
+- `app\templates\admin\components\scripts.html:2604`: `fetch(`/admin/api/spamsi-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2641`: `fetch(`/admin/api/spamso-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2688`: `fetch(`/admin/api/cbpcb-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2726`: `fetch(`/admin/api/wci-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2764`: `fetch(`/admin/api/rit-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2805`: `fetch(`/admin/api/insp3vib-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2850`: `fetch(`/admin/api/pit-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2884`: `fetch(`/admin/api/fit-data?page=${page}&per_page=${perPage}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2921`: `fetch(`/admin/api/repair-data?page=${page}&sort_by=${sortState.by}&sort_dir=${sortState.dir}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:2956`: `fetch(`/admin/api/prod-tag-tracker?page=${page}&date=${encodeURIComponent(date)}&serial=${encodeURIComponent(serial)}`)`
+- `app\templates\admin\components\scripts.html:3121`: `window.open(`/admin/print-tag/${encodeURIComponent(serial.trim())}`, '_blank', 'noopener,noreferrer');`
+- `app\templates\admin\components\scripts.html:3129`: `window.openEditModal = function (type, record) {`
+- `app\templates\admin\components\scripts.html:3180`: `fetch(`/admin/api/${type}-data/${id}`, {`
+- `app\templates\admin\components\scripts.html:3209`: `fetch(`/admin/api/${type}-data/${id}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:3245`: `fetch(`/admin/api/audit-logs?page=${page}`)`
+- `app\templates\admin\components\scripts.html:3303`: `fetch('/sys/api/lines')`
+- `app\templates\admin\components\scripts.html:3403`: `fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })`
+- `app\templates\admin\components\scripts.html:3419`: `fetch(`/sys/api/line/${selectedLineId}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:3445`: `fetch('/sys/api/users')`
+- `app\templates\admin\components\scripts.html:3565`: `fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })`
+- `app\templates\admin\components\scripts.html:3576`: `fetch(`/sys/api/user/${selectedUserId}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:3582`: `setTimeout(() => window.location.href = d.redirect, 1500);`
+- `app\templates\admin\components\scripts.html:3611`: `fetch('/sys/api/modules')`
+- `app\templates\admin\components\scripts.html:3710`: `fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })`
+- `app\templates\admin\components\scripts.html:3726`: `fetch(`/sys/api/module/${selectedModuleId}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:3748`: `fetch('/sys/api/tags')`
+- `app\templates\admin\components\scripts.html:3847`: `fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })`
+- `app\templates\admin\components\scripts.html:3863`: `fetch(`/sys/api/tag/${selectedTagId}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:3885`: `fetch('/sys/api/areas')`
+- `app\templates\admin\components\scripts.html:3971`: `fetch(id ? `/sys/api/area/${id}` : '/sys/api/area', {`
+- `app\templates\admin\components\scripts.html:3990`: `fetch(`/sys/api/area/${selectedAreaId}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:4008`: `window.openProfileModal = function () {`
+- `app\templates\admin\components\scripts.html:4031`: `fetch('/auth/change-password', {`
+- `app\templates\admin\components\scripts.html:4080`: `fetch(url)`
+- `app\templates\admin\components\scripts.html:4129`: `window.openSerialStartModal = function (mode) {`
+- `app\templates\admin\components\scripts.html:4173`: `fetch(url, {`
+- `app\templates\admin\components\scripts.html:4199`: `fetch(`/admin/api/serialref/${_ssSelectedId}`, { method: 'DELETE' })`
+- `app\templates\admin\components\scripts.html:4228`: `fetch('/admin/api/modelref')`
+- `app\templates\admin\components\scripts.html:4280`: `window.openGasTolModal = function (mode) {`
+- `app\templates\admin\components\scripts.html:4323`: `fetch('/admin/api/model-gas-target/' + encodeURIComponent(modelcode))`
+- `app\templates\admin\components\scripts.html:4365`: `fetch(url, {`
+- `app\templates\admin\components\scripts.html:4503`: `window.openQCReportModal = function () {`
+- `app\templates\admin\components\scripts.html:4519`: `fetch('/admin/api/models')`
+- `app\templates\admin\components\scripts.html:4575`: `window.open(url, '_blank', 'noopener,noreferrer');`
+- `app\templates\admin\components\scripts.html:4841`: `fetch('/admin/api/wip-resolve', {`
+- `app\templates\admin\components\scripts.html:4881`: `fetch('/admin/api/shifts')`
+- `app\templates\admin\components\scripts.html:4955`: `fetch(url, {`
+- `app\templates\admin\components\scripts.html:5014`: `fetch('/admin/api/linestat-viewer')`
+- `app\templates\admin\components\scripts.html:5130`: `window.open(url, '_blank', 'noopener,noreferrer');`
+- `app\templates\admin\components\scripts.html:5254`: `fetch(url).then(r => r.json()).then(data => {`
+- `app\templates\admin\components\scripts.html:5288`: `window.openCreateTransferSlipModal = function () {`
+- `app\templates\admin\components\scripts.html:5293`: `fetch('/admin/api/transfer-slips/available-dates')`
+- `app\templates\admin\components\scripts.html:5352`: `fetch(`/admin/api/transfer-slips/available-params?date=${dateVal}`)`
+- `app\templates\admin\components\scripts.html:5396`: `fetch('/admin/api/transfer-slips', {`
+- `app\templates\admin\components\scripts.html:5424`: `fetch(`/admin/api/trigger-transfer-csv/${slip_id}`, { method: 'POST' })`
+- `app\templates\admin\components\scripts.html:5462`: `fetch(url).then(r => r.json()).then(data => {`
+- `app\templates\admin\components\scripts.html:5546`: `window.openQCReportModal = function () {`
+- `app\templates\admin\components\scripts.html:5549`: `window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serial.trim())}`, '_blank');`
+- `app\templates\admin\components\scripts.html:5561`: `window.open(`/admin/print-qc-report?serials=${encodeURIComponent(serialsStr)}`, '_blank');`
+- `app\templates\admin\components\scripts.html:5619`: `fetch(`/api/scoreboard/models?line=${encodeURIComponent(lineStr)}&date=${encodeURIComponent(dateStr)}`)`
+- `app\templates\admin\components\scripts.html:5646`: `fetch(`/api/scoreboard/logs?line=${encodeURIComponent(lineStr)}&date=${encodeURIComponent(dateStr)}&model=${encodeURIComponent(modelStr)}&sort=${encodeURIComponent(sortStr)}&limit=50`)`
+- `app\templates\admin\components\scripts.html:5677`: `fetch(`/api/scoreboard/data?line=${encodeURIComponent(lineStr)}&date=${encodeURIComponent(dateStr)}`)`
+- `app\templates\scoreboard\all_lines.html:144`: `fetch('/api/scoreboard/data')`
+- `app\templates\scoreboard\line.html:457`: `fetch(`/api/scoreboard/data?line=${lineno}`)`
+- `app\templates\scoreboard\line.html:468`: `fetch(`/api/scoreboard/logs?line=${lineno}&limit=12`)`
+
+**Reconciliation**: Searched .js, .html, .jinja. (Positive control: fetch in app.js).

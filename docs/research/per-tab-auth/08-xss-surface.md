@@ -1,0 +1,223 @@
+Base commit: 0d7b700
+
+# A8 XSS AND TOKEN-THEFT SURFACE
+
+## Unsafe DOM assignments and External Scripts
+
+- `app\static\js\app.js:45`: `overlay.innerHTML = '<div class="scan-result-card ' + result + '">' +`
+- `app\templates\admin.html` External script: `https://cdn.jsdelivr.net/npm/flatpickr`
+- `app\templates\admin.html` External script: `https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js`
+- `app\templates\base.html:151`: `a.innerHTML = `<svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="8" width="4" height="10"/><rect x="8" y="4" width="4" height="14"/><rect x="14" y="1" width="4" height="17"/></svg>${line.name}`;`
+- `app\templates\admin\print_tag.html:1620`: `let lastValidHTML = div.innerHTML;`
+- `app\templates\admin\print_tag.html:1622`: `lastValidHTML = this.innerHTML;`
+- `app\templates\admin\print_tag.html:1627`: `this.innerHTML = lastValidHTML;`
+- `app\templates\admin\print_tag.html:1637`: `lastValidHTML = this.innerHTML;`
+- `app\templates\admin\components\scripts.html:54`: `document.querySelectorAll(`.sort-indicator[id^="${tableId}-sort-"]`).forEach(el => el.innerHTML = '');`
+- `app\templates\admin\components\scripts.html:57`: `activeIndicator.innerHTML = currentSort.dir === 'asc' ? 'â†‘' : 'â†“';`
+- `app\templates\admin\components\scripts.html:74`: `!tbody.innerHTML.includes('skeleton-cell') &&`
+- `app\templates\admin\components\scripts.html:83`: `tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;">Loading...</td></tr>`;`
+- `app\templates\admin\components\scripts.html:85`: `tbody.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">Loading...</div>';`
+- `app\templates\admin\components\scripts.html:87`: `tbody.innerHTML = [1, 2, 3].map(() => `<tr>${Array(colCount).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');`
+- `app\templates\admin\components\scripts.html:302`: `if (schedLine) schedLine.innerHTML = noLineHtml;`
+- `app\templates\admin\components\scripts.html:303`: `if (tsFilterLine) tsFilterLine.innerHTML = noLineHtml;`
+- `app\templates\admin\components\scripts.html:304`: `if (schedLineFilter) schedLineFilter.innerHTML = noLineHtml;`
+- `app\templates\admin\components\scripts.html:305`: `if (sbLineFilter) sbLineFilter.innerHTML = noLineHtml;`
+- `app\templates\admin\components\scripts.html:306`: `if (scoreboardLineSelector) scoreboardLineSelector.innerHTML = noLineHtml;`
+- `app\templates\admin\components\scripts.html:307`: `if (printQcLine) printQcLine.innerHTML = noLineHtml;`
+- `app\templates\admin\components\scripts.html:318`: `el.innerHTML = (addAll ? '<option value="all">All</option>' : '') + newHtml;`
+- `app\templates\admin\components\scripts.html:384`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:416`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:455`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:467`: `tbody.innerHTML = ``
+- `app\templates\admin\components\scripts.html:487`: `tbody.innerHTML = `<tr><td colspan="7" style="color:red; font-weight:bold; padding: 20px; text-align:center;">JS ERROR: ${err.message}<br/>${err.stack}</td></tr>`;`
+- `app\templates\admin\components\scripts.html:497`: `tbody.innerHTML = `<tr><td colspan="7" style="color:red; font-weight:bold; padding: 20px; text-align:center;">API/NETWORK ERROR: ${err.message}</td></tr>`;`
+- `app\templates\admin\components\scripts.html:527`: `select.innerHTML = '<option value="">-- Select Model --</option>';`
+- `app\templates\admin\components\scripts.html:574`: `lbl.innerHTML = ``
+- `app\templates\admin\components\scripts.html:718`: `warningDiv.innerHTML = `<strong>Warning:</strong> Setting plan to match CRS actual (${currentScheduleData.crs_qty}) will mark this schedule as done.<br><span style="color:#b45309;">Original Plan: ${currentScheduleData.planned_qty}</span>`;`
+- `app\templates\admin\components\scripts.html:790`: `document.getElementById('line-status-list').innerHTML = 'Loading...';`
+- `app\templates\admin\components\scripts.html:841`: `document.getElementById('line-status-list').innerHTML = listHtml;`
+- `app\templates\admin\components\scripts.html:843`: `document.getElementById('line-status-list').innerHTML = 'No active models found.';`
+- `app\templates\admin\components\scripts.html:846`: `.catch(() => document.getElementById('line-status-list').innerHTML = 'Error loading status.');`
+- `app\templates\admin\components\scripts.html:925`: `document.getElementById('ms-tbody').innerHTML =`
+- `app\templates\admin\components\scripts.html:938`: `document.getElementById('ms-tbody').innerHTML =`
+- `app\templates\admin\components\scripts.html:965`: `select.innerHTML = '<option value="All">All</option>';`
+- `app\templates\admin\components\scripts.html:986`: `document.getElementById('ms-tbody').innerHTML =`
+- `app\templates\admin\components\scripts.html:1008`: `tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-secondary);">No entries match the selected module.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:1027`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:1054`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:1124`: `if (selectMR) selectMR.innerHTML = '<option value="">-- Select Model --</option>';`
+- `app\templates\admin\components\scripts.html:1125`: `if (selectSS) selectSS.innerHTML = '<option value="">-- Select Model --</option>';`
+- `app\templates\admin\components\scripts.html:1188`: `tbody.innerHTML = ``
+- `app\templates\admin\components\scripts.html:1216`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:1250`: `groupRow.innerHTML = ``
+- `app\templates\admin\components\scripts.html:1275`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:1291`: `tbody.innerHTML = ``
+- `app\templates\admin\components\scripts.html:1303`: `tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Failed to load BOM data.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:1329`: `select.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:1331`: `select.innerHTML = '<option value="">No active areas configured</option>';`
+- `app\templates\admin\components\scripts.html:1346`: `select.innerHTML = '<option value="">Unable to load areas</option>';`
+- `app\templates\admin\components\scripts.html:1421`: `document.getElementById('tolerances-tbody').innerHTML = tolHtml;`
+- `app\templates\admin\components\scripts.html:1422`: `document.getElementById('serial-tbody').innerHTML = serHtml;`
+- `app\templates\admin\components\scripts.html:1426`: `document.getElementById('tolerances-tbody').innerHTML = '<tr><td colspan="7" class="empty-state" style="color:red">Failed to load data.</td></tr>';`
+- `app\templates\admin\components\scripts.html:1427`: `document.getElementById('serial-tbody').innerHTML = '<tr><td colspan="8" class="empty-state" style="color:red">Failed to load data.</td></tr>';`
+- `app\templates\admin\components\scripts.html:1657`: `document.getElementById('bom-parts-container').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:1703`: `document.getElementById('bom-parts-container').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:1724`: `document.getElementById('bom-parts-container').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:1842`: `row.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2158`: `filterEl.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2257`: `toast.innerHTML = message;`
+- `app\templates\admin\components\scripts.html:2299`: `document.querySelectorAll(`#${tableId}-table .sort-indicator`).forEach(el => el.innerHTML = '');`
+- `app\templates\admin\components\scripts.html:2302`: `indicator.innerHTML = state.dir === 'asc'`
+- `app\templates\admin\components\scripts.html:2378`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2380`: `tbody.innerHTML = buildEmptyState(5, 'No CRS Records Found', 'Try adjusting your search filters.');`
+- `app\templates\admin\components\scripts.html:2381`: `document.getElementById('crs-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2396`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2414`: `document.getElementById('crs-tbody').innerHTML = buildEmptyState(5, 'No CRS Records', 'Select a date or enter a serial, then click Refresh to load CRS records.');`
+- `app\templates\admin\components\scripts.html:2415`: `document.getElementById('crs-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2441`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2443`: `tbody.innerHTML = buildEmptyState(7, 'No GMS Records Found', 'Try adjusting your search filters.');`
+- `app\templates\admin\components\scripts.html:2444`: `document.getElementById('gms-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2459`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2479`: `document.getElementById('gms-tbody').innerHTML = buildEmptyState(7, 'No GMS Records', 'Select a date or enter a serial, then click Refresh to load GMS records.');`
+- `app\templates\admin\components\scripts.html:2480`: `document.getElementById('gms-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2506`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2508`: `tbody.innerHTML = buildEmptyState(9, 'No ATT Records Found', 'Try adjusting your search filters.');`
+- `app\templates\admin\components\scripts.html:2509`: `document.getElementById('att-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2530`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2552`: `document.getElementById('att-tbody').innerHTML = buildEmptyState(9, 'No ATT Records', 'Select a date or enter a serial, then click Refresh to load ATT records.');`
+- `app\templates\admin\components\scripts.html:2553`: `document.getElementById('att-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2586`: `tbody.innerHTML = [1, 2, 3].map(() => `<tr>${Array(cols).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');`
+- `app\templates\admin\components\scripts.html:2608`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'No SPAMSI Records', 'No SPAMSI records match your filter.'); document.getElementById('spamsi-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2609`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2617`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2645`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'No SPAMSO Records', 'No SPAMSO records match your filter.'); document.getElementById('spamso-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2646`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2654`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2692`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'No CB & PCB Records', 'No CB & PCB records match your filter.'); document.getElementById('cbpcb-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2693`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2701`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2730`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'No WCI Records', 'No WCI records match your filter.'); document.getElementById('wci-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2731`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2739`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2768`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'No RIT Records', 'No RIT records match your filter.'); document.getElementById('insp3run-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2769`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2777`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2809`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(7, 'No Vibration Records', 'No Vibration records match your filter.'); document.getElementById('insp3vib-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2810`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2818`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2855`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'No PIT Records', 'No PIT records match your filter.'); document.getElementById('pit-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2856`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2860`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2888`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(6, 'No FIT Records', 'No FIT records match your filter.'); document.getElementById('fit-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2889`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2897`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2918`: `tbody.innerHTML = [1, 2, 3].map(() => `<tr>${Array(10).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');`
+- `app\templates\admin\components\scripts.html:2924`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(10, 'No Repair Records', 'No Repair records match your filter.'); document.getElementById('repair-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2925`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2933`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:2955`: `tbody.innerHTML = [1, 2, 3].map(() => `<tr>${Array(12).fill('<td><div class="skeleton-cell" style="width:90%;height:13px;"></div></td>').join('')}</tr>`).join('');`
+- `app\templates\admin\components\scripts.html:2959`: `if (!data.records.length) { tbody.innerHTML = buildEmptyState(12, 'No Product Tags', 'No records match your filter.'); document.getElementById('prodtag-pagination').innerHTML = ''; return; }`
+- `app\templates\admin\components\scripts.html:2963`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:2973`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:3008`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:3010`: `tbody.innerHTML = emptyStateHtml;`
+- `app\templates\admin\components\scripts.html:3011`: `document.getElementById(containerId).innerHTML = '';`
+- `app\templates\admin\components\scripts.html:3098`: `container.innerHTML = html;`
+- `app\templates\admin\components\scripts.html:3136`: `container.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:3250`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:3252`: `tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No audit logs found.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:3253`: `document.getElementById('audit-pagination').innerHTML = '';`
+- `app\templates\admin\components\scripts.html:3259`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:3323`: `tr.innerHTML = `<td>${rowNum}</td><td><strong>${l.lineno}</strong></td><td>${l.name}</td><td><span class="badge ${l.is_active ? 'badge-active' : 'badge-inactive'}">${l.is_active ? 'Active' : 'Inactive'}</span></td><td style="color:var(--text-secondary);">${l.created_at.split(' ')[0]}</td>`;`
+- `app\templates\admin\components\scripts.html:3469`: `tr.innerHTML = `<td>${rowNum}</td><td><strong>${u.username}</strong></td><td>${u.full_name || '-'}</td><td>${roleBadge}</td><td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td><td style="color:var(--text-secondary);">${u.created_at.split(' ')[0]}</td>`;`
+- `app\templates\admin\components\scripts.html:3631`: `tr.innerHTML = `<td>${rowNum}</td><td><strong>${m.name}</strong></td><td>${m.description || '-'}</td><td><span class="badge ${m.is_active ? 'badge-active' : 'badge-inactive'}">${m.is_active ? 'Active' : 'Inactive'}</span></td><td style="color:var(--text-secondary);">${m.created_at.split(' ')[0]}</td>`;`
+- `app\templates\admin\components\scripts.html:3768`: `tr.innerHTML = `<td>${rowNum}</td><td><strong>${t.name}</strong></td><td>${t.description || '-'}</td><td><span class="badge ${t.is_active ? 'badge-active' : 'badge-inactive'}">${t.is_active ? 'Active' : 'Inactive'}</span></td><td style="color:var(--text-secondary);">${t.created_at.split(' ')[0]}</td>`;`
+- `app\templates\admin\components\scripts.html:3906`: `tr.innerHTML = `<td>${rowNum}</td><td><strong>${area.name}</strong></td><td>${area.description || '-'}</td><td><span class="badge ${area.is_active ? 'badge-active' : 'badge-inactive'}">${area.is_active ? 'Active' : 'Inactive'}</span></td><td style="color:var(--text-secondary);">${area.created_at.split(' ')[0]}</td>`;`
+- `app\templates\admin\components\scripts.html:4086`: `tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="padding:1.5rem; text-align:center;">No serial start entries found.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:4089`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:4110`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:4125`: `tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="padding:1.5rem;">Failed to load serial start data.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:4234`: `tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding:1.5rem; text-align:center;">No gas charge tolerances found.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:4237`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:4263`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:4276`: `tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding:1.5rem;">Failed to load gas charge tolerances.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:4347`: `previewEl.innerHTML = `Target: <strong>${_gtCurrentTargetCharge.toFixed(2)} kg</strong> <br><span style="color:var(--text-color);">Range:</span> <span style="color:var(--success-color);">${lower} kg - ${upper} kg</span>`;`
+- `app\templates\admin\components\scripts.html:4453`: `document.getElementById('att-det-status1').innerHTML = fmtBadgeHTML(data.status1);`
+- `app\templates\admin\components\scripts.html:4454`: `document.getElementById('att-det-status2').innerHTML = fmtBadgeHTML(data.status2);`
+- `app\templates\admin\components\scripts.html:4455`: `document.getElementById('att-det-status3').innerHTML = fmtBadgeHTML(data.status3);`
+- `app\templates\admin\components\scripts.html:4460`: `document.getElementById('att-det-overall').innerHTML = overallHTML;`
+- `app\templates\admin\components\scripts.html:4461`: `document.getElementById('att-det-top-status').innerHTML = overallHTML;`
+- `app\templates\admin\components\scripts.html:4487`: `document.getElementById('gms-det-status').innerHTML = `<span class="status-badge ${badgeCls}">${data.status || '—'}</span>`;`
+- `app\templates\admin\components\scripts.html:4488`: `document.getElementById('gms-det-top-status').innerHTML = `<span class="status-badge ${badgeCls}" style="font-size: 13px; padding: 4px 10px;">${data.status || '—'}</span>`;`
+- `app\templates\admin\components\scripts.html:4513`: `select.innerHTML = '<option value="">Loading models...</option>';`
+- `app\templates\admin\components\scripts.html:4531`: `select.innerHTML = '<option value="">-- Select Model --</option>';`
+- `app\templates\admin\components\scripts.html:4548`: `select.innerHTML = '<option value="">Error loading models</option>';`
+- `app\templates\admin\components\scripts.html:4590`: `if (warningEl) warningEl.innerHTML = `Leftover schedules from <strong>previous working dates</strong> require resolution before starting today's operations.`;`
+- `app\templates\admin\components\scripts.html:4592`: `if (warningEl) warningEl.innerHTML = `Leftover schedules from <strong id="wip-date">${wipData.active_date}</strong> require resolution before starting today's operations.`;`
+- `app\templates\admin\components\scripts.html:4596`: `activeList.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:4614`: `activeList.innerHTML = listHtml;`
+- `app\templates\admin\components\scripts.html:4696`: `activeList.innerHTML = listHtml;`
+- `app\templates\admin\components\scripts.html:4716`: `unstartedList.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:4731`: `item.innerHTML = ``
+- `app\templates\admin\components\scripts.html:4759`: `warningMsg.innerHTML = ``
+- `app\templates\admin\components\scripts.html:4879`: `tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Loading...</td></tr>';`
+- `app\templates\admin\components\scripts.html:4884`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:4886`: `tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No shifts found</td></tr>';`
+- `app\templates\admin\components\scripts.html:4892`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:4903`: `tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="color:var(--danger)">Failed to load shifts</td></tr>';`
+- `app\templates\admin\components\scripts.html:5012`: `tbody.innerHTML = '<tr><td colspan="72" class="empty-state">Loading Line Status...</td></tr>';`
+- `app\templates\admin\components\scripts.html:5018`: `tbody.innerHTML = '<tr><td colspan="72" class="empty-state">No linestat data available</td></tr>';`
+- `app\templates\admin\components\scripts.html:5022`: `tbody.innerHTML = data.map((row, i) => ``
+- `app\templates\admin\components\scripts.html:5103`: `tbody.innerHTML = '<tr><td colspan="72" class="empty-state" style="color:var(--danger);">Failed to load Line Status</td></tr>';`
+- `app\templates\admin\components\scripts.html:5252`: `tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">Loading...</td></tr>`;`
+- `app\templates\admin\components\scripts.html:5256`: `tbody.innerHTML = buildEmptyState(7, 'No Transfer Slips', 'No slips found matching your filters.');`
+- `app\templates\admin\components\scripts.html:5259`: `tbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:5269`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:5282`: `tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:red;">Failed to load.</td></tr>`;`
+- `app\templates\admin\components\scripts.html:5348`: `lineSelect.innerHTML = '<option value="">Loading...</option>';`
+- `app\templates\admin\components\scripts.html:5349`: `shiftSelect.innerHTML = '<option value="">Loading...</option>';`
+- `app\templates\admin\components\scripts.html:5350`: `modelSelect.innerHTML = '<option value="">Loading...</option>';`
+- `app\templates\admin\components\scripts.html:5355`: `lineSelect.innerHTML = '<option value="">-- Select Line --</option>';`
+- `app\templates\admin\components\scripts.html:5356`: `shiftSelect.innerHTML = '<option value="">-- Select Shift --</option>';`
+- `app\templates\admin\components\scripts.html:5357`: `modelSelect.innerHTML = '<option value="">-- Select Model --</option>';`
+- `app\templates\admin\components\scripts.html:5360`: `if (data.lines.length === 0) lineSelect.innerHTML = '<option value="">-- No data found --</option>';`
+- `app\templates\admin\components\scripts.html:5361`: `else data.lines.forEach(l => lineSelect.innerHTML += `<option value="${l}">${l}</option>`);`
+- `app\templates\admin\components\scripts.html:5363`: `if (data.shifts.length === 0) shiftSelect.innerHTML = '<option value="">-- No data found --</option>';`
+- `app\templates\admin\components\scripts.html:5364`: `else data.shifts.forEach(s => shiftSelect.innerHTML += `<option value="${s}">${s}</option>`);`
+- `app\templates\admin\components\scripts.html:5366`: `if (data.models.length === 0) modelSelect.innerHTML = '<option value="">-- No data found --</option>';`
+- `app\templates\admin\components\scripts.html:5367`: `else data.models.forEach(m => modelSelect.innerHTML += `<option value="${m}">${m}</option>`);`
+- `app\templates\admin\components\scripts.html:5372`: `lineSelect.innerHTML = '<option value="">-- Error --</option>';`
+- `app\templates\admin\components\scripts.html:5373`: `shiftSelect.innerHTML = '<option value="">-- Error --</option>';`
+- `app\templates\admin\components\scripts.html:5374`: `modelSelect.innerHTML = '<option value="">-- Error --</option>';`
+- `app\templates\admin\components\scripts.html:5392`: `const oldText = btn.innerHTML;`
+- `app\templates\admin\components\scripts.html:5393`: `btn.innerHTML = 'Generating...';`
+- `app\templates\admin\components\scripts.html:5401`: `btn.innerHTML = oldText;`
+- `app\templates\admin\components\scripts.html:5412`: `btn.innerHTML = oldText;`
+- `app\templates\admin\components\scripts.html:5420`: `const oldText = btn.innerHTML;`
+- `app\templates\admin\components\scripts.html:5421`: `btn.innerHTML = 'Generating...';`
+- `app\templates\admin\components\scripts.html:5427`: `btn.innerHTML = oldText;`
+- `app\templates\admin\components\scripts.html:5435`: `btn.innerHTML = oldText;`
+- `app\templates\admin\components\scripts.html:5458`: `listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 14px;">Loading...</div>`;`
+- `app\templates\admin\components\scripts.html:5464`: `listEl.innerHTML = ``
+- `app\templates\admin\components\scripts.html:5481`: `listEl.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:5488`: `item.innerHTML = ``
+- `app\templates\admin\components\scripts.html:5515`: `listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: red; font-size: 14px;">Failed to load.</div>`;`
+- `app\templates\admin\components\scripts.html:5625`: `sel.innerHTML = '<option value="all">All Models</option>';`
+- `app\templates\admin\components\scripts.html:5643`: `logsTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';`
+- `app\templates\admin\components\scripts.html:5651`: `logsTbody.innerHTML = '<tr><td colspan="5" class="empty-state">No logs found for these filters.</td></tr>';`
+- `app\templates\admin\components\scripts.html:5653`: `logsTbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:5662`: `tr.innerHTML = ``
+- `app\templates\admin\components\scripts.html:5690`: `document.getElementById('sb-og-model').innerHTML = '—';`
+- `app\templates\admin\components\scripts.html:5700`: `document.getElementById('sb-og-icon').innerHTML = '—';`
+- `app\templates\admin\components\scripts.html:5751`: `sicon.innerHTML = '—';`
+- `app\templates\admin\components\scripts.html:5778`: `document.getElementById('sb-og-model').innerHTML = '—';`
+- `app\templates\admin\components\scripts.html:5788`: `document.getElementById('sb-og-icon').innerHTML = '—';`
+- `app\templates\admin\components\scripts.html:5793`: `schedTbody.innerHTML = '<tr><td colspan="4" class="empty-state">No scheduled runs for this date.</td></tr>';`
+- `app\templates\admin\components\scripts.html:5795`: `schedTbody.innerHTML = '';`
+- `app\templates\admin\components\scripts.html:5803`: `tr.innerHTML = ``
+- `app\templates\scoreboard\all_lines.html` External script: `https://cdn.socket.io/4.7.2/socket.io.min.js`
+- `app\templates\scoreboard\line.html:403`: `document.getElementById('sched-tbody').innerHTML = tbodyHtml;`
+- `app\templates\scoreboard\line.html:486`: `document.getElementById('logs-tbody').innerHTML = html;`
+- `app\templates\scoreboard\line.html` External script: `https://cdn.socket.io/4.7.2/socket.io.min.js`
+
+**Reconciliation**: Searched .js, .html, .jinja. (Positive control: innerHTML in some JS files, external CDNs).
