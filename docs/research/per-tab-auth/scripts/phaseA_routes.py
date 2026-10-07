@@ -1,4 +1,4 @@
-"""
+﻿"""
 Extracts routes and role matrices. Run with: python docs/research/per-tab-auth/scripts/phaseA_routes.py
 """
 import os
@@ -113,3 +113,4 @@ for r in routes_data:
 output_a10.append("\n*Hidden UI mapping pending A2 template analysis.*")
 with open(os.path.join(out_dir, "10-role-matrix.md"), 'w', encoding='utf-8') as f:
     f.write("\n".join(output_a10))
+

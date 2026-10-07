@@ -1,4 +1,4 @@
-"""
+﻿"""
 Extracts template stats. Run with: python docs/research/per-tab-auth/scripts/phaseA_templates.py
 """
 import os
@@ -119,3 +119,4 @@ output_a2.append(f"- Unused templates: {len(all_templates - used_templates)}")
 
 with open(os.path.join(out_dir, "02-templates.md"), 'w', encoding='utf-8') as f:
     f.write("\n".join(output_a2))
+

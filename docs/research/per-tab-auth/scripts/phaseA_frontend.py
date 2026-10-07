@@ -1,4 +1,4 @@
-"""
+﻿"""
 Extracts frontend requests and XSS surface. Run with: python docs/research/per-tab-auth/scripts/phaseA_frontend.py
 """
 import os
@@ -53,3 +53,4 @@ with open(os.path.join(out_dir, "03-frontend-requests.md"), 'w', encoding='utf-8
     
 with open(os.path.join(out_dir, "08-xss-surface.md"), 'w', encoding='utf-8') as f:
     f.write("\n".join(output_a8))
+

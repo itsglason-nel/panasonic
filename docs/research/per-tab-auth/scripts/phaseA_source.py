@@ -1,4 +1,4 @@
-"""
+﻿"""
 Extracts library source facts. Run with: python docs/research/per-tab-auth/scripts/phaseA_source.py
 """
 import os
@@ -40,3 +40,4 @@ output_a7.append("- Flask hook order: `before_request` hooks run in the order th
 
 with open(os.path.join(out_dir, "07-source-verified-facts.md"), 'w', encoding='utf-8') as f:
     f.write("\n".join(output_a7))
+

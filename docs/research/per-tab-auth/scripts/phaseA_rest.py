@@ -1,4 +1,4 @@
-"""
+﻿"""
 Writes manual research facts. Run with: python docs/research/per-tab-auth/scripts/phaseA_rest.py
 """
 import os
@@ -151,3 +151,4 @@ write_md("00-summary.md", a12)
 write_md("12-open-questions.md", "See 00-summary.md")
 
 print("Files written successfully.")
+
