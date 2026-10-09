@@ -4,17 +4,17 @@
 
 | Check | Result | Verified by | Evidence |
 |---|---|---|---|
-| login | NOT TESTED | - | |
-| logout | NOT TESTED | - | |
-| Back button after logout | NOT TESTED | - | |
+| login | Pass | my browser (owner-reported, values not pasted) | |
+| logout | Pass | my browser (owner-reported, values not pasted) | |
+| Back button after logout | Pass (login page) | my browser (owner-reported, values not pasted) | |
 | two users on two hosts | Pass (stay separate) | script, earlier commit 135c5a4, development config, not re-run at HEAD | Phase 1 baseline isolated hosts via session backend (see aseline-headers.md). |
-| same user in two tabs | NOT TESTED | - | |
+| same user in two tabs | Pass | my browser (owner-reported, values not pasted) | |
 | expired session | NOT TESTED | - | |
 | JSON no-store | Pass | script, earlier commit aca0fc0, development config, not re-run at HEAD | Phase 2 script snapshot (phase2-headers.md) confirmed Cache-Control: no-store on API. |
 | HTML no-store | Pass | script, earlier commit aca0fc0, development config, not re-run at HEAD | Phase 2 script snapshot confirmed Cache-Control: no-store on HTML routes. |
 | static headers unchanged from baseline | Pass | script, earlier commit aca0fc0, development config, not re-run at HEAD | Phase 2 script snapshot confirmed /static bypassed the hook. |
-| cookie flags unchanged from baseline | NOT TESTED | - | |
-| REQUIRE_HTTPS unset = baseline | NOT TESTED | - | |
+| cookie flags unchanged from baseline | Pass | my browser (owner-reported, values not pasted) | |
+| REQUIRE_HTTPS unset = baseline | Pass | my browser (owner-reported, values not pasted) | |
 | HARDEN_API_CACHE off = JSON as baseline | NOT TESTED | - | (Verified logic via script, but full server end-to-end not tested in browser). |
 
 ## B. Flags
