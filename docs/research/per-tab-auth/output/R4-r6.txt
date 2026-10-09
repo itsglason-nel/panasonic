@@ -1,0 +1,25 @@
+--- R4: SERVER STARTUP ---
+--- wsgi.py ---
+"""
+PMPC Data Logger — WSGI Entry Point
+Usage: gunicorn --worker-class eventlet -b 0.0.0.0:8080 wsgi:app
+"""
+from app import create_app, socketio
+
+app = create_app()
+
+if __name__ == '__main__':
+    socketio.run(
+        app,
+        host=app.config.get('SERVER_HOST', '0.0.0.0'),
+        port=app.config.get('SERVER_PORT', 8080),
+        debug=app.config.get('DEBUG', False),
+    )
+
+--- SocketIO Matches ---
+app\__init__.py:9: from flask_socketio import SocketIO  # type: ignore
+app\__init__.py:27: socketio = SocketIO()
+app\__init__.py:91: # Flask-SocketIO
+config.py:61: # SocketIO CORS — set to '*' to allow localhost vs 127.0.0.1 origins
+app\templates\scoreboard\all_lines.html:141: const socket = io();
+app\templates\scoreboard\line.html:332: const socket = io();

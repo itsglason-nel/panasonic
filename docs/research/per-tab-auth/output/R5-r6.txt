@@ -1,0 +1,9 @@
+--- R5: PATH DEPENDENCIES ---
+app\__init__.py:115: @app.after_request
+app\__init__.py:127: if request.endpoint == 'static':
+app\__init__.py:168: logger.warning(f"CSRF Error: {e.description} on {flask_request.url}")
+app\__init__.py:171: if flask_request.endpoint == 'auth.login':
+app\__init__.py:173: return redirect(flask_request.referrer or url_for('auth.login'))
+app\__init__.py:176: @app.before_request
+app\__init__.py:189: if flask_request.endpoint == 'static':
+app\routes\admin.py:91: request.path,

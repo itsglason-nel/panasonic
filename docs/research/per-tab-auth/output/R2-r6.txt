@@ -1,0 +1,37 @@
+--- R2: PYTHON REDIRECTS ---
+app\__init__.py:82: login_manager.login_view = 'auth.login'
+app\__init__.py:172: return redirect(url_for('auth.login'))
+app\__init__.py:173: return redirect(flask_request.referrer or url_for('auth.login'))
+app\routes\admin.py:102: return redirect(url_for('scoreboard.all_lines'))
+app\routes\admin.py:362: # Get next sequence number for today
+app\routes\admin.py:364: next_seq = 0 if not last_sched else last_sched.seq + 1
+app\routes\admin.py:387: seq=next_seq,
+app\routes\admin.py:395: next_seq += 1
+app\routes\admin.py:437: seq=next_seq,
+app\routes\admin.py:445: next_seq += 1
+app\routes\admin.py:555: @admin_bp.route('/admin/api/next-sequence', methods=['GET'])
+app\routes\admin.py:557: def get_next_sequence():
+app\routes\admin.py:571: next_seq = 0 if not last_sched else last_sched.seq + 1
+app\routes\admin.py:572: return jsonify({'next_sequence': next_seq})
+app\routes\admin.py:607: next_seq = 0 if not last_sched else last_sched.seq + 1
+app\routes\admin.py:611: seq=next_seq,
+app\routes\admin.py:1506: abort(403)
+app\routes\admin.py:2667: # Get next sequence for today
+app\routes\admin.py:2669: next_seq = 0 if not last_sched else last_sched.seq + 1
+app\routes\admin.py:2683: seq=next_seq,
+app\routes\admin.py:2691: next_seq += 1
+app\routes\auth.py:49: return redirect(url_for('admin.admin_page'))
+app\routes\auth.py:50: return redirect(url_for('auth.login'))
+app\routes\auth.py:56: return redirect(url_for('admin.admin_page'))
+app\routes\auth.py:64: abort(400, description='Invalid or missing CSRF token.')
+app\routes\auth.py:96: return redirect(url_for('admin.admin_page'))
+app\routes\auth.py:119: return redirect(url_for('admin.admin_page'))
+app\routes\auth.py:128: return redirect(url_for('auth.login'))
+app\services\pdf_generator.py:63: browser_exe = next((p for p in edge_paths if os.path.exists(p)), None)
+app\services\transfer_slip_observer.py:103: # Might be that all PIT records are not GOOD yet or already assigned. We'll check again next loop.
+tools\bulk_model_import\csv_to_sql.py:102: header = next(reader, None)  # Skip row 1 (Table|Column names)
+tools\bulk_model_import\csv_to_sql.py:103: _ = next(reader, None)       # Skip row 2 (Constraints)
+tools\bulk_model_import\csv_to_sql.py:182: header = next(reader, None)  # Skip row 1
+tools\bulk_model_import\csv_to_sql.py:183: _ = next(reader, None)       # Skip row 2
+tools\bulk_model_import\csv_to_sql.py:256: header = next(reader, None)  # Skip row 1
+tools\bulk_model_import\csv_to_sql.py:257: _ = next(reader, None)       # Skip row 2

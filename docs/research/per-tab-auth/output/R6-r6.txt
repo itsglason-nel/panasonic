@@ -1,0 +1,28 @@
+--- R6: SESSION FILES ---
+--- __init__.py ---
+10: from flask_wtf.csrf import CSRFProtect
+28: csrf = CSRFProtect()
+108: # CSRF protection — exempt JSON API blueprints (they use session auth + same-origin)
+109: csrf.init_app(app)
+110: csrf.exempt(api_bp)
+111: csrf.exempt(admin_bp)
+112: csrf.exempt(scoreboard_bp)
+164: from flask_wtf.csrf import CSRFError
+166: @app.errorhandler(CSRFError)
+167: def handle_csrf_error(e):
+168: logger.warning(f"CSRF Error: {e.description} on {flask_request.url}")
+169: flash('Your session has expired or is invalid. Please try again.', 'error')
+--- __init__.py ---
+--- auth.py ---
+5: from flask_login import login_user, logout_user, login_required, current_user
+59: # CSRF validation
+60: from flask_wtf.csrf import validate_csrf
+62: validate_csrf(request.form.get('csrf_token'))
+64: abort(400, description='Invalid or missing CSRF token.')
+73: flash(
+86: login_user(user)
+90: flash(
+102: flash('Invalid username or password.', 'danger')
+108: flash(
+--- __init__.py ---
+--- __init__.py ---

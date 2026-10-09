@@ -1,0 +1,26 @@
+--- R3: SESSION COOKIE PATH ---
+--- __init__.py ---
+55: app.config['SESSION_COOKIE_SECURE'] = require_https
+56: app.config['REMEMBER_COOKIE_SECURE'] = require_https
+57: app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+58: app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
+71: app.config['SESSION_REDIS'] = redis_client
+74: app.config['SESSION_TYPE'] = 'filesystem'
+75: app.config['SESSION_FILE_DIR'] = os.path.join(
+143: if 'Cookie' not in vary:
+144: response.headers['Vary'] = f"{vary}, Cookie" if vary else "Cookie"
+207: redis_client = current_app.config.get('SESSION_REDIS')
+--- config.py ---
+45: SESSION_TYPE = 'redis'
+46: SESSION_PERMANENT = False
+47: SESSION_USE_SIGNER = True
+48: SESSION_KEY_PREFIX = 'pmpc_session:'
+54: REMEMBER_COOKIE_DURATION = 86400  # 24 hours
+56: # Session cookie hardening
+57: SESSION_COOKIE_HTTPONLY = True       # JS cannot read the session cookie
+58: SESSION_COOKIE_SAMESITE = 'Lax'     # Prevents CSRF via cross-site requests
+59: SESSION_COOKIE_NAME = 'pmpc_session'  # Non-guessable cookie name
+
+--- FOUND FLASK-SESSION at C:\Users\DELL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flask_session ---
+--- __init__.py ---
+Mentions of cookie_path in __init__.py:
