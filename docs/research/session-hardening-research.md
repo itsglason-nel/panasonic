@@ -63,7 +63,7 @@ e. **Static routes / Downloads**:
 **Recommendation on Phase 4 (Per-Tab Tokens)**:
 Due to the heavy reliance on server-side rendering of user data, skipping Phase 4 is confirmed. 
 
-**Alternative (Selected)**: Use browser host isolation (e.g., `localhost` vs `127.0.0.1`). Browsers natively isolate cookies by host. This achieves perfect per-tab/per-window isolation without any code changes, completely avoiding the complexities of JWTs, mismatch checks, and XSS risks.
+**Alternative (Selected)**: Use browser host isolation (e.g., `localhost` vs `127.0.0.1`). Browsers natively isolate cookies by host. Separate hosts (localhost vs 127.0.0.1), separate browser profiles or private windows each keep their own login. Tabs on the same host in the same profile share one login.
 
 ## Phase 2 Findings
 - The application's `after_request` hook now conditionally applies strict `Cache-Control` (`no-store, no-cache, must-revalidate, max-age=0`), `Pragma: no-cache`, and `Expires: 0` headers to both `text/html` and `application/json` responses.

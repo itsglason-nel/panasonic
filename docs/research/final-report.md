@@ -4,18 +4,18 @@
 
 | Check | Result | Verified by | Evidence |
 |---|---|---|---|
-| login | NOT TESTED | my browser | |
-| logout | NOT TESTED | my browser | |
-| Back button after logout | NOT TESTED | my browser | |
-| two users on two hosts | Pass (stay separate) | script | Phase 1 baseline isolated hosts via session backend (see `baseline-headers.md`). |
-| same user in two tabs | NOT TESTED | my browser | |
-| expired session | NOT TESTED | my browser | |
-| JSON no-store | Pass | script | Phase 2 script snapshot (`phase2-headers.md`) confirmed `Cache-Control: no-store` on API. |
-| HTML no-store | Pass | script | Phase 2 script snapshot confirmed `Cache-Control: no-store` on HTML routes. |
-| static headers unchanged from baseline | Pass | script | Phase 2 script snapshot confirmed `/static` bypassed the hook. |
-| cookie flags unchanged from baseline | Pass | script | Phase 3 script test (`test_phase3_helper.py`) confirmed flags unchanged with `REQUIRE_HTTPS` unset. |
-| REQUIRE_HTTPS unset = baseline | Pass | script | Phase 3 script test output matched Phase 1 baseline. |
-| HARDEN_API_CACHE off = JSON as baseline | NOT TESTED | my browser | (Verified logic via script, but full server end-to-end not tested in browser). |
+| login | NOT TESTED | - | |
+| logout | NOT TESTED | - | |
+| Back button after logout | NOT TESTED | - | |
+| two users on two hosts | Pass (stay separate) | script, earlier commit 56e9d6a, development config, not re-run at HEAD | Phase 1 baseline isolated hosts via session backend (see aseline-headers.md). Note that the 2c flag proof used a copy of the code. |
+| same user in two tabs | NOT TESTED | - | |
+| expired session | NOT TESTED | - | |
+| JSON no-store | Pass | script, earlier commit 600e588, development config, not re-run at HEAD | Phase 2 script snapshot (phase2-headers.md) confirmed Cache-Control: no-store on API. Note that the 2c flag proof used a copy of the code. |
+| HTML no-store | Pass | script, earlier commit 600e588, development config, not re-run at HEAD | Phase 2 script snapshot confirmed Cache-Control: no-store on HTML routes. Note that the 2c flag proof used a copy of the code. |
+| static headers unchanged from baseline | Pass | script, earlier commit 600e588, development config, not re-run at HEAD | Phase 2 script snapshot confirmed /static bypassed the hook. Note that the 2c flag proof used a copy of the code. |
+| cookie flags unchanged from baseline | NOT TESTED | - | |
+| REQUIRE_HTTPS unset = baseline | NOT TESTED | - | |
+| HARDEN_API_CACHE off = JSON as baseline | NOT TESTED | - | (Verified logic via script, but full server end-to-end not tested in browser). |
 
 ## B. Flags
 - `HARDEN_API_CACHE`: Default is ON. Accepted values: `1`, `true`, `yes`, `on` for True; `0`, `false`, `no`, `off` for False.
