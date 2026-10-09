@@ -7,12 +7,12 @@
 | login | NOT TESTED | - | |
 | logout | NOT TESTED | - | |
 | Back button after logout | NOT TESTED | - | |
-| two users on two hosts | Pass (stay separate) | script, earlier commit 56e9d6a, development config, not re-run at HEAD | Phase 1 baseline isolated hosts via session backend (see aseline-headers.md). Note that the 2c flag proof used a copy of the code. |
+| two users on two hosts | Pass (stay separate) | script, earlier commit 135c5a4, development config, not re-run at HEAD | Phase 1 baseline isolated hosts via session backend (see aseline-headers.md). |
 | same user in two tabs | NOT TESTED | - | |
 | expired session | NOT TESTED | - | |
-| JSON no-store | Pass | script, earlier commit 600e588, development config, not re-run at HEAD | Phase 2 script snapshot (phase2-headers.md) confirmed Cache-Control: no-store on API. Note that the 2c flag proof used a copy of the code. |
-| HTML no-store | Pass | script, earlier commit 600e588, development config, not re-run at HEAD | Phase 2 script snapshot confirmed Cache-Control: no-store on HTML routes. Note that the 2c flag proof used a copy of the code. |
-| static headers unchanged from baseline | Pass | script, earlier commit 600e588, development config, not re-run at HEAD | Phase 2 script snapshot confirmed /static bypassed the hook. Note that the 2c flag proof used a copy of the code. |
+| JSON no-store | Pass | script, earlier commit aca0fc0, development config, not re-run at HEAD | Phase 2 script snapshot (phase2-headers.md) confirmed Cache-Control: no-store on API. |
+| HTML no-store | Pass | script, earlier commit aca0fc0, development config, not re-run at HEAD | Phase 2 script snapshot confirmed Cache-Control: no-store on HTML routes. |
+| static headers unchanged from baseline | Pass | script, earlier commit aca0fc0, development config, not re-run at HEAD | Phase 2 script snapshot confirmed /static bypassed the hook. |
 | cookie flags unchanged from baseline | NOT TESTED | - | |
 | REQUIRE_HTTPS unset = baseline | NOT TESTED | - | |
 | HARDEN_API_CACHE off = JSON as baseline | NOT TESTED | - | (Verified logic via script, but full server end-to-end not tested in browser). |
