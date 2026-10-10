@@ -9,11 +9,11 @@
             const contentType = response.headers.get('content-type');
             if ((response.redirected && response.url.includes('/auth/login')) ||
                 (contentType && contentType.includes('text/html'))) {
-                window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                window.location.href = (window.tabUrl ? window.tabUrl('/auth/login') : '/auth/login') + '?next=' + encodeURIComponent(window.location.pathname);
                 return new Promise(() => { }); // Prevent downstream JSON parsing errors
             }
             if (response.status === 401) {
-                window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                window.location.href = (window.tabUrl ? window.tabUrl('/auth/login') : '/auth/login') + '?next=' + encodeURIComponent(window.location.pathname);
                 return new Promise(() => { });
             }
             return response;
@@ -3579,7 +3579,7 @@
                     if (d.success) {
                         if (d.redirect) {
                             showToast(d.message || 'User deleted. Redirecting...', 'success');
-                            setTimeout(() => window.location.href = d.redirect, 1500);
+                            setTimeout(() => window.location.href = (window.tabUrl ? window.tabUrl(d.redirect) : d.redirect), 1500);
                         } else {
                             selectedUserId = null; currentUserData = null; loadUsers(); showToast('User deleted.', 'success');
                         }

@@ -14,7 +14,7 @@
 
     <script>
         if (!sessionStorage.getItem('tab_session_active')) {
-            window.location.replace('/auth/logout');
+            window.location.replace(window.tabUrl ? window.tabUrl('/auth/logout') : '/auth/logout');
         } else {
             document.documentElement.classList.add('session-valid');
         }

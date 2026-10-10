@@ -147,7 +147,7 @@
             .then(lines => {
                 lines.forEach(line => {
                     const a = document.createElement('a');
-                    a.className = 'nav-link' + (window.location.pathname === `/scoreboard/line/${line.id}` ? ' active' : '');
+                    a.className = 'nav-link' + (window.location.pathname === (window.TAB_BASE || "") + `/scoreboard/line/${line.id}` ? ' active' : '');
                     a.href = `/scoreboard/line/${line.id}`;
                     a.innerHTML = `<svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="8" width="4" height="10"/><rect x="8" y="4" width="4" height="14"/><rect x="14" y="1" width="4" height="17"/></svg>${line.name}`;
                     navContainer.appendChild(a);

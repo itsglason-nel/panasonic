@@ -330,7 +330,7 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({ path: (window.TAB_BASE || "") + "/socket.io" });
         const lineno = "{{ line.lineno }}";
         
         const updateDate = (dateStr) => {

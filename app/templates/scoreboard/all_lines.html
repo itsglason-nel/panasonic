@@ -139,7 +139,7 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io({ path: (window.TAB_BASE || "") + "/socket.io" });
         
         function updateScoreboard() {
             fetch('/api/scoreboard/data')
