@@ -47,6 +47,10 @@ def create_app(config_name=None):
         template_folder='templates',
     )
     app.config.from_object(config_map[config_name])
+
+    if app.config['ENABLE_TAB_SESSIONS']:
+        from app.tabscope import register_prefix_policy
+        register_prefix_policy(app)
     
     # ── Custom Config Flags ──
     app.config['HARDEN_API_CACHE'] = parse_bool_env('HARDEN_API_CACHE', True)
@@ -340,5 +344,9 @@ def create_app(config_name=None):
         logger.warning('Failed to start Model Import observer thread: %s', e)
 
     logger.info('PMPC Data Logger started in "%s" mode.', config_name)
-    return app
 
+    if app.config['ENABLE_TAB_SESSIONS']:
+        from app.tabscope import apply_cookie_path, TabScope
+        apply_cookie_path(app)
+        app.wsgi_app = TabScope(app.wsgi_app)
+    return app
