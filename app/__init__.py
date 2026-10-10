@@ -53,8 +53,9 @@ def create_app(config_name=None):
         app.config['SESSION_COOKIE_NAME'] = 'pmpc_tab_session'
         app.config['SESSION_FILE_THRESHOLD'] = 5000
         
-        from app.tabscope import register_prefix_policy
+        from app.tabscope import register_prefix_policy, register_old_cookie_cleanup
         register_prefix_policy(app)
+        register_old_cookie_cleanup(app)
     
     # ── Custom Config Flags ──
     app.config['HARDEN_API_CACHE'] = parse_bool_env('HARDEN_API_CACHE', True)

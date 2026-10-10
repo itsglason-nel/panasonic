@@ -1,3 +1,10 @@
+
+def register_old_cookie_cleanup(app):
+    @app.after_request
+    def cleanup_old_cookie(response):
+        if "pmpc_session" in request.cookies:
+            response.delete_cookie("pmpc_session", path="/")
+        return response
 import secrets
 import re
 from flask import request, jsonify, redirect
