@@ -48,7 +48,11 @@ def create_app(config_name=None):
     )
     app.config.from_object(config_map[config_name])
 
-    if app.config['ENABLE_TAB_SESSIONS']:
+    app.config['ENABLE_TAB_SESSIONS'] = parse_bool_env('ENABLE_TAB_SESSIONS', False)
+    if app.config.get('ENABLE_TAB_SESSIONS', False):
+        app.config['SESSION_COOKIE_NAME'] = 'pmpc_tab_session'
+        app.config['SESSION_FILE_THRESHOLD'] = 5000
+        
         from app.tabscope import register_prefix_policy
         register_prefix_policy(app)
     
@@ -80,6 +84,10 @@ def create_app(config_name=None):
             os.path.dirname(__file__), '.flask_sessions'
         )
     session_ext.init_app(app)
+
+    if app.config.get('ENABLE_TAB_SESSIONS', False):
+        from app.tabscope import apply_cookie_path
+        apply_cookie_path(app)
 
     # Flask-Login
     login_manager.init_app(app)
@@ -344,9 +352,8 @@ def create_app(config_name=None):
         logger.warning('Failed to start Model Import observer thread: %s', e)
 
     logger.info('PMPC Data Logger started in "%s" mode.', config_name)
-
-    if app.config['ENABLE_TAB_SESSIONS']:
-        from app.tabscope import apply_cookie_path, TabScope
-        apply_cookie_path(app)
+    if app.config.get('ENABLE_TAB_SESSIONS', False):
+        from app.tabscope import TabScope
         app.wsgi_app = TabScope(app.wsgi_app)
     return app
+
