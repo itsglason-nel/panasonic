@@ -1,4 +1,4 @@
-﻿const BASE = document.currentScript.dataset.base;
+const BASE = document.currentScript.dataset.base;
 if (BASE) {
     window.TAB_BASE = BASE;
     window.tabUrl = u => (typeof u === "string" && u.startsWith("/") && !u.startsWith("//") && !u.startsWith(BASE + "/") && !u.startsWith("/static/") && !u.startsWith("/socket.io/")) ? BASE + u : u;
