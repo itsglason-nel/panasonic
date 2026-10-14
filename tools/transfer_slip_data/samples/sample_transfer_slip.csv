@@ -1,2 +1,5 @@
-Reference Number,Production Date,Line,Shift,Model,Total Qty,Created By,Start Time,End Time,Finished Date,Serials
-L126100001,2026-10-05,L1,Shift 1,CW-U921JPH,3,System (Auto),08:30:00,10:45:00,2026-10-05,"12345678, 12345679, 12345680"
+Plant,Serial Number,Material Number,Actual Quantity,Update Date,Update Time,Slip No.,Slip Line,Production Order,Operation No.
+34P3,691625793,CW-U921JPH,100,22.09.2026,11:25:07,L126090075,L1,,
+34P3,691625794,CW-U921JPH,100,22.09.2026,11:25:07,L126090075,L1,,
+34P3,791625801,CW-XC12345,50,22.09.2026,16:45:10,L126090075,L1,,
+34P3,791625802,CW-XC12345,50,22.09.2026,16:45:10,L126090075,L1,,

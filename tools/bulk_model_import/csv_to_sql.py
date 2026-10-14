@@ -81,6 +81,7 @@ def convert_csv_to_sql(config_path, parts_path):
     statements = []
     errors = []
     seen_modelcodes = set()
+    seen_serialstarts = set()
     seen_spamsi_codes = set()
     seen_areas = set()
     seen_modules = set()
@@ -129,7 +130,12 @@ def convert_csv_to_sql(config_path, parts_path):
                     _validate_length(area, 14, 'area', i, 'Config')
                     if area:
                         seen_areas.add(area)
-                    _validate_length(serialstart, 6, 'serialstart', i, 'Config')
+                    if serialstart:
+                        _validate_length(serialstart, 6, 'serialstart', i, 'Config')
+                        if serialstart in seen_serialstarts:
+                            errors.append(f"Config Row {i}: duplicate serialstart '{serialstart}'")
+                            continue
+                        seen_serialstarts.add(serialstart)
 
                     gmstolpos = _validate_decimal(row[5].strip(), 'gmstolpos', i, 'Config')
                     gmstolneg = _validate_decimal(row[6].strip(), 'gmstolneg', i, 'Config')
@@ -151,9 +157,12 @@ def convert_csv_to_sql(config_path, parts_path):
                     spamso_out = row[20].strip() or None
 
                     if spamsi_code:
+                        if len(spamsi_code) < 3:
+                            spamsi_code = spamsi_code.zfill(3)
                         _validate_length(spamsi_code, 4, 'spamsi_unique_code', i, 'Config')
                         if spamsi_code in seen_spamsi_codes:
                             errors.append(f"Config Row {i}: duplicate spamsi_unique_code '{spamsi_code}'")
+                            continue
                         seen_spamsi_codes.add(spamsi_code)
 
                     if spamso_out:
@@ -206,6 +215,8 @@ def convert_csv_to_sql(config_path, parts_path):
                     ritheat2 = _validate_on_null(row[17].strip(), 'ritheat2', i, 'Config')
                     pittws = _validate_on_null(row[18].strip(), 'pittws', i, 'Config')
                     spamsi_code = row[19].strip() or None
+                    if spamsi_code and len(spamsi_code) < 3:
+                        spamsi_code = spamsi_code.zfill(3)
                     spamso_out = row[20].strip() or None
 
                     statements.append("-- Model: " + modelcode)

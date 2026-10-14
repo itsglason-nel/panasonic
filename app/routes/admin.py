@@ -1,6 +1,6 @@
 """Admin routes — Administrator module page and CRUD APIs."""
 import logging
-from flask import Blueprint, session, render_template, jsonify, request, redirect, url_for
+from flask import Blueprint, session, render_template, jsonify, request, redirect, url_for, current_app
 from datetime import datetime
 from functools import wraps
 from flask_login import login_required, current_user, logout_user
@@ -182,6 +182,7 @@ def get_schedules():
             
         is_locked = False
         is_queued_at_crs = False
+        is_on_belt = False
         ls = linestat_dict.get(s.lineno)
         if ls:
             is_on_belt = (
@@ -207,6 +208,25 @@ def get_schedules():
             
             is_queued_at_crs = is_on_belt and not is_locked
 
+        table_crs = crs_counts.get((str(s.date), s.modelcode, s.lineno), 0)
+        belt_crs = 0
+        if ls:
+            if ls.crsmodelcode == s.modelcode:
+                belt_crs = max(0, s.plan - (ls.crsvar or 0))
+            elif is_on_belt:
+                belt_crs = s.plan
+        effective_crs_qty = max(table_crs, s.act, belt_crs)
+
+        is_crs_done_and_moved = False
+        if ls and effective_crs_qty >= s.plan:
+            another_at_crs = (ls.crsmodelcode is not None and ls.crsmodelcode != s.modelcode)
+            later_started = any(
+                other.seq > s.seq and (other.act > 0 or other.modelcode == ls.crsmodelcode)
+                for other in schedules if other.lineno == s.lineno and other.date == s.date
+            )
+            if another_at_crs or later_started:
+                is_crs_done_and_moved = True
+
         schedules_data.append({
             'id': s.id,
             'line_code': s.lineno,
@@ -216,7 +236,7 @@ def get_schedules():
             'model_id': s.id,
             'planned_qty': s.plan,
             'actual_qty': s.act,
-            'crs_qty': crs_counts.get((str(s.date), s.modelcode, s.lineno), 0),
+            'crs_qty': effective_crs_qty,
             'takt_time': s.takttime,
             'shift': 'DAY',
             'status': 'ON_GOING' if s.act < s.plan else 'DONE',
@@ -227,6 +247,7 @@ def get_schedules():
             'is_ghost': is_ghost,
             'is_locked': is_locked,
             'is_queued_at_crs': is_queued_at_crs,
+            'is_crs_done_and_moved': is_crs_done_and_moved,
         })
 
     # ── Build wip_status for ghost resolution ────────────────────────────────
@@ -363,8 +384,13 @@ def wip_resolve():
         last_sched = WorkSched.query.filter_by(lineno=lineno, date=today_date).order_by(WorkSched.seq.desc()).first()
         next_seq = 0 if not last_sched else last_sched.seq + 1
 
+        carried_act_by_model = {}
+        old_plan_by_model = {}
+
         for sched in unfinished_scheds:
             s_model = sched.modelcode.strip() if sched.modelcode else ''
+            carried_act_by_model[s_model] = sched.act or 0
+            old_plan_by_model[s_model] = sched.plan or 0
             if s_model not in active_model_codes:
                 # Unstarted schedule
                 if str(sched.id) in unstarted_plans:
@@ -415,29 +441,30 @@ def wip_resolve():
                     if linestat.outmodelcode and linestat.outmodelcode.strip() == s_model and linestat.outvar:
                         max_var = max(max_var, linestat.outvar)
                         
-                    final_plan = max_var
-                    
-                    # If they updated the plan for the CRS model, check if it's higher
+                    # Determine total batch plan and carried actual
+                    carried_act = sched.act or 0
+                    total_batch_plan = sched.plan
                     if linestat.crsmodelcode and linestat.crsmodelcode.strip() == s_model and crs_new_plan:
                         try:
                             crs_plan_val = int(crs_new_plan)
-                            if crs_plan_val > final_plan:
-                                final_plan = crs_plan_val
+                            if crs_plan_val >= carried_act:
+                                total_batch_plan = crs_plan_val
                         except ValueError:
                             pass
                     
-                    if final_plan > 0:
+                    if total_batch_plan > 0:
                         # Fix 4: Check for existing today-schedule to avoid UniqueConstraint crash
                         existing = WorkSched.query.filter_by(lineno=lineno, date=today_date, modelcode=sched.modelcode).first()
                         if existing:
-                            existing.plan += final_plan
+                            existing.plan = total_batch_plan
+                            existing.act = carried_act
                         else:
                             new_sched = WorkSched(
                                 lineno=lineno,
                                 seq=next_seq,
                                 modelcode=sched.modelcode,
-                                plan=final_plan,
-                                act=0, 
+                                plan=total_batch_plan,
+                                act=carried_act, 
                                 takttime=sched.takttime,
                                 date=today_date
                             )
@@ -533,6 +560,30 @@ def wip_resolve():
                 from datetime import datetime
                 linestat.active_date = today_date
                 linestat.updtime = datetime.now()
+                if linestat.crsmodelcode and crs_new_plan:
+                    try:
+                        new_plan_val = int(crs_new_plan)
+                        crs_model_clean = linestat.crsmodelcode.strip()
+                        old_plan_val = old_plan_by_model.get(crs_model_clean, new_plan_val)
+                        plan_diff = new_plan_val - old_plan_val
+                        stations = [
+                            ('crs', 'crsmodelcode', 'crsvar'),
+                            ('att', 'attmodelcode', 'attvar'),
+                            ('gms', 'gmsmodelcode', 'gmsvar'),
+                            ('spamsi', 'inmodelcode', 'invar'),
+                            ('spamso', 'outmodelcode', 'outvar'),
+                            ('wci', 'wcimodelcode', 'wcivar'),
+                            ('rit', 'ritmodelcode', 'ritvar'),
+                            ('fit', 'fitmodelcode', 'fitvar'),
+                            ('pit', 'pitmodelcode', 'pitvar')
+                        ]
+                        for st_prefix, code_attr, var_attr in stations:
+                            st_code = getattr(linestat, code_attr)
+                            if st_code and st_code.strip() == crs_model_clean:
+                                current_var = getattr(linestat, var_attr) or 0
+                                setattr(linestat, var_attr, max(0, current_var + plan_diff))
+                    except ValueError:
+                        pass
         db.session.commit()
         
         # If the belt has no active models (all were unstarted ghost schedules),
@@ -606,17 +657,22 @@ def add_schedule():
     last_sched = WorkSched.query.filter_by(lineno=lineno, date=parsed_date).order_by(WorkSched.seq.desc()).first()
     next_seq = 0 if not last_sched else last_sched.seq + 1
 
-    new_sched = WorkSched(
-        lineno=lineno,
-        seq=next_seq,
-        modelcode=modelcode,
-        plan=data.get('planned_qty', 0),
-        act=0,
-        takttime=data.get('takt_time', 0),
-        date=parsed_date
-    )
-    db.session.add(new_sched)
-    db.session.commit()
+    try:
+        new_sched = WorkSched(
+            lineno=lineno,
+            seq=next_seq,
+            modelcode=modelcode,
+            plan=data.get('planned_qty', 0),
+            act=0,
+            takttime=data.get('takt_time', 0),
+            date=parsed_date
+        )
+        db.session.add(new_sched)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error('add_schedule failed: %s', e)
+        return jsonify({'success': False, 'error': f'Failed to add schedule: {str(e)}'}), 400
 
     # Seed linestat only if the line is currently idle (No Work).
     # Lines that already have an active or WIP model are left untouched;
@@ -792,24 +848,69 @@ def edit_delete_schedule(sid):
                 # sched.act only reflects PIT-completed units. CRS is the entry
                 # point, so any unit scanned there is already "in the pipeline".
                 from sqlalchemy import text as sa_text
-                crs_count = db.session.query(func.count(CRS.id)).filter(
+                table_crs_count = db.session.query(func.count(CRS.id)).filter(
                     CRS.modelcode == sched.modelcode,
                     CRS.lineno == sched.lineno,
                     func.date(CRS.time) == sched.date
                 ).scalar() or 0
+
+                belt_crs = 0
+                if linestat:
+                    if linestat.crsmodelcode == sched.modelcode:
+                        belt_crs = max(0, sched.plan - (linestat.crsvar or 0))
+                    elif is_active_sched:
+                        belt_crs = sched.plan
+
+                crs_count = max(table_crs_count, sched.act, belt_crs)
                 floor = max(sched.act, crs_count)
                 if diff < 0 and new_plan < floor:
                     return jsonify({'success': False, 'error': f'Cannot decrease plan below {floor} — {crs_count} unit(s) already scanned at CRS ({sched.act} completed at PIT).'})
                 
+                if diff > 0 and linestat and crs_count >= sched.plan:
+                    another_at_crs = (linestat.crsmodelcode is not None and linestat.crsmodelcode != sched.modelcode)
+                    later_scheds = WorkSched.query.filter(
+                        WorkSched.lineno == sched.lineno,
+                        WorkSched.date == sched.date,
+                        WorkSched.seq > sched.seq
+                    ).all()
+                    
+                    later_active_or_started = None
+                    if later_scheds:
+                        active_station_codes = {m for m in [
+                            linestat.crsmodelcode, linestat.attmodelcode, linestat.gmsmodelcode,
+                            linestat.inmodelcode, linestat.outmodelcode, linestat.wcimodelcode,
+                            linestat.ritmodelcode, linestat.fitmodelcode, linestat.pitmodelcode
+                        ] if m}
+                        for ls_item in later_scheds:
+                            if ls_item.act > 0 or ls_item.modelcode in active_station_codes:
+                                later_active_or_started = ls_item
+                                break
+                            table_later_crs = db.session.query(func.count(CRS.id)).filter(
+                                CRS.modelcode == ls_item.modelcode,
+                                CRS.lineno == ls_item.lineno,
+                                func.date(CRS.time) == ls_item.date
+                            ).scalar() or 0
+                            if table_later_crs > 0:
+                                later_active_or_started = ls_item
+                                break
+                                
+                    if another_at_crs or later_active_or_started:
+                        other_code = linestat.crsmodelcode or (later_active_or_started.modelcode if later_active_or_started else 'the next model')
+                        return jsonify({
+                            'success': False,
+                            'error': f'Cannot increase plan: CRS has already completed this sequence and the line moved to {other_code}. To produce more units of {sched.modelcode}, please add a new Work Schedule sequence.'
+                        })
+                
                 stations_to_awaken = []
+                stations_to_shift = []
                 
                 if linestat and is_active_sched:
                     stations = [
                         ('crs', 'crsmodelcode', 'crsvar'),
                         ('att', 'attmodelcode', 'attvar'),
                         ('gms', 'gmsmodelcode', 'gmsvar'),
-                        ('in', 'inmodelcode', 'invar'),
-                        ('out', 'outmodelcode', 'outvar'),
+                        ('spamsi', 'inmodelcode', 'invar'),
+                        ('spamso', 'outmodelcode', 'outvar'),
                         ('wci', 'wcimodelcode', 'wcivar'),
                         ('rit', 'ritmodelcode', 'ritvar'),
                         ('fit', 'fitmodelcode', 'fitvar'),
@@ -824,8 +925,10 @@ def edit_delete_schedule(sid):
                             if new_var < 0:
                                 return jsonify({'success': False, 'error': f'Cannot decrease plan: {st_prefix.upper()} has already processed those units.'})
                             setattr(linestat, var_attr, new_var)
+                            if new_var == 0:
+                                stations_to_shift.append(st_prefix)
                         elif current_code is None and diff > 0:
-                            stations_to_awaken.append((st_prefix, var_attr))
+                            stations_to_awaken.append((st_prefix, var_attr, code_attr))
                         elif current_code != sched.modelcode and diff < 0:
                             if current_code is not None:
                                 current_st_sched = WorkSched.query.filter_by(lineno=sched.lineno, date=sched.date, modelcode=current_code).order_by(WorkSched.seq.desc()).first()
@@ -836,28 +939,33 @@ def edit_delete_schedule(sid):
                 db.session.commit()
                 
                 if linestat:
-                    if linestat.status == 'No Work' and diff > 0:
+                    if (linestat.status == 'No Work' or not is_active_sched) and diff > 0:
                         from app.services.linestat_monitor import initialize_line
                         try:
                             initialize_line(sched.lineno)
                         except Exception as e:
                             import logging
                             logging.getLogger(__name__).error(f"Failed to initialize line on edit: {e}")
-                    elif stations_to_awaken:
-                        for st_prefix, var_attr in stations_to_awaken:
-                            try:
-                                db.session.execute(
-                                    text(f"CALL sp_linestat_shift_sequence('{st_prefix}', :lineno, NULL)"),
-                                    {'lineno': sched.lineno}
-                                )
-                                db.session.commit()
-                                db.session.refresh(linestat)
-                                if getattr(linestat, f"{st_prefix}modelcode") == sched.modelcode:
-                                    setattr(linestat, var_attr, diff)
+                    else:
+                        if stations_to_awaken:
+                            for st_prefix, var_attr, code_attr in stations_to_awaken:
+                                try:
+                                    db.session.execute(
+                                        text(f"CALL sp_linestat_shift_sequence('{st_prefix}', :lineno, NULL)"),
+                                        {'lineno': sched.lineno}
+                                    )
                                     db.session.commit()
-                            except Exception as e:
-                                import logging
-                                logging.getLogger(__name__).error(f"Failed to awaken {st_prefix} on edit: {e}")
+                                    db.session.refresh(linestat)
+                                    if getattr(linestat, code_attr) == sched.modelcode:
+                                        setattr(linestat, var_attr, diff)
+                                        db.session.commit()
+                                except Exception as e:
+                                    import logging
+                                    logging.getLogger(__name__).error(f"Failed to awaken {st_prefix} on edit: {e}")
+                        if stations_to_shift:
+                            from app.services.linestat_monitor import trigger_shift_if_zero
+                            for st_prefix in stations_to_shift:
+                                trigger_shift_if_zero(sched.lineno, st_prefix, sched.modelcode)
         except ValueError:
             pass
             
@@ -962,18 +1070,38 @@ def update_modelref(modelcode):
                 'error': 'SPAMSI Unique Code is required for new models.'
             }), 400
         
-        if len(unique_code) > 4:
-            return jsonify({
-                'success': False,
-                'error': 'SPAMSI Unique Code must be 4 characters or fewer.'
-            }), 400
         if unique_code:
+            # Auto-pad to 3 characters with leading zeros if under 3 characters (e.g. 1 -> 001, A1 -> 0A1)
+            if len(unique_code) < 3:
+                unique_code = unique_code.zfill(3)
+
+            if len(unique_code) > 4:
+                return jsonify({
+                    'success': False,
+                    'error': 'SPAMSI Unique Code must be 4 characters or fewer.'
+                }), 400
             assigned = ModelRef.query.filter_by(spamsi_unique=unique_code).first()
             if assigned and assigned.modelcode != modelcode:
                 return jsonify({
                     'success': False,
-                    'error': 'This SPAMSI Unique Code is already assigned to another model.'
+                    'error': f'This SPAMSI Unique Code is already assigned to model {assigned.modelcode}.'
                 }), 409
+
+    if 'serialstart' in data:
+        serialstart_val = str(data['serialstart'] or '').strip() or None
+        if serialstart_val:
+            if len(serialstart_val) > 6:
+                return jsonify({
+                    'success': False,
+                    'error': 'Serial Start must be 6 characters or fewer.'
+                }), 400
+            assigned_serial = ModelRef.query.filter_by(serialstart=serialstart_val).first()
+            if assigned_serial and assigned_serial.modelcode != modelcode:
+                return jsonify({
+                    'success': False,
+                    'error': f'This Serial Start is already assigned to model {assigned_serial.modelcode}.'
+                }), 409
+        data['serialstart'] = serialstart_val
     
     if not ref:
         ref = ModelRef(modelcode=modelcode)
@@ -1495,7 +1623,8 @@ def update_att_data(id):
 @login_required
 def print_tag(serial):
     """Render the Production Information Tag for a specific serial number."""
-    unit_data = _get_tag_data(serial)
+    modelcode = request.args.get('modelcode', '').strip() or None
+    unit_data = _get_tag_data(serial, modelcode=modelcode)
     return render_template('admin/print_tag.html', unit=unit_data)
 
 @admin_bp.route('/internal/print-tag/<serial>', methods=['GET'])
@@ -1504,7 +1633,8 @@ def internal_print_tag(serial):
     if request.remote_addr != '127.0.0.1':
         from flask import abort
         abort(403)
-    unit_data = _get_tag_data(serial)
+    modelcode = request.args.get('modelcode', '').strip() or None
+    unit_data = _get_tag_data(serial, modelcode=modelcode)
     return render_template('admin/print_tag.html', unit=unit_data)
 
 @admin_bp.route('/admin/api/trigger-pdf/<serial>', methods=['POST'])
@@ -1526,22 +1656,44 @@ def trigger_pdf(serial):
     else:
         return jsonify({'success': False, 'error': 'Failed to generate PDF. Check logs.'}), 500
 
-def _get_tag_data(serial):
-    """Gather data from CRS, GMS, ATT, WCI for a specific serial number."""
-    # Gather data from CRS, GMS, ATT, WCI
-    crs_record = CRS.query.filter_by(serial=serial).order_by(CRS.id.desc()).first()
-    gms_record = GMS.query.filter_by(serial=serial).order_by(GMS.id.desc()).first()
-    att_record = ATT.query.filter_by(serial=serial).order_by(ATT.id.desc()).first()
+def _get_tag_data(serial, modelcode=None):
+    """Gather data from CRS, GMS, ATT, WCI, RIT, FIT, PIT for a specific serial number and optional modelcode."""
+    crs_query = CRS.query.filter_by(serial=serial)
+    if modelcode:
+        crs_query = crs_query.filter_by(modelcode=modelcode)
+    crs_record = crs_query.order_by(CRS.id.desc()).first()
+
+    target_model = modelcode or (crs_record.modelcode if crs_record else None)
+
+    gms_query = GMS.query.filter_by(serial=serial)
+    att_query = ATT.query.filter_by(serial=serial)
+    if target_model:
+        gms_query = gms_query.filter_by(modelcode=target_model)
+        att_query = att_query.filter_by(modelcode=target_model)
+
+    gms_record = gms_query.order_by(GMS.id.desc()).first()
+    att_record = att_query.order_by(ATT.id.desc()).first()
     
     from app.models.wci import WCI
     from app.models.rit import RIT
     from app.models.fit import FIT
     from app.models.pit import PIT
     
-    wci_record = WCI.query.filter_by(serial=serial).order_by(WCI.id.desc()).first()
-    rit_record = RIT.query.filter_by(serial=serial).order_by(RIT.id.desc()).first()
-    fit_record = FIT.query.filter_by(serial=serial).order_by(FIT.id.desc()).first()
-    pit_record = PIT.query.filter_by(serial=serial).order_by(PIT.id.desc()).first()
+    wci_query = WCI.query.filter_by(serial=serial)
+    rit_query = RIT.query.filter_by(serial=serial)
+    fit_query = FIT.query.filter_by(serial=serial)
+    pit_query = PIT.query.filter_by(serial=serial)
+
+    if target_model:
+        wci_query = wci_query.filter_by(modelcode=target_model)
+        rit_query = rit_query.filter_by(modelcode=target_model)
+        fit_query = fit_query.filter_by(modelcode=target_model)
+        pit_query = pit_query.filter_by(modelcode=target_model)
+
+    wci_record = wci_query.order_by(WCI.id.desc()).first()
+    rit_record = rit_query.order_by(RIT.id.desc()).first()
+    fit_record = fit_query.order_by(FIT.id.desc()).first()
+    pit_record = pit_query.order_by(PIT.id.desc()).first()
     
     # Determine the time to calculate shift (Day/Night) and Date
     production_time = crs_record.time if crs_record else datetime.now()
@@ -1893,8 +2045,14 @@ def get_fit_data():
 @admin_bp.route('/admin/api/prod-tag-tracker', methods=['GET'])
 @login_required
 def get_prod_tag_tracker():
-    page = max(1, int(request.args.get('page', 1)))
-    per_page = max(1, int(request.args.get('per_page', 50)))
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        page = 1
+    try:
+        per_page = max(1, min(100, int(request.args.get('per_page', 50))))
+    except (ValueError, TypeError):
+        per_page = 50
     date_str = request.args.get('date', '').strip()
     serial = request.args.get('serial', '').strip()
 
@@ -1925,14 +2083,30 @@ def get_prod_tag_tracker():
         return st_upper
 
     def get_latest_statuses(model):
-        subquery = db.session.query(model.serial, func.max(model.time).label('maxtime')).filter(model.serial.in_(serials)).group_by(model.serial).subquery()
-        records = db.session.query(model).join(subquery, db.and_(model.serial == subquery.c.serial, model.time == subquery.c.maxtime)).all()
+        subquery = db.session.query(
+            func.coalesce(model.modelcode, '').label('mcode'),
+            model.serial,
+            func.max(model.time).label('maxtime')
+        ).filter(
+            model.serial.in_(serials)
+        ).group_by(
+            func.coalesce(model.modelcode, ''),
+            model.serial
+        ).subquery()
+        records = db.session.query(model).join(
+            subquery,
+            db.and_(
+                func.coalesce(model.modelcode, '') == subquery.c.mcode,
+                model.serial == subquery.c.serial,
+                model.time == subquery.c.maxtime
+            )
+        ).order_by(model.id.asc()).all()
         res = {}
         for r in records:
             val = getattr(r, 'overallstatus', None)
             if not val:
                 val = getattr(r, 'status', None)
-            res[r.serial] = val
+            res[((r.modelcode or '').strip().upper(), (r.serial or '').strip())] = val
         return res
 
     att_status = get_latest_statuses(ATT)
@@ -1946,17 +2120,18 @@ def get_prod_tag_tracker():
     results = []
     for r in crs_records:
         s = r.serial
+        m_key = ((r.modelcode or '').strip().upper(), (s or '').strip())
         # A serial is considered Ready to Print if ALL inspection stations are OK.
         stations = {
             'CRS': 'GOOD',
-            'ATT': standardize_status(att_status.get(s)),
-            'GMS': standardize_status(gms_status.get(s)),
-            'SPAMSI': standardize_status(spamsi_status.get(s)),
-            'SPAMSO': standardize_status(spamso_status.get(s)),
-            'WCI': standardize_status(wci_status.get(s)),
-            'RIT': standardize_status(rit_status.get(s)),
-            'FIT': standardize_status(fit_status.get(s)),
-            'PIT': standardize_status(pit_status.get(s))
+            'ATT': standardize_status(att_status.get(m_key)),
+            'GMS': standardize_status(gms_status.get(m_key)),
+            'SPAMSI': standardize_status(spamsi_status.get(m_key)),
+            'SPAMSO': standardize_status(spamso_status.get(m_key)),
+            'WCI': standardize_status(wci_status.get(m_key)),
+            'RIT': standardize_status(rit_status.get(m_key)),
+            'FIT': standardize_status(fit_status.get(m_key)),
+            'PIT': standardize_status(pit_status.get(m_key))
         }
         
         # Check if all required stations are GOOD/PASS/OK
@@ -2005,6 +2180,7 @@ def sys_get_lines():
         'id': l.id,
         'lineno': l.lineno,
         'name': l.name,
+        'plant_code': getattr(l, 'plant_code', None) or '34P3',
         'is_active': l.is_active,
         'created_at': str(l.created_at)
     } for l in lines])
@@ -2017,6 +2193,7 @@ def create_line():
     data = request.get_json()
     lineno = data.get('lineno', '').strip().upper()
     name = data.get('name', '').strip()
+    plant_code = data.get('plant_code', '').strip().upper() or '34P3'
 
     if not lineno or not name:
         return jsonify({'success': False, 'error': 'Line number and name are required.'}), 400
@@ -2024,7 +2201,7 @@ def create_line():
     if Line.query.filter_by(lineno=lineno).first():
         return jsonify({'success': False, 'error': f'Line "{lineno}" already exists.'}), 409
 
-    new_line = Line(lineno=lineno, name=name, is_active=True)
+    new_line = Line(lineno=lineno, name=name, plant_code=plant_code, is_active=True)
     db.session.add(new_line)
     db.session.commit()
     return jsonify({'success': True, 'id': new_line.id})
@@ -2044,6 +2221,8 @@ def edit_delete_line(lid):
     data = request.get_json()
     if 'name' in data:
         line.name = data['name'].strip()
+    if 'plant_code' in data:
+        line.plant_code = data['plant_code'].strip().upper() or '34P3'
     if 'is_active' in data:
         line.is_active = bool(data['is_active'])
     db.session.commit()
@@ -2060,6 +2239,7 @@ def get_active_lines():
         'id': l.id,
         'lineno': l.lineno,
         'name': l.name,
+        'plant_code': getattr(l, 'plant_code', None) or '34P3',
     } for l in lines])
 
 
@@ -2396,13 +2576,35 @@ def print_specific_qc():
     from app.models.fit import FIT
     from app.models.pit import PIT
     
-    att_record = ATT.query.filter_by(serial=serial).order_by(ATT.time.desc()).first()
-    spamsi_record = SPAMSI.query.filter((SPAMSI.serial == serial) | (SPAMSI.inserial == serial)).order_by(SPAMSI.time.desc()).first()
-    spamso_record = SPAMSO.query.filter((SPAMSO.serial == serial) | (SPAMSO.outserial == serial)).order_by(SPAMSO.time.desc()).first()
-    wci_record = WCI.query.filter_by(serial=serial).order_by(WCI.time.desc()).first()
-    rit_record = RIT.query.filter_by(serial=serial).order_by(RIT.time.desc()).first()
-    fit_record = FIT.query.filter_by(serial=serial).order_by(FIT.time.desc()).first()
-    pit_record = PIT.query.filter_by(serial=serial).order_by(PIT.time.desc()).first()
+    att_query = ATT.query.filter_by(serial=serial)
+    if model:
+        att_query = att_query.filter_by(modelcode=model)
+    att_record = att_query.order_by(ATT.time.desc()).first()
+
+    spamsi_cond = (SPAMSI.serial == serial) | (SPAMSI.inserial == serial)
+    if model:
+        spamsi_cond = spamsi_cond & (SPAMSI.modelcode == model)
+    spamsi_record = SPAMSI.query.filter(spamsi_cond).order_by(SPAMSI.time.desc()).first()
+
+    spamso_cond = (SPAMSO.serial == serial) | (SPAMSO.outserial == serial)
+    if model:
+        spamso_cond = spamso_cond & (SPAMSO.modelcode == model)
+    spamso_record = SPAMSO.query.filter(spamso_cond).order_by(SPAMSO.time.desc()).first()
+
+    wci_query = WCI.query.filter_by(serial=serial)
+    rit_query = RIT.query.filter_by(serial=serial)
+    fit_query = FIT.query.filter_by(serial=serial)
+    pit_query = PIT.query.filter_by(serial=serial)
+    if model:
+        wci_query = wci_query.filter_by(modelcode=model)
+        rit_query = rit_query.filter_by(modelcode=model)
+        fit_query = fit_query.filter_by(modelcode=model)
+        pit_query = pit_query.filter_by(modelcode=model)
+
+    wci_record = wci_query.order_by(WCI.time.desc()).first()
+    rit_record = rit_query.order_by(RIT.time.desc()).first()
+    fit_record = fit_query.order_by(FIT.time.desc()).first()
+    pit_record = pit_query.order_by(PIT.time.desc()).first()
 
     parts_list = []
     
@@ -2676,14 +2878,16 @@ def post_conveyor_action():
                 # Fix 4: Avoid UniqueConstraint crash on duplicate (lineno, date, modelcode)
                 existing = WorkSched.query.filter_by(lineno=lineno, date=today_date, modelcode=sched.modelcode).first()
                 if existing:
-                    existing.plan += remaining
+                    existing.plan = max(existing.plan, sched.plan)
+                    if existing.act == 0 and sched.act:
+                        existing.act = sched.act
                 else:
                     new_sched = WorkSched(
                         lineno=lineno,
                         seq=next_seq,
                         modelcode=sched.modelcode,
-                        plan=remaining,
-                        act=0,
+                        plan=sched.plan,
+                        act=sched.act or 0,
                         takttime=sched.takttime,
                         date=today_date
                     )
@@ -2931,18 +3135,24 @@ def create_transfer_slip():
 
     import json
     
-    # Check already assigned serials for this date
-    existing_slips = TransferSlip.query.filter(
-        func.date(TransferSlip.production_date) == p_date
-    ).all()
+    # Check if a transfer slip already exists for this date, line, and model
+    existing_slip = TransferSlip.query.filter(
+        func.date(TransferSlip.production_date) == p_date,
+        TransferSlip.line == line,
+        TransferSlip.modelcode == modelcode
+    ).first()
     
+    # Check already assigned serials for this line and date
+    all_slips_today = TransferSlip.query.filter(
+        func.date(TransferSlip.production_date) == p_date,
+        TransferSlip.line == line
+    ).all()
     assigned_serials = set()
-    for slip in existing_slips:
+    for slip in all_slips_today:
         if slip.serials_json:
             try:
-                sl_list = json.loads(slip.serials_json)
-                assigned_serials.update(sl_list)
-            except:
+                assigned_serials.update(json.loads(slip.serials_json))
+            except Exception:
                 pass
 
     # 1. Fetch serials from PIT that passed
@@ -2958,8 +3168,20 @@ def create_transfer_slip():
     if total_qty == 0:
         return jsonify({'success': False, 'error': 'No completed units found for these parameters.'}), 404
 
-    # 2. Generate Ref Number (Format: Line No. | Last 2 digit of year | Month | Series)
-    # Series is 4-digit count of slips created in this month
+    from app.services.csv_generator import generate_transfer_slip_csv
+    
+    if existing_slip:
+        # Append to existing slip for this model
+        current_serials = json.loads(existing_slip.serials_json) if existing_slip.serials_json else []
+        combined_serials = current_serials + serials
+        existing_slip.serials_json = json.dumps(combined_serials)
+        existing_slip.total_qty = len(combined_serials)
+        existing_slip.time = datetime.now()
+        db.session.commit()
+        generate_transfer_slip_csv(existing_slip.id)
+        return jsonify({'success': True, 'slip_id': existing_slip.id, 'ref_number': existing_slip.ref_number})
+
+    # 2. Generate Ref Number for new slip (Format: Line No. | 2-digit Year | 2-digit Month | 4-digit Series)
     year2 = str(p_date.year)[-2:]
     month2 = f"{p_date.month:02d}"
     
@@ -2971,10 +3193,12 @@ def create_transfer_slip():
     series4 = f"{month_slips_count + 1:04d}"
     ref_number = f"{prefix}{series4}"
     
-    # 3. Create Slip
-    import json
+    from app.services.csv_generator import get_plant_code_for_line
+    current_plant = get_plant_code_for_line(line)
+    # 3. Create Slip per model
     new_slip = TransferSlip(
         ref_number=ref_number,
+        plant_code=current_plant,
         production_date=p_date,
         line=line,
         shift=shift,
@@ -2987,8 +3211,7 @@ def create_transfer_slip():
     db.session.add(new_slip)
     db.session.commit()
     
-    # 4. Trigger CSV Generation automatically on manual creation
-    from app.services.csv_generator import generate_transfer_slip_csv
+    # 4. Trigger CSV Generation automatically on creation
     generate_transfer_slip_csv(new_slip.id)
     
     return jsonify({'success': True, 'slip_id': new_slip.id, 'ref_number': new_slip.ref_number})
@@ -3131,14 +3354,35 @@ def print_qc_report():
     
     for s in serial_list:
         crs = CRS.query.filter_by(serial=s).order_by(CRS.time.desc()).first()
-        att = ATT.query.filter_by(serial=s).order_by(ATT.time.desc()).first()
-        gms = GMS.query.filter_by(serial=s).order_by(GMS.time.desc()).first()
-        spamsi = SPAMSI.query.filter((SPAMSI.serial == s) | (SPAMSI.inserial == s)).order_by(SPAMSI.time.desc()).first()
-        spamso = SPAMSO.query.filter((SPAMSO.serial == s) | (SPAMSO.outserial == s)).order_by(SPAMSO.time.desc()).first()
-        wci = WCI.query.filter_by(serial=s).order_by(WCI.time.desc()).first()
-        rit = RIT.query.filter_by(serial=s).order_by(RIT.time.desc()).first()
-        fit = FIT.query.filter_by(serial=s).order_by(FIT.time.desc()).first()
-        pit = PIT.query.filter_by(serial=s).order_by(PIT.time.desc()).first()
+        target_model = crs.modelcode if crs else None
+
+        att_query = ATT.query.filter_by(serial=s)
+        gms_query = GMS.query.filter_by(serial=s)
+        spamsi_cond = (SPAMSI.serial == s) | (SPAMSI.inserial == s)
+        spamso_cond = (SPAMSO.serial == s) | (SPAMSO.outserial == s)
+        wci_query = WCI.query.filter_by(serial=s)
+        rit_query = RIT.query.filter_by(serial=s)
+        fit_query = FIT.query.filter_by(serial=s)
+        pit_query = PIT.query.filter_by(serial=s)
+
+        if target_model:
+            att_query = att_query.filter_by(modelcode=target_model)
+            gms_query = gms_query.filter_by(modelcode=target_model)
+            spamsi_cond = spamsi_cond & (SPAMSI.modelcode == target_model)
+            spamso_cond = spamso_cond & (SPAMSO.modelcode == target_model)
+            wci_query = wci_query.filter_by(modelcode=target_model)
+            rit_query = rit_query.filter_by(modelcode=target_model)
+            fit_query = fit_query.filter_by(modelcode=target_model)
+            pit_query = pit_query.filter_by(modelcode=target_model)
+
+        att = att_query.order_by(ATT.time.desc()).first()
+        gms = gms_query.order_by(GMS.time.desc()).first()
+        spamsi = SPAMSI.query.filter(spamsi_cond).order_by(SPAMSI.time.desc()).first()
+        spamso = SPAMSO.query.filter(spamso_cond).order_by(SPAMSO.time.desc()).first()
+        wci = wci_query.order_by(WCI.time.desc()).first()
+        rit = rit_query.order_by(RIT.time.desc()).first()
+        fit = fit_query.order_by(FIT.time.desc()).first()
+        pit = pit_query.order_by(PIT.time.desc()).first()
         
         # Determine model
         model = ''

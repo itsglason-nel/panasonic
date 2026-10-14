@@ -1275,7 +1275,7 @@
                                 <span class="hide-on-mobile" style="margin-left: 6px;">Refresh</span>
                             </button>
                             <button class="btn btn-secondary" id="prodtag-btn-print" disabled
-                                onclick="if(tableSelection.prodtag) window.open('/admin/print-tag/' + encodeURIComponent(tableSelection.prodtag.serial), '_blank', 'noopener,noreferrer')"
+                                onclick="if(tableSelection.prodtag) window.open('/admin/print-tag/' + encodeURIComponent(tableSelection.prodtag.serial) + '?modelcode=' + encodeURIComponent(tableSelection.prodtag.modelcode), '_blank', 'noopener,noreferrer')"
                                 style="display: flex; align-items: center; gap: 6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -1900,6 +1900,17 @@
                                         <option value="asc">Oldest First</option>
                                     </select>
                                 </div>
+                                <button class="btn btn-secondary" id="scoreboard-btn-refresh" onclick="loadScoreboardData()" title="Refresh"
+                                    style="height: 35px; padding: 0 12px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <polyline points="1 20 1 14 7 14"></polyline>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                    </svg>
+                                    <span class="hide-on-mobile">Refresh</span>
+                                </button>
                             </div>
                         </div>
                         <div style="border-bottom: 1px solid var(--border-light); margin-bottom: 15px; width: 100%;">
@@ -2466,13 +2477,14 @@
                                         <th>NO.</th>
                                         <th>Line No</th>
                                         <th>Name</th>
+                                        <th>Plant Code</th>
                                         <th>Status</th>
                                         <th>Created</th>
                                     </tr>
                                 </thead>
                                 <tbody id="lines-tbody">
                                     <tr class="empty-state-row">
-                                        <td colspan="5" class="empty-state">
+                                        <td colspan="6" class="empty-state">
                                             <div class="empty-state-wrapper">
                                                 <div class="empty-state-icon">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"

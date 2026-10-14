@@ -38,12 +38,12 @@ If any of these conditions are violated, the tool will throw an error and refuse
 Model Configuration (model_import_config.csv):
 - `modelcode`: Max 14 chars. Must be UNIQUE in the database.
 - `area`: Max 14 chars. If the area does not exist in the `areas` table, it will be automatically added.
-- `serialstart`: Max 6 chars.
+- `serialstart`: Max 6 chars. Must be UNIQUE globally across all models.
 - `program_h` / `program_f`: Must be exactly NN:NN format (e.g. 05:30) or blank.
 - `gmstolpos` / `gmstolneg`: DECIMAL(4,2), max 99.99.
 - `op_current_*` / `in_power_*` / `temp_diff_*`: DECIMAL(4,2), max 99.99.
 - `ritheat1` / `ritheat2` / `pittws`: Must be exactly "ON" or blank.
-- `spamsi_unique_code`: Max 4 chars. Must be UNIQUE globally across all models.
+- `spamsi_unique_code`: Max 4 chars (standard 3 chars, e.g. 001, 0A1, 0B2). Must be UNIQUE globally across all models. Values under 3 characters are automatically padded with leading zeros (e.g. 1 -> 001, A1 -> 0A1, B2 -> 0B2) to prevent Excel leading-zero stripping.
 - `spamso_outmodel`: Max 14 chars.
 
 BOM Parts (model_import_parts.csv):

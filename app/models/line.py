@@ -8,6 +8,7 @@ class Line(db.Model):
     id         = db.Column(db.Integer, primary_key=True, autoincrement=True)
     lineno     = db.Column(db.String(4), nullable=False, unique=True)
     name       = db.Column(db.String(50), nullable=False)
+    plant_code = db.Column(db.String(10), nullable=False, default='34P3')
     is_active  = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.TIMESTAMP, nullable=False,
                            server_default=db.func.current_timestamp())

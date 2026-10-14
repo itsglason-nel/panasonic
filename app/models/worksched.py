@@ -17,9 +17,9 @@ class WorkSched(db.Model):
     finalized_at = db.Column(db.DateTime,    nullable=True)
     finalized_by = db.Column(db.String(50),  nullable=True)
 
-    # ── Database-level uniqueness — prevents duplicates even under race conditions ──
+    # ── Database-level uniqueness — prevents duplicate sequences on the same line and date ──
     __table_args__ = (
-        db.UniqueConstraint('lineno', 'date', 'modelcode', name='uq_worksched_line_date_model'),
+        db.UniqueConstraint('lineno', 'date', 'seq', name='uq_worksched_line_date_seq'),
     )
 
 

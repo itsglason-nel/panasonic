@@ -50,17 +50,34 @@ sp_block: BEGIN
         UPDATE linestat SET active_date = v_active_date WHERE id = v_linestat_id;
     END IF;
 
-    -- Resolve current sequence.
+    -- Resolve current sequence chronologically (handles multiple sequences of same model)
     -- NULL p_current_model signals "initialize from the very first scheduled seq"
     IF p_current_model IS NULL THEN
         SET v_current_seq = -1;
     ELSE
-        SELECT seq INTO v_current_seq
-        FROM   worksched
-        WHERE  lineno      = p_lineno
-          AND  date        = v_active_date
-          AND  modelcode   = p_current_model
-        ORDER  BY seq DESC LIMIT 1;
+        SELECT w.seq INTO v_current_seq
+        FROM   worksched w
+        WHERE  w.lineno    = p_lineno
+          AND  w.date      = v_active_date
+          AND  w.modelcode = p_current_model
+          AND  NOT EXISTS (
+              SELECT 1 FROM worksched w_prev
+              WHERE w_prev.lineno    = p_lineno
+                AND w_prev.date      = v_active_date
+                AND w_prev.seq       < w.seq
+                AND w_prev.modelcode != p_current_model
+                AND w_prev.act       < w_prev.plan
+          )
+        ORDER  BY w.seq ASC LIMIT 1;
+
+        IF v_current_seq IS NULL THEN
+            SELECT seq INTO v_current_seq
+            FROM   worksched
+            WHERE  lineno    = p_lineno
+              AND  date      = v_active_date
+              AND  modelcode = p_current_model
+            ORDER  BY seq DESC LIMIT 1;
+        END IF;
 
         IF v_current_seq IS NULL THEN
             LEAVE sp_block;

@@ -206,6 +206,51 @@
             color: #000;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .scoreboard-refresh-btn {
+            background-color: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-size: 16px;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            user-select: none;
+            letter-spacing: 0.5px;
+        }
+
+        .scoreboard-refresh-btn:hover {
+            background-color: #222222;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .scoreboard-refresh-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .scoreboard-refresh-btn.refreshing svg {
+            animation: sb-spin 0.8s linear infinite;
+        }
+
+        @keyframes sb-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 <body>
@@ -213,7 +258,17 @@
     <div class="top-header">
         <div id="header-line">LINE {{ line.lineno }}</div>
         <div id="header-date">FEBRUARY 18, 2026</div>
-        <div id="header-shift">SHIFT: DAY</div>
+        <div class="header-right">
+            <div id="header-shift">SHIFT: DAY</div>
+            <button id="scoreboard-refresh-btn" class="scoreboard-refresh-btn" onclick="manualRefresh()" title="Refresh Scoreboard">
+                <svg id="scoreboard-refresh-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>REFRESH</span>
+            </button>
+        </div>
     </div>
 
     <div class="carousel">
@@ -496,6 +551,16 @@
                 fetchLogsData();
             }
         });
+        
+        function manualRefresh() {
+            const btn = document.getElementById('scoreboard-refresh-btn');
+            if (btn) {
+                btn.classList.add('refreshing');
+                setTimeout(() => btn.classList.remove('refreshing'), 800);
+            }
+            fetchProdData();
+            fetchLogsData();
+        }
         
         fetchProdData();
         fetchLogsData();

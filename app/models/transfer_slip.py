@@ -6,6 +6,7 @@ class TransferSlip(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     ref_number = db.Column(db.String(20), unique=True, nullable=False)
+    plant_code = db.Column(db.String(10), nullable=False, default='34P3')
     production_date = db.Column(db.Date, nullable=False)
     line = db.Column(db.String(10), nullable=False)
     shift = db.Column(db.String(10), nullable=False)

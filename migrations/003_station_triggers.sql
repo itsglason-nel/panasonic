@@ -491,6 +491,8 @@ BEGIN
 END$$
 
 -- PIT AFTER Trigger
+-- DROP TRIGGER IF EXISTS after_pit_insert$$
+
 CREATE TRIGGER after_pit_insert AFTER INSERT ON pit
 FOR EACH ROW
 BEGIN
@@ -511,22 +513,22 @@ BEGIN
         UPDATE linestat SET pitvar = pitvar - 1, updtime = CURRENT_TIMESTAMP WHERE id = v_linestat_id;
         SET v_var = v_var - 1;
         
-        -- Retrieve the Primary Key for the currently active schedule
+        -- Retrieve the Primary Key for the chronologically oldest unfinished schedule for this model.
+        -- We drop the 'date = v_active_date' constraint so that if CRS shifted the date forward, 
+        -- PIT can still find and increment the historical schedule that these units belong to.
         SELECT id INTO v_worksched_id FROM worksched 
-        WHERE date = v_active_date 
-          AND lineno = NEW.lineno 
+        WHERE lineno = NEW.lineno 
           AND modelcode = v_model 
           AND act < plan
-        ORDER BY seq ASC
+        ORDER BY date ASC, seq ASC
         LIMIT 1;
         
-        -- Fallback if all sequences for this model are completed
+        -- Fallback if all sequences for this model are completed (overshooting)
         IF v_worksched_id IS NULL THEN
             SELECT id INTO v_worksched_id FROM worksched 
-            WHERE date = v_active_date 
-              AND lineno = NEW.lineno 
+            WHERE lineno = NEW.lineno 
               AND modelcode = v_model 
-            ORDER BY seq DESC
+            ORDER BY date DESC, seq DESC
             LIMIT 1;
         END IF;
         
@@ -540,6 +542,7 @@ BEGIN
             CALL sp_linestat_shift_sequence('pit', NEW.lineno, v_model);
         END IF;
     END IF;
+    
 END$$
 
 DELIMITER ;

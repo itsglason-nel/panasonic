@@ -8,7 +8,7 @@ class ModelRef(db.Model):
     modelcode = db.Column(db.String(14), nullable=False, unique=True)
     
     area = db.Column(db.String(14), nullable=True)
-    serialstart = db.Column(db.String(6), nullable=True)
+    serialstart = db.Column(db.String(6), unique=True, nullable=True)
     
     program_h = db.Column(db.String(6), nullable=True)
     program_f = db.Column(db.String(6), nullable=True)

@@ -88,6 +88,44 @@ class Config:
         r'C:\Users\DELL\Desktop\Product Info Tag'
     )
 
+    # Transfer Slip Directories
+    TRANSFER_SLIP_DIR = os.environ.get(
+        'TRANSFER_SLIP_DIR',
+        os.path.join(os.path.dirname(__file__), 'tools', 'transfer_slip_data')
+    )
+    TRANSFER_SLIP_CSV_PATH = os.environ.get(
+        'TRANSFER_SLIP_CSV_PATH',
+        os.path.join(TRANSFER_SLIP_DIR, 'actual')
+    )
+    TRANSFER_SLIP_MIDDLEWARE_DIR = os.environ.get(
+        'TRANSFER_SLIP_MIDDLEWARE_DIR',
+        os.path.join(TRANSFER_SLIP_DIR, 'middleware')
+    )
+    TRANSFER_SLIP_MIDDLEWARE_FILENAME = os.environ.get(
+        'TRANSFER_SLIP_MIDDLEWARE_FILENAME',
+        'transfer_slip_continuous.csv'
+    )
+    TRANSFER_SLIP_MIDDLEWARE_PREVIEW_FILENAME = os.environ.get(
+        'TRANSFER_SLIP_MIDDLEWARE_PREVIEW_FILENAME',
+        'transfer_slip_continuous_preview.csv'
+    )
+
+    # Transfer Slip Plant Configuration
+    PLANT_CODE = os.environ.get('PLANT_CODE', '34P3')
+    LINE_PLANT_MAPPING = {}
+    _env_mapping = os.environ.get('LINE_PLANT_MAPPING', '').strip()
+    if _env_mapping:
+        try:
+            import json as _json
+            LINE_PLANT_MAPPING = _json.loads(_env_mapping)
+        except Exception:
+            for pair in _env_mapping.split(','):
+                if ':' in pair:
+                    k, v = pair.split(':', 1)
+                    LINE_PLANT_MAPPING[k.strip().upper()] = v.strip().upper()
+    if 'L1' not in LINE_PLANT_MAPPING:
+        LINE_PLANT_MAPPING['L1'] = PLANT_CODE
+
     # Bulk Model Import Directories
     BULK_MODEL_IMPORT_INPUT_DIR = os.environ.get(
         'BULK_MODEL_IMPORT_INPUT_DIR',
